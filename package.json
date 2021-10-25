@@ -1,0 +1,40 @@
+{
+  "name": "@i4mi/fhir_questionnaire",
+  "version": "0.0.1",
+  "description": "TS Package for handling FHIR Questionnaire and generating QuestionnaireRespones.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "test": "jest --config jestconfig.json",
+    "build": "rm -rf ./dist && npm i && tsc"
+  },
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "bugs": {
+    "url": "https://github.com/i4mi/"
+  },
+  "homepage": "https://github.com/i4mi/",
+  "keywords": [
+    "fhir",
+    "resources",
+    "i4mi",
+    "questionnaire",
+    "questionnaireresponse",
+    "typescript"
+  ],
+  "author": "Gabriel Hess, Olivier Descloux @ Institute for Medical Informatics (I4MI) - Bern University of Applied Science (BFH)",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "typescript": "^4.4.4"
+  },
+  "dependencies": {
+    "@i4mi/fhir_r4": "^1.0.10",
+    "fhirpath": "^2.9.1",
+    "moment": "^2.29.1"
+  },
+  "files": [
+    "dist/**/*"
+  ]
+}
