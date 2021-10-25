@@ -11,7 +11,7 @@
         ],
         "module": "commonjs",
         "moduleResolution": "node",
-        "outDir": "fhir-questionnaire",
+        "outDir": "dist",
         "sourceMap": true,
         "suppressImplicitAnyIndexErrors": true,
         "strict": true,
