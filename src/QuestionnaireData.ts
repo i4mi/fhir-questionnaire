@@ -37,15 +37,15 @@ export default class QuestionnaireData {
         this.items = new Array<IQuestion>();
         this.hiddenFhirItems = new Array<{item: IQuestion,parentLinkId?: string}>();
         this.availableLanguages = _availableLanguages || [];
+        this.valueSets = {};
 
-        if(_valueSets) {
+        if (_valueSets) {
             this.valueSets = _valueSets;
-        } else {
+        } else if (this.fhirQuestionnaire.contained) {
             // process contained valuesets
             // TODO: prepare for not contained valuesets
-            this.valueSets = {};
 
-            this.fhirQuestionnaire.contained?.forEach((resource: Resource) => {
+            this.fhirQuestionnaire.contained.forEach((resource: Resource) => {
                 if(resource.resourceType === 'ValueSet') {
                     const valueSet = resource as ValueSet;
                     if(valueSet.id) {
@@ -57,7 +57,9 @@ export default class QuestionnaireData {
 
         if (_items) {
             this.items = _items;
-            this.hiddenFhirItems = _hiddenFhirItems ? _hiddenFhirItems : [];
+            this.hiddenFhirItems = _hiddenFhirItems
+                                    ? _hiddenFhirItems
+                                    : [];
         } else {
             this.items = new Array<IQuestion>();
             this.resetResponse();
@@ -91,8 +93,8 @@ export default class QuestionnaireData {
             // now we stepped through all the items and the helper array is complete, we can add depending questions to their determinators
             questionsDependencies.forEach((question) => {
                 const determinator = this.findQuestionById(question.id, this.items);
-                if (question.reference) {
-                    determinator?.dependingQuestions.push({
+                if (question.reference && determinator) {
+                    determinator.dependingQuestions.push({
                         dependingQuestion: question.reference,
                         answer: question.answer
                     });
@@ -140,7 +142,9 @@ export default class QuestionnaireData {
                 if(_answer.disableOtherAnswers) {
                     _answer.disableOtherAnswers.forEach((otherAnswer) => {
                         const indexOfOtherAnswer = _question.selectedAnswers.findIndex(( selectedAnswer ) => {
-                            return selectedAnswer.valueCoding?.code === otherAnswer
+                            return selectedAnswer.valueCoding
+                                        ? selectedAnswer.valueCoding.code === otherAnswer
+                                        : undefined;
                         });
                         if (indexOfOtherAnswer >= 0) { // otherAnswer is selected
                             _question.selectedAnswers.splice(indexOfOtherAnswer,1) // remove otherAnswer)
@@ -156,7 +160,11 @@ export default class QuestionnaireData {
 
         // update depending questions
         _question.dependingQuestions.forEach((dependingQuestion) => {
-            dependingQuestion.dependingQuestion.isEnabled = (dependingQuestion.answer.valueCoding?.code === _answer.code.valueCoding?.code && indexOfAnswer < 0)
+            if (! dependingQuestion.answer.valueCoding || !_answer.code.valueCoding) {
+                dependingQuestion.dependingQuestion.isEnabled = false;
+            } else {
+                dependingQuestion.dependingQuestion.isEnabled = (_answer.code.valueCoding && dependingQuestion.answer.valueCoding.code === _answer.code.valueCoding.code && indexOfAnswer < 0);
+            }
         });
     }
 
@@ -177,7 +185,7 @@ export default class QuestionnaireData {
     * @param _language the language code of the wanted language
     **/
     getQuestionnaireTitle(_language: string): string | undefined {
-        if (this.fhirQuestionnaire._title?.extension) {
+        if (this.fhirQuestionnaire._title && this.fhirQuestionnaire._title.extension) {
             return this.getTranslationsFromExtension(this.fhirQuestionnaire._title as {extension: Array<{extension: Array<any>}>})[_language]
         } else {
             return undefined;
@@ -194,68 +202,73 @@ export default class QuestionnaireData {
         if (this.lastRestored == undefined || moment(this.lastRestored).isBefore(_fhirResponse.authored)) {
             this.lastRestored = _fhirResponse.authored;
             this.responseIdToSynchronize = _fhirResponse.id;
-            const questionnaireUrl = _fhirResponse.questionnaire?.split('|')[0];
-            if (questionnaireUrl !== this.fhirQuestionnaire.url?.split('|')[0]) {
+            const questionnaireUrl = _fhirResponse.questionnaire
+                                        ? _fhirResponse.questionnaire.split('|')[0]
+                                        : '';
+            if (this.fhirQuestionnaire.url && questionnaireUrl !== this.fhirQuestionnaire.url.split('|')[0]) {
                 throw new Error('Invalid argument: QuestionnaireResponse does not match Questionnaire!');
             }
-            _fhirResponse.item?.forEach((answerItem) => {
-                const item = this.findQuestionById(answerItem.linkId, this.items);
-                if (item) {
-                    item.selectedAnswers = [];
-                    if (item.answerOptions && item.answerOptions.length > 0) {
-                        answerItem.answer?.forEach((answer) => {
-                            const answerAsAnswerOption = item.answerOptions.find((answerOption) => {
-                                if (answer.valueCoding) {
-                                    return answer.valueCoding.system === answerOption.code.valueCoding?.system
-                                    ? answer.valueCoding.code === answerOption.code.valueCoding?.code
-                                    : false
-                                } else if (answer.valueString) {
-                                    return answer.valueString === answerOption.code.valueString;
-                                } else if (answer.valueInteger) {
-                                    return answer.valueInteger === answerOption.code.valueInteger;
-                                } else if (answer.valueDate) {
-                                    return answer.valueDate === answerOption.code.valueDate;
-                                } else if (answer.valueQuantity) {
-                                    return answer.valueQuantity === answerOption.code.valueQuantity;
-                                } else if (answer.valueDateTime) {
-                                    return answer.valueDateTime === answerOption.code.valueDateTime;
-                                } else if (answer.valueBoolean) {
-                                    return answer.valueBoolean === answerOption.code.valueBoolean;
-                                } else if (answer.valueDecimal) {
-                                    return answer.valueDecimal === answerOption.code.valueDecimal;
-                                } else if (answer.valueTime) {
-                                    return answer.valueTime === answerOption.code.valueTime;
-                                } else if (answer.valueUri) {
-                                    return answer.valueUri === answerOption.code.valueUri;
-                                } else if (answer.valueReference) {
-                                    return answer.valueReference === answerOption.code.valueReference;
-                                } else if (answer.valueAttachment) {
-                                    return answer.valueReference === answerOption.code.valueAttachment;
+            if (_fhirResponse.item) {
+                _fhirResponse.item.forEach((answerItem) => {
+                    const item = this.findQuestionById(answerItem.linkId, this.items);
+                    if (item) {
+                        item.selectedAnswers = [];
+                        if (item.answerOptions && item.answerOptions.length > 0 && answerItem.answer) {
+                            answerItem.answer.forEach((answer) => {
+                                const answerAsAnswerOption = item.answerOptions.find((answerOption) => {
+                                    if (answer.valueCoding && answerOption.code.valueCoding) {
+                                        return answer.valueCoding.system === answerOption.code.valueCoding.system
+                                                                                ? answer.valueCoding.code === answerOption.code.valueCoding.code
+                                                                                : false;
+                                    } else if (answer.valueString) {
+                                        return answer.valueString === answerOption.code.valueString;
+                                    } else if (answer.valueInteger) {
+                                        return answer.valueInteger === answerOption.code.valueInteger;
+                                    } else if (answer.valueDate) {
+                                        return answer.valueDate === answerOption.code.valueDate;
+                                    } else if (answer.valueQuantity) {
+                                        return answer.valueQuantity === answerOption.code.valueQuantity;
+                                    } else if (answer.valueDateTime) {
+                                        return answer.valueDateTime === answerOption.code.valueDateTime;
+                                    } else if (answer.valueBoolean) {
+                                        return answer.valueBoolean === answerOption.code.valueBoolean;
+                                    } else if (answer.valueDecimal) {
+                                        return answer.valueDecimal === answerOption.code.valueDecimal;
+                                    } else if (answer.valueTime) {
+                                        return answer.valueTime === answerOption.code.valueTime;
+                                    } else if (answer.valueUri) {
+                                        return answer.valueUri === answerOption.code.valueUri;
+                                    } else if (answer.valueReference) {
+                                        return answer.valueReference === answerOption.code.valueReference;
+                                    } else if (answer.valueAttachment) {
+                                        return answer.valueReference === answerOption.code.valueAttachment;
+                                    } else {
+                                        //TODO: other answer types
+                                        console.warn('Answer has unknown type', answerOption.code);
+                                        return false;
+                                    }
+                                });
+                                if (answerAsAnswerOption) {
+                                    item.selectedAnswers.push(answerAsAnswerOption.code);
                                 } else {
-                                    //TODO: other answer types
-                                    console.warn('Answer has unknown type', answerOption.code);
-                                    return false;
+                                    item.selectedAnswers = answerItem.answer
+                                                                ? answerItem.answer
+                                                                : [];
                                 }
                             });
-                            if (answerAsAnswerOption) {
-                                item.selectedAnswers.push(answerAsAnswerOption.code);
+                        } else if (answerItem.answer && answerItem.answer.length > 0) {
+                            if (item.allowsMultipleAnswers) {
+                                item.selectedAnswers = answerItem.answer;
                             } else {
-                                item.selectedAnswers = answerItem.answer
-                                                            ? answerItem.answer
-                                                            : [];
+                                item.selectedAnswers.push(answerItem.answer[0]);
                             }
-                        });
-                    } else if (answerItem.answer && answerItem.answer.length > 0) {
-                        if (item.allowsMultipleAnswers) {
-                            item.selectedAnswers = answerItem.answer;
-                        } else {
-                            item.selectedAnswers.push(answerItem.answer[0]);
                         }
+                    } else {
+                        console.warn('Item with linkId ' + answerItem.linkId + ' was found in QuestionnaireResponse, but does not exist in Questionnaire.');
                     }
-                } else {
-                    console.warn('Item with linkId ' + answerItem.linkId + ' was found in QuestionnaireResponse, but does not exist in Questionnaire.');
-                }
-            })
+                })
+            }
+
         }
     }
 
@@ -276,7 +289,9 @@ export default class QuestionnaireData {
             resourceType: 'QuestionnaireResponse',
             extension: [{
                 url: QUESTIONNAIRERESPONSE_CODING_EXTENSION_URL,
-                valueCoding: this.fhirQuestionnaire.code[0]
+                valueCoding: this.fhirQuestionnaire.code
+                                ? this.fhirQuestionnaire.code[0]
+                                : {}
             }],
             questionnaire: this.getQuestionnaireURLwithVersion(),
             authored: _date ? _date.toISOString() : new Date().toISOString(),
@@ -287,18 +302,20 @@ export default class QuestionnaireData {
         };
 
         // stuff to do for items with calculated expression
-        const itemsWithCalculatedExpression = this.hiddenFhirItems.filter(i => i.item.options?.calculatedExpression !== undefined);
-        itemsWithCalculatedExpression.forEach((item) => {
-            try {
-                const calculatedAnswer = { valueDecimal: fhirpath.evaluate(fhirResponse, item.item.options?.calculatedExpression) };
-                if (item.item.allowsMultipleAnswers) {
-                    item.item.selectedAnswers.push(calculatedAnswer);
-                } else {
-                    item.item.selectedAnswers = [calculatedAnswer];
+        const itemsWithCalculatedExpression = this.hiddenFhirItems.filter(i => i.item.options && i.item.options.calculatedExpression !== undefined);
+        itemsWithCalculatedExpression.forEach(item => {
+            if (item.item.options) {
+                try {
+                    const calculatedAnswer = { valueDecimal: fhirpath.evaluate(fhirResponse, item.item.options.calculatedExpression) };
+                    if (item.item.allowsMultipleAnswers) {
+                        item.item.selectedAnswers.push(calculatedAnswer);
+                    } else {
+                        item.item.selectedAnswers = [calculatedAnswer];
+                    }
                 }
-            }
-            catch(e) {
-                throw new Error ('Can not evaluate fhirpath expression for item ' + item.item.id + ': ' + item.item.options?.calculatedExpression + '.');
+                catch(e) {
+                    throw new Error ('Can not evaluate fhirpath expression for item ' + item.item.id + ': ' + item.item.options.calculatedExpression + '.');
+                }
             }
             if (item.parentLinkId) {
                 const recursivelyFindId = (id: string, items: QuestionnaireResponseItem[]): QuestionnaireResponseItem | undefined => {
@@ -398,24 +415,24 @@ export default class QuestionnaireData {
                 } else if (!question.allowsMultipleAnswers && question.selectedAnswers.length > 1){
                     throw new Error(`Invalid answer set: IQuestion with id ${question.id} allows only one answer, but has more.`);
                 } else {
-                    const responseItem: QuestionnaireResponseItem = {
+                    const responseItem = {
                         linkId: question.id,
                         text: question.label[_language],
                         answer: new Array<QuestionnaireResponseItemAnswer>()
-                    }
+                    };
                     question.selectedAnswers.forEach((answer) => {
                         if (answer.valueCoding) {
                             // find translated display for answer valueCoding
-                            const answerDisplayAllLanguages = question.answerOptions.find((answerOption) => {
-                                return answerOption.code.valueCoding?.code === answer.valueCoding?.code
-                            })?.answer;
+                            const answerDisplayAllLanguages = (question.answerOptions.find((answerOption) => {
+                                return answerOption.code.valueCoding && answer.valueCoding && answerOption.code.valueCoding.code === answer.valueCoding.code;
+                            }) || {answer: ''}).answer;
                             // some answer options (e.g. zip code locations) have only one language set
                             const answerDisplay = answerDisplayAllLanguages
                                                     ? answerDisplayAllLanguages[_language]
                                                         ? answerDisplayAllLanguages[_language]
                                                         : answerDisplayAllLanguages[Object.keys(answerDisplayAllLanguages)[0]]
                                                     : '';
-                            responseItem.answer?.push({
+                            responseItem.answer.push({
                                 valueCoding: {
                                     system: answer.valueCoding.system,
                                     code: answer.valueCoding.code,
@@ -424,13 +441,13 @@ export default class QuestionnaireData {
                                 }
                             });
                         } else {
-                            responseItem.answer?.push(answer);
+                            responseItem.answer.push(answer);
                         }
                     });
 
                     if (question.subItems && question.subItems.length > 0) {
-                        responseItem.item = [];
-                        this.mapIQuestionToQuestionnaireResponseItem(question.subItems, responseItem.item, _language);
+                        (responseItem as QuestionnaireResponseItem).item = [];
+                        this.mapIQuestionToQuestionnaireResponseItem(question.subItems, (responseItem as QuestionnaireResponseItem).item || [], _language);
                     }
                     // add to array
                     _responseItems.push(responseItem);
@@ -481,17 +498,18 @@ export default class QuestionnaireData {
         // first handle group items with subitems
         if (_FHIRItem.item && _FHIRItem.item.length > 0) {
             question.subItems = new Array<IQuestion>();
-
             _FHIRItem.item.forEach((subItem) => {
-                question.subItems?.push(this.mapQuestionnaireItemToIQuestion(subItem));
+                if (question.subItems) {
+                    question.subItems.push(this.mapQuestionnaireItemToIQuestion(subItem));
+                }
             });
         }
 
         // handle the non-group items
         if (_FHIRItem.type !== QuestionnaireItemType.GROUP) {
-            if (_FHIRItem.readOnly) {
+            if (_FHIRItem.readOnly && _FHIRItem.code) {
                 question.options = question.options || {};
-                _FHIRItem.code?.forEach((code: Coding) => {
+                _FHIRItem.code.forEach((code: Coding) => {
                     if (code.code && code.system === 'http://snomed.info/sct' && question.options) {
                         question.options.populateType = PopulateType[code.code]
                     }
@@ -505,72 +523,91 @@ export default class QuestionnaireData {
                     const answerValueSet = this.valueSets[_FHIRItem.answerValueSet.split('#')[1]];
 
                     // check if the valueset has an extension for items unselecting others
-                    const unselectOtherExtensions = _FHIRItem.extension?.filter((extension) => {
-                        return extension.url === UNSELECT_OTHERS_EXTENSION;
-                    }) as Extension[];
+                    let unselectOtherExtensions: Extension[];
+                    if (_FHIRItem.extension) {
+                        unselectOtherExtensions = _FHIRItem.extension.filter((extension) => {
+                            return extension.url === UNSELECT_OTHERS_EXTENSION;
+                        });
+                    }
 
-                    answerValueSet.compose?.include[0].concept?.forEach((concept) => {
-                        // build answerOption objects with translations
-                        const answerOption: IAnswerOption = {
-                            answer: this.getTranslationsFromDesignation(concept.designation),
-                            code: {
-                                valueCoding:
-                                {
-                                    system: answerValueSet.compose?.include[0].system ? answerValueSet.compose.include[0].system : answerValueSet.url,
-                                    code: concept.code
-                                }
-                            }
-                        }
-
-                        if (unselectOtherExtensions) {
-                            // prepare the unselect-others array when an answeroption unselects other options
-                            unselectOtherExtensions.forEach((extension) => {
-                                extension = extension.extension[0];
-                                if (extension.valueCode === answerOption.code.valueCoding?.code && answerOption.code.valueCoding?.code) {
-                                    answerOptionsToUnselect.push({
-                                        disabler: answerOption.code.valueCoding?.code,
-                                        toBeDisabled: {mustAllOthersBeDisabled: true}
-                                    });
-                                } else {
-                                    if(answerOption.code.valueCoding?.code && extension.valueCode){
-                                        answerOptionsToUnselect.push({
-                                            disabler: answerOption.code.valueCoding?.code,
-                                            toBeDisabled: extension.valueCode
-                                        });
+                    if (answerValueSet.compose && answerValueSet.compose.include[0].concept) {
+                        const system = answerValueSet.compose.include[0].system;
+                        answerValueSet.compose.include[0].concept.forEach((concept) => {
+                            // build answerOption objects with translations
+                            const answerOption: IAnswerOption = {
+                                answer: this.getTranslationsFromDesignation(concept.designation),
+                                code: {
+                                    valueCoding:
+                                    {
+                                        system: system
+                                                    ? system
+                                                    : answerValueSet.url,
+                                        code: concept.code
                                     }
                                 }
-                            });
-                        }
-
-                        question.answerOptions?.push(answerOption);
-                    });
-                    // now we know all answerOptions, we can link the dependingAnswers from the temp array
-                    answerOptionsToUnselect.forEach((answerPair) => {
-                        const disabler = question.answerOptions?.find((answerOption) => {
-                            return answerOption.code.valueCoding?.code === answerPair.disabler;
-                        });
-                        let answersToBeDisabled: Array<code> = new Array<code>();
-                        if (answerPair.toBeDisabled == {mustAllOthersBeDisabled: true}) {
-                            // add all but the disabler option to array
-                            question.answerOptions?.map((answerOption) => {
-                                if(answerOption.code.valueCoding?.code !== answerPair.disabler)
-                                answersToBeDisabled.push(answerOption.code.valueCoding.code)
-                            });
-                        } else {
-                            answersToBeDisabled = new Array<code>();
-                            // find the link to the disabled question
-                            const disabledQuestion = question.answerOptions?.find((answerOption) => {
-                                return answerOption.code.valueCoding?.code === answerPair.toBeDisabled;
-                            });
-                            if(disabledQuestion) {
-                                answersToBeDisabled.push(disabledQuestion.code.valueCoding.code);
                             }
+
+                            if (unselectOtherExtensions) {
+                                // prepare the unselect-others array when an answeroption unselects other options
+                                unselectOtherExtensions.forEach((extension) => {
+                                    extension = extension.extension
+                                                    ? extension.extension[0]
+                                                    : {url: ''};
+                                    if (answerOption.code.valueCoding && answerOption.code.valueCoding && extension.valueCode === answerOption.code.valueCoding.code && answerOption.code.valueCoding.code) {
+                                        answerOptionsToUnselect.push({
+                                            disabler: answerOption.code.valueCoding.code,
+                                            toBeDisabled: {mustAllOthersBeDisabled: true}
+                                        });
+                                    } else if (answerOption.code.valueCoding){
+                                        if (answerOption.code.valueCoding.code && extension.valueCode){
+                                            answerOptionsToUnselect.push({
+                                                disabler: answerOption.code.valueCoding.code,
+                                                toBeDisabled: extension.valueCode
+                                            });
+                                        }
+                                    }
+                                });
+                            }
+                            if (question.answerOptions) {
+                                question.answerOptions.push(answerOption);
+                            }
+                        });
+                    }
+
+                    // now we know all answerOptions, we can link the dependingAnswers from the temp array
+
+                    answerOptionsToUnselect.forEach((answerPair) => {
+                        if (question.answerOptions) {
+                            const disabler = question.answerOptions.find((answerOption) => {
+                                                return answerOption.code.valueCoding && answerOption.code.valueCoding.code === answerPair.disabler;
+                                            });
+                            let answersToBeDisabled: Array<code> = new Array<code>();
+                            if (answerPair.toBeDisabled == {mustAllOthersBeDisabled: true}) {
+                                // add all but the disabler option to array
+                                question.answerOptions.map((answerOption) => {
+                                    if (answerOption.code.valueCoding && answerOption.code.valueCoding.code && answerOption.code.valueCoding.code !== answerPair.disabler) {
+                                        answersToBeDisabled.push(answerOption.code.valueCoding.code);
+                                    }
+                                });
+                            } else {
+                                answersToBeDisabled = new Array<code>();
+                                // find the link to the disabled question
+                                const disabledQuestion = question.answerOptions.find((answerOption) => {
+                                    return answerOption.code.valueCoding
+                                                ? answerOption.code.valueCoding.code === answerPair.toBeDisabled
+                                                : false;
+                                });
+                                if (disabledQuestion && disabledQuestion.code.valueCoding && disabledQuestion.code.valueCoding.code) {
+                                    answersToBeDisabled.push(disabledQuestion.code.valueCoding.code);
+                                }
+                            }
+                            // finally assign the to be disabled questions to the disabler
+                            if (disabler) {
+                                disabler.disableOtherAnswers = answersToBeDisabled;
+                            };
                         }
-                        // finally assign the to be disabled questions to the disabler
-                        if (disabler) {
-                            disabler.disableOtherAnswers = answersToBeDisabled;
-                        };
                     });
+
                 } else if (_FHIRItem.answerOption) {
                     question.answerOptions = _FHIRItem.answerOption.map((answerOption) => {
                         let answerOptionText: {[language: string]: string} = {};
@@ -580,13 +617,13 @@ export default class QuestionnaireData {
 
                         if (answerOption.valueCoding) {
                             // check if we have multi-language support
-                            if (answerOption.valueCoding._display?.extension) {
+                            if (answerOption.valueCoding._display && answerOption.valueCoding._display.extension) {
                                 Object.keys(answerOptionText).forEach(key => {
                                     answerOptionText[key] = this.getTranslationsFromExtension(answerOption.valueCoding._display as {extension: Array<{extension: Array<any>}>})[key]
                                 });
                             } else { // when not, use the same text for every language
                                 Object.keys(answerOptionText).forEach(key => {
-                                    answerOptionText[key] = answerOption.valueCoding.display;
+                                    answerOptionText[key] = answerOption.valueCoding.display || '';
                                 });
                             }
 
@@ -609,7 +646,7 @@ export default class QuestionnaireData {
                         return {
                             answer: answerOptionText,
                             code: answerOption
-                        }
+                        };
                     })
 
                 } else { // no answerValueSet available
@@ -620,21 +657,23 @@ export default class QuestionnaireData {
             } else if (_FHIRItem.type === QuestionnaireItemType.DISPLAY) {
                 question.readOnly = true;
             } else if (_FHIRItem.type === QuestionnaireItemType.QUANTITY) {
-                if (question.options?.controlType == ItemControlType.SLIDER) {
+                if (question.options && question.options.controlType == ItemControlType.SLIDER &&  question.options.min &&  question.options.max) {
                     question.answerOptions = [
                         {
                             answer: {
                                 // TODO: make dynamic
-                                de: 'Wert mit Slider ausgewählt ($MIN$ - $MAX$)'.replace('$MIN$', question.options.min?.toString()).replace('$MAX$', question.options.max?.toString()),
-                                fr: 'Valeur sélectionnée avec le slider ($MIN$ - $MAX$)'.replace('$MIN$', question.options.min?.toString()).replace('$MAX$', question.options.max?.toString())
+                                de: 'Wert mit Slider ausgewählt ($MIN$ - $MAX$)'.replace('$MIN$', question.options.min.toString()).replace('$MAX$', question.options.max.toString()),
+                                fr: 'Valeur sélectionnée avec le slider ($MIN$ - $MAX$)'.replace('$MIN$', question.options.min.toString()).replace('$MAX$', question.options.max.toString())
                             },
                             code:  {
-                                valueQuantity: {
-                                    value: undefined,
-                                    system: question.options.unit?.system,
-                                    unit: question.options.unit?.display,
-                                    code: question.options.unit?.code
-                                }
+                                valueQuantity: question.options.unit
+                                                ? {
+                                                    value: undefined,
+                                                    system: question.options.unit.system,
+                                                    unit:  question.options.unit.display,
+                                                    code: question.options.unit.code
+                                                }
+                                                : {}
                             }
                         }
                     ]
@@ -661,7 +700,7 @@ export default class QuestionnaireData {
             format: this.hasExtension(ENTRY_FORMAT_EXTENSION, undefined, _FHIRItem),
             sliderStep: this.hasExtension(SLIDER_STEP_VALUE_EXTENSION, undefined, _FHIRItem),
             unit: this.hasExtension(UNIT_EXTENSION, 'https://ucum.org', _FHIRItem),
-            calculatedExpression: this.hasExtension(CALCULATED_EXPRESSION_EXTENSION, 'text/fhirpath', _FHIRItem)?.expression
+            calculatedExpression: this.hasExtension(CALCULATED_EXPRESSION_EXTENSION, 'text/fhirpath', _FHIRItem).expression
         };
         if (itemControlExtension) {
             Object.values(ItemControlType).forEach((typeCode) => {
@@ -707,8 +746,10 @@ export default class QuestionnaireData {
 
         if (_FHIRItem.item && _FHIRItem.item.length > 0) {
 
-            _FHIRItem.item.forEach((item, index)=>{
-                dependingQuestions = dependingQuestions.concat(this.linkDependingQuestions(item, _currentQuestion.subItems[index]) );
+            _FHIRItem.item.forEach((item, index) => {
+                if (_currentQuestion.subItems) {
+                    dependingQuestions = dependingQuestions.concat(this.linkDependingQuestions(item, _currentQuestion.subItems[index]) );
+                }
             });
         }
 
@@ -744,38 +785,41 @@ export default class QuestionnaireData {
     */
     private hasExtension(_extensionURL: string, _extensionSystem: string | undefined, _item: QuestionnaireItem): any {
         let returnValue: any = undefined;
-        _item.extension?.forEach((extension) => {
-            if (!returnValue && extension.url === _extensionURL) {
-                if (_extensionSystem) {
-                    extension.valueCodeableConcept?.coding?.forEach((coding) => {
-                        if (coding.system === _extensionSystem) {
-                            returnValue = coding;
-                        }
-                    });
+        if (_item.extension) {
+            _item.extension.forEach((extension) => {
+                if (!returnValue && extension.url === _extensionURL) {
+                    if (_extensionSystem && extension.valueCodeableConcept && extension.valueCodeableConcept.coding) {
+                        extension.valueCodeableConcept.coding.forEach((coding) => {
+                            if (coding.system === _extensionSystem) {
+                                returnValue = coding;
+                            }
+                        });
+                    }
+                    if (extension.valueDuration && extension.valueDuration.system && extension.valueDuration.system === _extensionSystem) {
+                        returnValue = extension.valueDuration;
+                    }
+                    if (extension.valueInteger != undefined) {
+                        returnValue = extension.valueInteger;
+                    }
+                    if (extension.valueString) {
+                        returnValue = extension.valueString;
+                    }
+                    if (extension.valueBoolean) {
+                        returnValue = extension.valueBoolean;
+                    }
+                    if (extension.valueDate) {
+                        returnValue = extension.valueDate;
+                    }
+                    if (extension.valueExpression && extension.valueExpression.language && extension.valueExpression.language=== _extensionSystem) {
+                        returnValue = extension.valueExpression;
+                    }
+                    return (returnValue
+                        ? returnValue
+                        : true);
                 }
-                if (extension.valueDuration?.system && extension.valueDuration?.system === _extensionSystem) {
-                    returnValue = extension.valueDuration;
-                }
-                if (extension.valueInteger != undefined) {
-                    returnValue = extension.valueInteger;
-                }
-                if (extension.valueString) {
-                    returnValue = extension.valueString;
-                }
-                if (extension.valueBoolean) {
-                    returnValue = extension.valueBoolean;
-                }
-                if (extension.valueDate) {
-                    returnValue = extension.valueDate;
-                }
-                if (extension.valueExpression?.language && extension.valueExpression?.language=== _extensionSystem) {
-                    returnValue = extension.valueExpression;
-                }
-                return (returnValue
-                    ? returnValue
-                    : true);
-            }
-        });
+            });
+        }
+
         return returnValue;
     }
 
