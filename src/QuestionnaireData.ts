@@ -304,9 +304,20 @@ export default class QuestionnaireData {
         // stuff to do for items with calculated expression
         const itemsWithCalculatedExpression = this.hiddenFhirItems.filter(i => i.item.options && i.item.options.calculatedExpression !== undefined);
         itemsWithCalculatedExpression.forEach(item => {
-            if (item.item.options) {
+            if (item.item.options && item.item.options.calculatedExpression) {
                 try {
-                    const calculatedAnswer = { valueDecimal: fhirpath.evaluate(fhirResponse, item.item.options.calculatedExpression) };
+                    let calculatedAnswer = {};
+                    switch (item.item.type) {
+                        case QuestionnaireItemType.INTEGER:
+                            calculatedAnswer = { valueInteger: fhirpath.evaluate(fhirResponse, item.item.options.calculatedExpression)[0] };
+                            break;
+                        case QuestionnaireItemType.DECIMAL:
+                            calculatedAnswer = { valueDecimal: fhirpath.evaluate(fhirResponse, item.item.options.calculatedExpression)[0] };
+                            break;
+                        default:
+                            console.warn('Calculated answer for item type ' + item.item.type + 'is currently not implemented.');
+                    }
+
                     if (item.item.allowsMultipleAnswers) {
                         item.item.selectedAnswers.push(calculatedAnswer);
                     } else {
@@ -694,14 +705,17 @@ export default class QuestionnaireData {
 
     private setOptionsFromExtensions(_FHIRItem: QuestionnaireItem): IQuestionOptions | undefined {
         const itemControlExtension = this.hasExtension(ITEM_CONTROL_EXTENSION, ITEM_CONTROL_EXTENSION_SYSTEM, _FHIRItem);
+        const fhirPathExtension = this.hasExtension(CALCULATED_EXPRESSION_EXTENSION, 'text/fhirpath', _FHIRItem);
+
         let returnValue: IQuestionOptions = {
             min: this.hasExtension(MIN_VALUE_EXTENSION, undefined, _FHIRItem),
             max: this.hasExtension(MAX_VALUE_EXTENSION, undefined, _FHIRItem),
             format: this.hasExtension(ENTRY_FORMAT_EXTENSION, undefined, _FHIRItem),
             sliderStep: this.hasExtension(SLIDER_STEP_VALUE_EXTENSION, undefined, _FHIRItem),
             unit: this.hasExtension(UNIT_EXTENSION, 'https://ucum.org', _FHIRItem),
-            calculatedExpression: this.hasExtension(CALCULATED_EXPRESSION_EXTENSION, 'text/fhirpath', _FHIRItem).expression
+            calculatedExpression: fhirPathExtension ? fhirPathExtension.expression : undefined
         };
+
         if (itemControlExtension) {
             Object.values(ItemControlType).forEach((typeCode) => {
                 if (!returnValue.controlType && itemControlExtension.code === typeCode) {

@@ -5,7 +5,6 @@
   "main": "dist/QuestionnaireData.js",
   "types": "dist/QuestionnaireData.d.ts",
   "scripts": {
-    "test": "jest --config jestconfig.json",
     "build": "rm -rf ./dist && npm i && tsc"
   },
   "repository": {
@@ -22,7 +21,8 @@
     "i4mi",
     "questionnaire",
     "questionnaireresponse",
-    "typescript"
+    "typescript",
+    "fhirpath"
   ],
   "author": "Gabriel Hess, Olivier Descloux @ Institute for Medical Informatics (I4MI) - Bern University of Applied Science (BFH)",
   "license": "Apache-2.0",
