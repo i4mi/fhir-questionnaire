@@ -668,7 +668,7 @@ export default class QuestionnaireData {
             } else if (_FHIRItem.type === QuestionnaireItemType.DISPLAY) {
                 question.readOnly = true;
             } else if (_FHIRItem.type === QuestionnaireItemType.QUANTITY) {
-                if (question.options && question.options.controlType == ItemControlType.SLIDER &&  question.options.min &&  question.options.max) {
+                if (question.options && question.options.controlType == ItemControlType.SLIDER && question.options.min !== undefined &&  question.options.max !== undefined) {
                     question.answerOptions = [
                         {
                             answer: {
