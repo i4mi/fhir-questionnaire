@@ -1,4 +1,3 @@
-import moment from 'moment';
 import fhirpath from 'fhirpath';
 import { Questionnaire, QuestionnaireResponse, QuestionnaireResponseStatus, QuestionnaireResponseItem, QuestionnaireItemType,
     Resource, ValueSet, QuestionnaireItem, Reference, QuestionnaireResponseItemAnswer, Extension, code, Coding} from "@i4mi/fhir_r4";
@@ -28,7 +27,7 @@ export default class QuestionnaireData {
         item: IQuestion,
         parentLinkId?: string
     }[];
-    lastRestored: string | undefined;
+    lastRestored: Date | undefined;
     availableLanguages: string[];
     responseIdToSynchronize: string | undefined;
 
@@ -199,8 +198,10 @@ export default class QuestionnaireData {
     **/
     restoreAnswersFromQuestionnaireResponse(_fhirResponse: QuestionnaireResponse): void {
         // only restore, if it is not already up to date
-        if (this.lastRestored == undefined || moment(this.lastRestored).isBefore(_fhirResponse.authored)) {
-            this.lastRestored = _fhirResponse.authored;
+        if (this.lastRestored == undefined || (_fhirResponse.authored && this.lastRestored < new Date(_fhirResponse.authored))) {
+            this.lastRestored = _fhirResponse.authored
+                                    ? new Date(_fhirResponse.authored)
+                                    : new Date();
             this.responseIdToSynchronize = _fhirResponse.id;
             const questionnaireUrl = _fhirResponse.questionnaire
                                         ? _fhirResponse.questionnaire.split('|')[0]
