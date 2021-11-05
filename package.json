@@ -1,12 +1,11 @@
 {
   "name": "@i4mi/fhir_questionnaire",
-  "version": "0.0.2----BEFORE PUBLISHING NEW VERSION FIX fhirpath.default.xxx issue in compiled code!",
+  "version": "0.0.3",
   "description": "TS Package for handling FHIR Questionnaire and generating QuestionnaireRespones.",
   "main": "dist/QuestionnaireData.js",
   "types": "dist/QuestionnaireData.d.ts",
   "scripts": {
-    "build": "rm -rf ./dist && npm i && tsc",
-    "test": "clear && jest --config jestconfig.json"
+    "build": "rm -rf ./dist && npm i && tsc"
   },
   "repository": {
     "type": "git",
@@ -28,10 +27,6 @@
   "author": "Gabriel Hess, Olivier Descloux @ Institute for Medical Informatics (I4MI) - Bern University of Applied Science (BFH)",
   "license": "Apache-2.0",
   "devDependencies": {
-    "@babel/preset-env": "^7.16.0",
-    "@babel/preset-typescript": "^7.16.0",
-    "babel-jest": "^27.3.1",
-    "jest": "^27.3.1",
     "typescript": "^4.1.3"
   },
   "dependencies": {

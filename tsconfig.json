@@ -4,6 +4,7 @@
         "declaration": true,
         "forceConsistentCasingInFileNames": true,
         "jsx": "react",
+        "esModuleInterop": true,
         "lib": [
             "es2017",
             "dom"
