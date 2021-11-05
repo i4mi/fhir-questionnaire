@@ -197,6 +197,71 @@ export default class QuestionnaireData {
     * @throws an error if the questionnaire response is not matching the questionnaire
     **/
     restoreAnswersFromQuestionnaireResponse(_fhirResponse: QuestionnaireResponse): void {
+        const that = this;
+        function answerMatchingIQuestionItemWithFhirResponseItem(_fhirItems: QuestionnaireResponseItem[]): void {
+            _fhirItems.forEach((answerItem) => {
+                const item = that.findQuestionById(answerItem.linkId, that.items);
+                if (item) {
+                    item.selectedAnswers = [];
+                    if (item.answerOptions && item.answerOptions.length > 0 && answerItem.answer) {
+                        answerItem.answer.forEach((answer) => {
+                            const answerAsAnswerOption = item.answerOptions.find((answerOption) => {
+                                if (answer.valueCoding && answerOption.code.valueCoding) {
+                                    return answer.valueCoding.system === answerOption.code.valueCoding.system
+                                                                            ? answer.valueCoding.code === answerOption.code.valueCoding.code
+                                                                            : false;
+                                } else if (answer.valueString) {
+                                    return answer.valueString === answerOption.code.valueString;
+                                } else if (answer.valueInteger) {
+                                    return answer.valueInteger === answerOption.code.valueInteger;
+                                } else if (answer.valueDate) {
+                                    return answer.valueDate === answerOption.code.valueDate;
+                                } else if (answer.valueQuantity) {
+                                    return answer.valueQuantity === answerOption.code.valueQuantity;
+                                } else if (answer.valueDateTime) {
+                                    return answer.valueDateTime === answerOption.code.valueDateTime;
+                                } else if (answer.valueBoolean) {
+                                    return answer.valueBoolean === answerOption.code.valueBoolean;
+                                } else if (answer.valueDecimal) {
+                                    return answer.valueDecimal === answerOption.code.valueDecimal;
+                                } else if (answer.valueTime) {
+                                    return answer.valueTime === answerOption.code.valueTime;
+                                } else if (answer.valueUri) {
+                                    return answer.valueUri === answerOption.code.valueUri;
+                                } else if (answer.valueReference) {
+                                    return answer.valueReference === answerOption.code.valueReference;
+                                } else if (answer.valueAttachment) {
+                                    return answer.valueReference === answerOption.code.valueAttachment;
+                                } else {
+                                    //TODO: other answer types
+                                    console.warn('Answer has unknown type', answerOption.code);
+                                    return false;
+                                }
+                            });
+                            if (answerAsAnswerOption) {
+                                item.selectedAnswers.push(answerAsAnswerOption.code);
+                            } else {
+                                item.selectedAnswers = answerItem.answer
+                                                            ? answerItem.answer
+                                                            : [];
+                            }
+                        });
+                    } else if (answerItem.answer && answerItem.answer.length > 0) {
+                        if (item.allowsMultipleAnswers) {
+                            item.selectedAnswers = answerItem.answer;
+                        } else {
+                            item.selectedAnswers.push(answerItem.answer[0]);
+                        }
+                    }
+                    if (answerItem.item) {
+                        answerMatchingIQuestionItemWithFhirResponseItem(answerItem.item, item.subItems);
+                    }
+                } else {
+                    console.warn('Item with linkId ' + answerItem.linkId + ' was found in QuestionnaireResponse, but does not exist in Questionnaire.');
+                }
+            })
+        }
+
         // only restore, if it is not already up to date
         if (this.lastRestored == undefined || (_fhirResponse.authored && this.lastRestored < new Date(_fhirResponse.authored))) {
             this.lastRestored = _fhirResponse.authored
@@ -210,64 +275,7 @@ export default class QuestionnaireData {
                 throw new Error('Invalid argument: QuestionnaireResponse does not match Questionnaire!');
             }
             if (_fhirResponse.item) {
-                _fhirResponse.item.forEach((answerItem) => {
-                    const item = this.findQuestionById(answerItem.linkId, this.items);
-                    if (item) {
-                        item.selectedAnswers = [];
-                        if (item.answerOptions && item.answerOptions.length > 0 && answerItem.answer) {
-                            answerItem.answer.forEach((answer) => {
-                                const answerAsAnswerOption = item.answerOptions.find((answerOption) => {
-                                    if (answer.valueCoding && answerOption.code.valueCoding) {
-                                        return answer.valueCoding.system === answerOption.code.valueCoding.system
-                                                                                ? answer.valueCoding.code === answerOption.code.valueCoding.code
-                                                                                : false;
-                                    } else if (answer.valueString) {
-                                        return answer.valueString === answerOption.code.valueString;
-                                    } else if (answer.valueInteger) {
-                                        return answer.valueInteger === answerOption.code.valueInteger;
-                                    } else if (answer.valueDate) {
-                                        return answer.valueDate === answerOption.code.valueDate;
-                                    } else if (answer.valueQuantity) {
-                                        return answer.valueQuantity === answerOption.code.valueQuantity;
-                                    } else if (answer.valueDateTime) {
-                                        return answer.valueDateTime === answerOption.code.valueDateTime;
-                                    } else if (answer.valueBoolean) {
-                                        return answer.valueBoolean === answerOption.code.valueBoolean;
-                                    } else if (answer.valueDecimal) {
-                                        return answer.valueDecimal === answerOption.code.valueDecimal;
-                                    } else if (answer.valueTime) {
-                                        return answer.valueTime === answerOption.code.valueTime;
-                                    } else if (answer.valueUri) {
-                                        return answer.valueUri === answerOption.code.valueUri;
-                                    } else if (answer.valueReference) {
-                                        return answer.valueReference === answerOption.code.valueReference;
-                                    } else if (answer.valueAttachment) {
-                                        return answer.valueReference === answerOption.code.valueAttachment;
-                                    } else {
-                                        //TODO: other answer types
-                                        console.warn('Answer has unknown type', answerOption.code);
-                                        return false;
-                                    }
-                                });
-                                if (answerAsAnswerOption) {
-                                    item.selectedAnswers.push(answerAsAnswerOption.code);
-                                } else {
-                                    item.selectedAnswers = answerItem.answer
-                                                                ? answerItem.answer
-                                                                : [];
-                                }
-                            });
-                        } else if (answerItem.answer && answerItem.answer.length > 0) {
-                            if (item.allowsMultipleAnswers) {
-                                item.selectedAnswers = answerItem.answer;
-                            } else {
-                                item.selectedAnswers.push(answerItem.answer[0]);
-                            }
-                        }
-                    } else {
-                        console.warn('Item with linkId ' + answerItem.linkId + ' was found in QuestionnaireResponse, but does not exist in Questionnaire.');
-                    }
-                })
+                answerMatchingIQuestionItemWithFhirResponseItem(_fhirResponse.item);
             }
 
         }
