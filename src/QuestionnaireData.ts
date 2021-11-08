@@ -157,7 +157,6 @@ export default class QuestionnaireData {
             }
         }
 
-        // update depending questions
         _question.dependingQuestions.forEach((dependingQuestion) => {
             if (! dependingQuestion.answer.valueCoding || !_answer.code.valueCoding) {
                 dependingQuestion.dependingQuestion.isEnabled = false;
@@ -239,7 +238,7 @@ export default class QuestionnaireData {
                                 }
                             });
                             if (answerAsAnswerOption) {
-                                item.selectedAnswers.push(answerAsAnswerOption.code);
+                                that.updateQuestionAnswers(item, answerAsAnswerOption);
                             } else {
                                 item.selectedAnswers = answerItem.answer
                                                             ? answerItem.answer
@@ -254,7 +253,7 @@ export default class QuestionnaireData {
                         }
                     }
                     if (answerItem.item) {
-                        answerMatchingIQuestionItemWithFhirResponseItem(answerItem.item, item.subItems);
+                        answerMatchingIQuestionItemWithFhirResponseItem(answerItem.item);
                     }
                 } else {
                     console.warn('Item with linkId ' + answerItem.linkId + ' was found in QuestionnaireResponse, but does not exist in Questionnaire.');
