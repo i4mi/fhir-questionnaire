@@ -19,7 +19,8 @@ export default interface IQuestion {
     dependingQuestions:
         {
             dependingQuestion: IQuestion;
-            answer: QuestionnaireResponseItemAnswer;
+            answers: QuestionnaireResponseItemAnswer[];
+            operators: string[];
         }[];
     required: boolean; // use required in QuestionnaireItem
     allowsMultipleAnswers: boolean;

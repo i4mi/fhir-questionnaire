@@ -74,7 +74,7 @@ export default class QuestionnaireData {
         }
         this.hiddenFhirItems = new Array<{item: IQuestion, parentLinkId?: string}>();
 
-        let questionsDependencies: {id: string, reference?: IQuestion, answer: any}[] = []; // helper array for dependingQuestions
+        let questionsDependencies: {id: string, reference?: IQuestion, operator: string, answer: any}[] = []; // helper array for dependingQuestions
 
         if (this.fhirQuestionnaire.item) {
             this.filterOutHiddenItems(this.fhirQuestionnaire.item).forEach((item) => {
@@ -93,10 +93,17 @@ export default class QuestionnaireData {
             questionsDependencies.forEach((question) => {
                 const determinator = this.findQuestionById(question.id, this.items);
                 if (question.reference && determinator) {
-                    determinator.dependingQuestions.push({
-                        dependingQuestion: question.reference,
-                        answer: question.answer
-                    });
+                    const existingDependingQuestion = determinator.dependingQuestions.find(q => q.dependingQuestion == question.reference);
+                    if (existingDependingQuestion) {
+                        existingDependingQuestion.answers.push(question.answer);
+                        existingDependingQuestion.operators.push(question.operator);
+                    } else {
+                        determinator.dependingQuestions.push({
+                            dependingQuestion: question.reference,
+                            answers: [question.answer],
+                            operators: [question.operator]
+                        });
+                    }
                 }
             });
         }
@@ -158,11 +165,16 @@ export default class QuestionnaireData {
         }
 
         _question.dependingQuestions.forEach((dependingQuestion) => {
-            if (! dependingQuestion.answer.valueCoding || !_answer.code.valueCoding) {
-                dependingQuestion.dependingQuestion.isEnabled = false;
-            } else {
-                dependingQuestion.dependingQuestion.isEnabled = (_answer.code.valueCoding && dependingQuestion.answer.valueCoding.code === _answer.code.valueCoding.code && indexOfAnswer < 0);
-            }
+            dependingQuestion.dependingQuestion.isEnabled = false;
+            dependingQuestion.answers.forEach(answer => {
+                // check if we have valueCoding and question is not already enabled
+                if (answer.valueCoding && _answer.code.valueCoding && !dependingQuestion.dependingQuestion.isEnabled) {
+                    dependingQuestion.dependingQuestion.isEnabled = (answer.valueCoding.code === _answer.code.valueCoding.code && indexOfAnswer < 0);
+                } // check if we have valueString and question is not already enabled
+                else if (answer.valueString && _answer.code.valueString && !dependingQuestion.dependingQuestion.isEnabled) {
+                    dependingQuestion.dependingQuestion.isEnabled = (answer.valueString === _answer.code.valueString && indexOfAnswer < 0);
+                }
+            });
         });
     }
 
@@ -399,14 +411,14 @@ export default class QuestionnaireData {
             } else if (question.readOnly) {
                 // do nothing
             } else {
-                if(question.required || !_onlyRequired) {
+                if (question.required || !_onlyRequired) {
                     isComplete = isComplete
                     ? question.selectedAnswers && question.selectedAnswers.length > 0
                     : false;
                 }
             }
             // after the first item is not complete, we don't have to look any further
-            if(!isComplete) return false;
+            if (!isComplete) return false;
         });
         return isComplete;
     }
@@ -763,8 +775,8 @@ export default class QuestionnaireData {
         return returnArray;
     }
 
-    private linkDependingQuestions(_FHIRItem : QuestionnaireItem, _currentQuestion : IQuestion){
-        let dependingQuestions = new Array<{id: string, reference: IQuestion | undefined, answer: any}>();
+    private linkDependingQuestions(_FHIRItem : QuestionnaireItem, _currentQuestion : IQuestion): {id: string, reference: IQuestion | undefined, operator: string, answer: any}[]{
+        let dependingQuestions = new Array<{id: string, reference: IQuestion | undefined, operator: string, answer: any}>();
 
         if (_FHIRItem.item && _FHIRItem.item.length > 0) {
 
@@ -775,15 +787,21 @@ export default class QuestionnaireData {
             });
         }
 
-        // prepare helper array for dependent questions
         if (_FHIRItem.enableWhen) {
             _currentQuestion.isEnabled = false;
             _FHIRItem.enableWhen.forEach((determinator) => {
-                if(determinator.answerString || determinator.answerCoding){
+                if (determinator.answerString || determinator.answerCoding) {
                     dependingQuestions.push({
                         id: determinator.question,
                         reference: _currentQuestion,
-                        answer: determinator.answerCoding ? {valueCoding: determinator.answerCoding} : {valueString: determinator.answerString}
+                        operator: determinator.operator,
+                        answer: determinator.answerCoding
+                                    ? {
+                                        valueCoding: determinator.answerCoding
+                                    }
+                                    : {
+                                        valueString: determinator.answerString
+                                    }
                     });
                 } else {
                     // TODO: implement other types when needed
