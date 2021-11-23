@@ -166,18 +166,20 @@ export default class QuestionnaireData {
         }
 
         _question.dependingQuestions.forEach((dependingQuestion) => {
-            // TODO: implement handling of dependingQuestionsEnableBehaviour === 'all' (now it's any: just one of the criteria must be fulfilled for enabling)
-            dependingQuestion.dependingQuestion.isEnabled = false;
+            dependingQuestion.dependingQuestion.isEnabled = (_question.dependingQuestionsEnableBehaviour == 'all'); // when it's all we start with true, when undefined or any with false
             dependingQuestion.criteria.forEach(criterium => {
-                // check if we have valueCoding and question is not already enabled
+                let evaluatesToTrue = false;
                 if (criterium.answer.valueCoding && criterium.answer.valueCoding.code
-                    && _answer.code.valueCoding && _answer.code.valueCoding.code
-                    && !dependingQuestion.dependingQuestion.isEnabled) {
-                    dependingQuestion.dependingQuestion.isEnabled = this.evaluateAnswersForDependingQuestion(_answer.code.valueCoding.code, criterium.answer.valueCoding.code, criterium.operator);
+                    && _answer.code.valueCoding && _answer.code.valueCoding.code) {
+
+                    evaluatesToTrue = this.evaluateAnswersForDependingQuestion(_answer.code.valueCoding.code, criterium.answer.valueCoding.code, criterium.operator);
                 } // check if we have valueString and question is not already enabled
                 else if (criterium.answer.valueString && _answer.code.valueString && !dependingQuestion.dependingQuestion.isEnabled) {
-                    dependingQuestion.dependingQuestion.isEnabled = this.evaluateAnswersForDependingQuestion(_answer.code.valueString, criterium.answer.valueString, criterium.operator);
+                    evaluatesToTrue = this.evaluateAnswersForDependingQuestion(_answer.code.valueString, criterium.answer.valueString, criterium.operator);
                 }
+                dependingQuestion.dependingQuestion.isEnabled = (_question.dependingQuestionsEnableBehaviour == 'all')
+                                                                    ? (evaluatesToTrue && dependingQuestion.dependingQuestion.isEnabled) // only true, when criteria before were true
+                                                                    : (evaluatesToTrue || dependingQuestion.dependingQuestion.isEnabled) // true when evaluates to true or questions before were true
             });
         });
     }
