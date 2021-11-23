@@ -1,6 +1,6 @@
 import fhirpath from 'fhirpath';
 import { Questionnaire, QuestionnaireResponse, QuestionnaireResponseStatus, QuestionnaireResponseItem, QuestionnaireItemType,
-    Resource, ValueSet, QuestionnaireItem, Reference, QuestionnaireResponseItemAnswer, Extension, code, Coding} from "@i4mi/fhir_r4";
+    Resource, ValueSet, QuestionnaireItem, Reference, QuestionnaireResponseItemAnswer, Extension, code, Coding, QuestionnaireItemOperator} from "@i4mi/fhir_r4";
 import IQuestion, { IAnswerOption, IQuestionOptions, ItemControlType, PopulateType } from "./IQuestion";
 
 const UNSELECT_OTHERS_EXTENSION = "http://midata.coop/extensions/valueset-unselect-others";
@@ -74,7 +74,7 @@ export default class QuestionnaireData {
         }
         this.hiddenFhirItems = new Array<{item: IQuestion, parentLinkId?: string}>();
 
-        let questionsDependencies: {id: string, reference?: IQuestion, operator: string, answer: any}[] = []; // helper array for dependingQuestions
+        let questionsDependencies: {id: string, reference?: IQuestion, operator: QuestionnaireItemOperator, answer: any}[] = []; // helper array for dependingQuestions
 
         if (this.fhirQuestionnaire.item) {
             this.filterOutHiddenItems(this.fhirQuestionnaire.item).forEach((item) => {
@@ -95,13 +95,17 @@ export default class QuestionnaireData {
                 if (question.reference && determinator) {
                     const existingDependingQuestion = determinator.dependingQuestions.find(q => q.dependingQuestion == question.reference);
                     if (existingDependingQuestion) {
-                        existingDependingQuestion.answers.push(question.answer);
-                        existingDependingQuestion.operators.push(question.operator);
+                        existingDependingQuestion.criteria.push({
+                            answer: question.answer,
+                            operator: question.operator
+                        });
                     } else {
                         determinator.dependingQuestions.push({
                             dependingQuestion: question.reference,
-                            answers: [question.answer],
-                            operators: [question.operator]
+                            criteria: [{
+                                answer: question.answer,
+                                operator: question.operator
+                            }]
                         });
                     }
                 }
@@ -129,9 +133,6 @@ export default class QuestionnaireData {
            || (_question.type === QuestionnaireItemType.DATE && _answer.code.valueDate == '')) {
                // remove previous given answers
             _question.selectedAnswers.splice(0,_question.selectedAnswers.length);
-            _question.dependingQuestions.forEach((dependingQuestion) => {
-                dependingQuestion.dependingQuestion.isEnabled = false;
-            });
             return;
         }
 
@@ -165,17 +166,54 @@ export default class QuestionnaireData {
         }
 
         _question.dependingQuestions.forEach((dependingQuestion) => {
+            // TODO: implement handling of dependingQuestionsEnableBehaviour === 'all' (now it's any: just one of the criteria must be fulfilled for enabling)
             dependingQuestion.dependingQuestion.isEnabled = false;
-            dependingQuestion.answers.forEach(answer => {
+            dependingQuestion.criteria.forEach(criterium => {
                 // check if we have valueCoding and question is not already enabled
-                if (answer.valueCoding && _answer.code.valueCoding && !dependingQuestion.dependingQuestion.isEnabled) {
-                    dependingQuestion.dependingQuestion.isEnabled = (answer.valueCoding.code === _answer.code.valueCoding.code && indexOfAnswer < 0);
+                if (criterium.answer.valueCoding && criterium.answer.valueCoding.code
+                    && _answer.code.valueCoding && _answer.code.valueCoding.code
+                    && !dependingQuestion.dependingQuestion.isEnabled) {
+                    dependingQuestion.dependingQuestion.isEnabled = this.evaluateAnswersForDependingQuestion(_answer.code.valueCoding.code, criterium.answer.valueCoding.code, criterium.operator);
                 } // check if we have valueString and question is not already enabled
-                else if (answer.valueString && _answer.code.valueString && !dependingQuestion.dependingQuestion.isEnabled) {
-                    dependingQuestion.dependingQuestion.isEnabled = (answer.valueString === _answer.code.valueString && indexOfAnswer < 0);
+                else if (criterium.answer.valueString && _answer.code.valueString && !dependingQuestion.dependingQuestion.isEnabled) {
+                    dependingQuestion.dependingQuestion.isEnabled = this.evaluateAnswersForDependingQuestion(_answer.code.valueString, criterium.answer.valueString, criterium.operator);
                 }
             });
         });
+    }
+
+    /**
+    * Evaluates a given answer with a criterium and an operator, for enabling and disabling depending questions.
+    * @param _answer        the given answer, as string (also for code etc) or as a number (when using GE, GT, LE & LT operator)
+    * @param _criterium     the criterium against which the given answer is compared
+    * @param _operator      defines if the answer and criterium must be equal or not equal etc.
+    * @returns              true if answer and criterium match with the given operator, false if not so.
+    **/
+    private evaluateAnswersForDependingQuestion(_answer: string | number , _criterium: string | number, _operator: QuestionnaireItemOperator): boolean {
+        // make sure we have both comparants as number if one is
+        if (typeof _answer === 'number' && typeof _criterium === 'string') {
+            _criterium = Number(_criterium);
+        } else if (typeof _criterium === 'number' && typeof _answer === 'string') {
+            _answer = Number(_answer);
+        }
+        
+        switch (_operator) {
+            case QuestionnaireItemOperator.EXISTS:
+                return _answer !== undefined;
+            case QuestionnaireItemOperator.E:
+                return _answer === _criterium;
+            case QuestionnaireItemOperator.GE:
+                return _answer >= _criterium;
+            case QuestionnaireItemOperator.LE:
+                return _answer <= _criterium;
+            case QuestionnaireItemOperator.GT:
+                return _answer > _criterium;
+            case QuestionnaireItemOperator.LT:
+                return _answer < _criterium;
+            case QuestionnaireItemOperator.NE:
+                return _answer != _criterium && _answer !== undefined;
+            default: return false;
+        }
     }
 
 
@@ -502,6 +540,7 @@ export default class QuestionnaireData {
             answerOptions: new Array<IAnswerOption>(),
             selectedAnswers: Array<QuestionnaireResponseItemAnswer>(),
             dependingQuestions: [],
+            dependingQuestionsEnableBehaviour: _FHIRItem.enableBehavior,
             isEnabled: true,
             readOnly: _FHIRItem.readOnly ? _FHIRItem.readOnly : false,
             options: this.setOptionsFromExtensions(_FHIRItem)
@@ -775,8 +814,8 @@ export default class QuestionnaireData {
         return returnArray;
     }
 
-    private linkDependingQuestions(_FHIRItem : QuestionnaireItem, _currentQuestion : IQuestion): {id: string, reference: IQuestion | undefined, operator: string, answer: any}[]{
-        let dependingQuestions = new Array<{id: string, reference: IQuestion | undefined, operator: string, answer: any}>();
+    private linkDependingQuestions(_FHIRItem : QuestionnaireItem, _currentQuestion : IQuestion): {id: string, reference: IQuestion | undefined, operator: QuestionnaireItemOperator, answer: any}[]{
+        let dependingQuestions = new Array<{id: string, reference: IQuestion | undefined, operator: QuestionnaireItemOperator, answer: any}>();
 
         if (_FHIRItem.item && _FHIRItem.item.length > 0) {
 

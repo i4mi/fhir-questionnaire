@@ -1,4 +1,4 @@
-import { code, Coding, QuestionnaireResponseItemAnswer, QuestionnaireItemType } from '@i4mi/fhir_r4';
+import { code, Coding, QuestionnaireResponseItemAnswer, QuestionnaireItemType, QuestionnaireItemOperator, QuestionnaireEnableWhenBehavior } from '@i4mi/fhir_r4';
 
 export enum ItemControlType {
     SPINNER = 'spinner',
@@ -19,9 +19,12 @@ export default interface IQuestion {
     dependingQuestions:
         {
             dependingQuestion: IQuestion;
-            answers: QuestionnaireResponseItemAnswer[];
-            operators: string[];
+            criteria: {
+                answer: QuestionnaireResponseItemAnswer,
+                operator: QuestionnaireItemOperator
+            }[];
         }[];
+    dependingQuestionsEnableBehaviour?: QuestionnaireEnableWhenBehavior;
     required: boolean; // use required in QuestionnaireItem
     allowsMultipleAnswers: boolean;
     isEnabled: boolean;
