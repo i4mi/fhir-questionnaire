@@ -19,7 +19,8 @@
     },
     "exclude": [
         "node_modules",
-        "dist"
+        "dist",
+        "__tests__"
     ],
     "compileOnSave": false,
     "buildOnSave": false
