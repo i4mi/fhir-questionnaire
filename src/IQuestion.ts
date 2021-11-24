@@ -10,7 +10,7 @@ export enum PopulateType {
     '46098-0' = 'SEX'
 }
 
-export default interface IQuestion {
+export interface IQuestion {
     id: string; // represents linkId in QuestionnaireItem
     type: QuestionnaireItemType;
     label: {[language: string]: string};

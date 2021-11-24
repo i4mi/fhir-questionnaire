@@ -1,7 +1,7 @@
 import fhirpath from 'fhirpath';
 import { Questionnaire, QuestionnaireResponse, QuestionnaireResponseStatus, QuestionnaireResponseItem, QuestionnaireItemType,
     Resource, ValueSet, QuestionnaireItem, Reference, QuestionnaireResponseItemAnswer, Extension, code, Coding, QuestionnaireItemOperator} from "@i4mi/fhir_r4";
-import IQuestion, { IAnswerOption, IQuestionOptions, ItemControlType, PopulateType } from "./IQuestion";
+import { IQuestion, IAnswerOption, IQuestionOptions, ItemControlType, PopulateType } from "./IQuestion";
 
 const UNSELECT_OTHERS_EXTENSION = "http://midata.coop/extensions/valueset-unselect-others";
 const ITEM_CONTROL_EXTENSION = 'http://hl7.org/fhir/StructureDefinition/questionnaire-itemControl';
@@ -15,7 +15,7 @@ const HIDDEN_EXTENSION = "http://hl7.org/fhir/StructureDefinition/questionnaire-
 const CALCULATED_EXPRESSION_EXTENSION = 'http://hl7.org/fhir/uv/sdc/StructureDefinition/sdc-questionnaire-calculatedExpression';
 const QUESTIONNAIRERESPONSE_CODING_EXTENSION_URL = 'http://midata.coop/extensions/response-code';
 
-export default class QuestionnaireData {
+export class QuestionnaireData {
     // the FHIR resources we work on
     fhirQuestionnaire: Questionnaire;
     valueSets: {
@@ -198,7 +198,7 @@ export default class QuestionnaireData {
         } else if (typeof _criterium === 'number' && typeof _answer === 'string') {
             _answer = Number(_answer);
         }
-        
+
         switch (_operator) {
             case QuestionnaireItemOperator.EXISTS:
                 return _answer !== undefined;
