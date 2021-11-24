@@ -1,4 +1,4 @@
-import { code, Coding, QuestionnaireResponseItemAnswer, QuestionnaireItemType } from '@i4mi/fhir_r4';
+import { code, Coding, QuestionnaireResponseItemAnswer, QuestionnaireItemType, QuestionnaireItemOperator, QuestionnaireEnableWhenBehavior } from '@i4mi/fhir_r4';
 
 export enum ItemControlType {
     SPINNER = 'spinner',
@@ -10,7 +10,7 @@ export enum PopulateType {
     '46098-0' = 'SEX'
 }
 
-export default interface IQuestion {
+export interface IQuestion {
     id: string; // represents linkId in QuestionnaireItem
     type: QuestionnaireItemType;
     label: {[language: string]: string};
@@ -19,8 +19,12 @@ export default interface IQuestion {
     dependingQuestions:
         {
             dependingQuestion: IQuestion;
-            answer: QuestionnaireResponseItemAnswer;
+            criteria: {
+                answer: QuestionnaireResponseItemAnswer,
+                operator: QuestionnaireItemOperator
+            }[];
         }[];
+    dependingQuestionsEnableBehaviour?: QuestionnaireEnableWhenBehavior;
     required: boolean; // use required in QuestionnaireItem
     allowsMultipleAnswers: boolean;
     isEnabled: boolean;

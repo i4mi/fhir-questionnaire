@@ -1,6 +1,6 @@
 {
   "name": "@i4mi/fhir_questionnaire",
-  "version": "0.0.1",
+  "version": "0.0.4",
   "description": "TS Package for handling FHIR Questionnaire and generating QuestionnaireRespones.",
   "main": "dist/QuestionnaireData.js",
   "types": "dist/QuestionnaireData.d.ts",
@@ -31,8 +31,7 @@
   },
   "dependencies": {
     "@i4mi/fhir_r4": "^1.0.10",
-    "fhirpath": "^2.9.1",
-    "moment": "^2.29.1"
+    "fhirpath": "^2.9.1"
   },
   "files": [
     "dist/**/*"

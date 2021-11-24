@@ -4,6 +4,7 @@
         "declaration": true,
         "forceConsistentCasingInFileNames": true,
         "jsx": "react",
+        "esModuleInterop": true,
         "lib": [
             "es2017",
             "dom"
@@ -16,12 +17,9 @@
         "strict": true,
         "target": "es5"
     },
-    "files": [
-        "./src/QuestionnaireData.ts",
-        "./src/fhirpath.d.ts"
-    ],
     "exclude": [
-        "node_modules"
+        "node_modules",
+        "dist"
     ],
     "compileOnSave": false,
     "buildOnSave": false
