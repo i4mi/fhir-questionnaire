@@ -1,7 +1,7 @@
 import fhirpath from 'fhirpath';
 import { Questionnaire, QuestionnaireResponse, QuestionnaireResponseStatus, QuestionnaireResponseItem, QuestionnaireItemType,
-    Resource, ValueSet, QuestionnaireItem, Reference, QuestionnaireResponseItemAnswer, Extension, code, Coding, QuestionnaireItemOperator} from "@i4mi/fhir_r4";
-import { IQuestion, IAnswerOption, IQuestionOptions, ItemControlType, PopulateType } from "./IQuestion";
+    Resource, ValueSet, QuestionnaireItem, Reference, QuestionnaireResponseItemAnswer, Extension, code, QuestionnaireItemOperator} from "@i4mi/fhir_r4";
+import { IQuestion, IAnswerOption, IQuestionOptions, ItemControlType } from "./IQuestion";
 
 const UNSELECT_OTHERS_EXTENSION = "http://midata.coop/extensions/valueset-unselect-others";
 const ITEM_CONTROL_EXTENSION = 'http://hl7.org/fhir/StructureDefinition/questionnaire-itemControl';
@@ -14,6 +14,65 @@ const UNIT_EXTENSION = 'http://hl7.org/fhir/StructureDefinition/questionnaire-un
 const HIDDEN_EXTENSION = "http://hl7.org/fhir/StructureDefinition/questionnaire-hidden";
 const CALCULATED_EXPRESSION_EXTENSION = 'http://hl7.org/fhir/uv/sdc/StructureDefinition/sdc-questionnaire-calculatedExpression';
 const QUESTIONNAIRERESPONSE_CODING_EXTENSION_URL = 'http://midata.coop/extensions/response-code';
+const INITIAL_EXPRESSION_EXTENSION = 'http://hl7.org/fhir/uv/sdc/StructureDefinition/sdc-questionnaire-initialExpression';
+
+const PRIMITIVE_VALUE_X = [
+    'valueString',
+    'valueInteger',
+    'valueBoolean',
+    'valueDecimal',
+    'valueDate',
+    'valueDateTime',
+    'valueTime',
+    'valueUri'
+];
+const COMPLEX_VALUE_X = [
+    {
+        type: 'valueCoding',
+        isMatching: (criterium: QuestionnaireResponseItemAnswer, answerOption: IAnswerOption) => {
+            if (criterium.valueCoding && answerOption.code.valueCoding) {
+                return criterium.valueCoding.system === answerOption.code.valueCoding.system
+                        && criterium.valueCoding.code === answerOption.code.valueCoding.code;
+            } else {
+                return false;
+            }
+        }
+    },
+    {
+        type: 'valueAttachment',
+        isMatching: (criterium: QuestionnaireResponseItemAnswer, answerOption: IAnswerOption) => {
+            if (criterium.valueAttachment) {
+                console.log('Sorry, picking valueAttachment from AnswerOptions is currently not supported.');
+            }
+            return false;
+        }
+    },
+    {
+        type: 'valueReference',
+        isMatching: (criterium: QuestionnaireResponseItemAnswer, answerOption: IAnswerOption) => {
+            if (criterium.valueReference && answerOption.code.valueReference) {
+                return criterium.valueReference.reference === answerOption.code.valueReference.reference
+                        || criterium.valueReference.identifier === answerOption.code.valueReference.identifier;
+            } else {
+                return false;
+            }
+        }
+    },
+    {
+        type: 'valueQuantity',
+        isMatching: (criterium: QuestionnaireResponseItemAnswer, answerOption: IAnswerOption) => {
+            if (criterium.valueQuantity && answerOption.code.valueQuantity) {
+                return criterium.valueQuantity.value === answerOption.code.valueQuantity.value
+                        && (
+                            criterium.valueQuantity.unit === answerOption.code.valueQuantity.unit
+                            || criterium.valueQuantity.code === answerOption.code.valueQuantity.code
+                        );
+            } else {
+                return false;
+            }
+        }
+    }
+];
 
 export class QuestionnaireData {
     // the FHIR resources we work on
@@ -248,49 +307,17 @@ export class QuestionnaireData {
     * @throws an error if the questionnaire response is not matching the questionnaire
     **/
     restoreAnswersFromQuestionnaireResponse(_fhirResponse: QuestionnaireResponse): void {
-        const that = this;
-        function answerMatchingIQuestionItemWithFhirResponseItem(_fhirItems: QuestionnaireResponseItem[]): void {
+        const answerMatchingIQuestionItemWithFhirResponseItem = (_fhirItems: QuestionnaireResponseItem[]): void => {
             _fhirItems.forEach((answerItem) => {
-                const item = that.findQuestionById(answerItem.linkId, that.items);
+                const item = this.findQuestionById(answerItem.linkId, this.items);
                 if (item) {
                     item.selectedAnswers = [];
                     if (item.answerOptions && item.answerOptions.length > 0 && answerItem.answer) {
                         answerItem.answer.forEach((answer) => {
-                            const answerAsAnswerOption = item.answerOptions.find((answerOption) => {
-                                if (answer.valueCoding && answerOption.code.valueCoding) {
-                                    return answer.valueCoding.system === answerOption.code.valueCoding.system
-                                                                            ? answer.valueCoding.code === answerOption.code.valueCoding.code
-                                                                            : false;
-                                } else if (answer.valueString) {
-                                    return answer.valueString === answerOption.code.valueString;
-                                } else if (answer.valueInteger) {
-                                    return answer.valueInteger === answerOption.code.valueInteger;
-                                } else if (answer.valueDate) {
-                                    return answer.valueDate === answerOption.code.valueDate;
-                                } else if (answer.valueQuantity) {
-                                    return answer.valueQuantity === answerOption.code.valueQuantity;
-                                } else if (answer.valueDateTime) {
-                                    return answer.valueDateTime === answerOption.code.valueDateTime;
-                                } else if (answer.valueBoolean) {
-                                    return answer.valueBoolean === answerOption.code.valueBoolean;
-                                } else if (answer.valueDecimal) {
-                                    return answer.valueDecimal === answerOption.code.valueDecimal;
-                                } else if (answer.valueTime) {
-                                    return answer.valueTime === answerOption.code.valueTime;
-                                } else if (answer.valueUri) {
-                                    return answer.valueUri === answerOption.code.valueUri;
-                                } else if (answer.valueReference) {
-                                    return answer.valueReference === answerOption.code.valueReference;
-                                } else if (answer.valueAttachment) {
-                                    return answer.valueReference === answerOption.code.valueAttachment;
-                                } else {
-                                    //TODO: other answer types
-                                    console.warn('Answer has unknown type', answerOption.code);
-                                    return false;
-                                }
-                            });
+                            const answerAsAnswerOption = this.findAccordingAnswerOption(answer, item.answerOptions);
+
                             if (answerAsAnswerOption) {
-                                that.updateQuestionAnswers(item, answerAsAnswerOption);
+                                this.updateQuestionAnswers(item, answerAsAnswerOption);
                             } else {
                                 item.selectedAnswers = answerItem.answer
                                                             ? answerItem.answer
@@ -579,15 +606,6 @@ export class QuestionnaireData {
 
         // handle the non-group items
         if (_FHIRItem.type !== QuestionnaireItemType.GROUP) {
-            if (_FHIRItem.readOnly && _FHIRItem.code) {
-                question.options = question.options || {};
-                _FHIRItem.code.forEach((code: Coding) => {
-                    if (code.code && code.system === 'http://snomed.info/sct' && question.options) {
-                        question.options.populateType = PopulateType[code.code]
-                    }
-                });
-            }
-
             if (_FHIRItem.type === QuestionnaireItemType.CHOICE) {
                 // process answer options from ValueSet
                 if (_FHIRItem.answerValueSet && _FHIRItem.answerValueSet.indexOf('#') >= 0) { // these are the "contained valuesets"
@@ -766,7 +784,8 @@ export class QuestionnaireData {
 
     private setOptionsFromExtensions(_FHIRItem: QuestionnaireItem): IQuestionOptions | undefined {
         const itemControlExtension = this.hasExtension(ITEM_CONTROL_EXTENSION, ITEM_CONTROL_EXTENSION_SYSTEM, _FHIRItem);
-        const fhirPathExtension = this.hasExtension(CALCULATED_EXPRESSION_EXTENSION, 'text/fhirpath', _FHIRItem);
+        const calculatedExpressionExtension = this.hasExtension(CALCULATED_EXPRESSION_EXTENSION, 'text/fhirpath', _FHIRItem);
+        const initialExpressionExtension = this.hasExtension(INITIAL_EXPRESSION_EXTENSION, 'text/fhirpath', _FHIRItem);
 
         let returnValue: IQuestionOptions = {
             min: this.hasExtension(MIN_VALUE_EXTENSION, undefined, _FHIRItem),
@@ -774,7 +793,8 @@ export class QuestionnaireData {
             format: this.hasExtension(ENTRY_FORMAT_EXTENSION, undefined, _FHIRItem),
             sliderStep: this.hasExtension(SLIDER_STEP_VALUE_EXTENSION, undefined, _FHIRItem),
             unit: this.hasExtension(UNIT_EXTENSION, 'https://ucum.org', _FHIRItem),
-            calculatedExpression: fhirPathExtension ? fhirPathExtension.expression : undefined
+            calculatedExpression: calculatedExpressionExtension ? calculatedExpressionExtension.expression : undefined,
+            initialExpression: initialExpressionExtension ? initialExpressionExtension.expression : undefined
         };
 
         if (itemControlExtension) {
@@ -859,6 +879,8 @@ export class QuestionnaireData {
     *   - valueDuration
     *   - valueString
     *   - valueInteger
+    *   - valueDate
+    *   - valueExpression
     *   - valueBoolean (CAVE: when the valueBoolean is FALSE, the method will return FALSE!)
     *   )
     *   If the extension exists with another value, the method returns TRUE.
@@ -902,6 +924,138 @@ export class QuestionnaireData {
         }
 
         return returnValue;
+    }
+
+    /**
+    * Populates the questions with initialExpression FHIRPath extensions with data from given resources.
+    * The FHIRPath resources need to specify the needed resource type with %type as first node of the FHIRPath
+    * expressions (e.g. '%patient.name.given.first()').
+    * @param _resources     array of resources used to populate the answers (e.g. Patient resource). Each resource
+    *                       type can only be in the array once.
+    * @param _overWriteExistingAnswers (optional) specifies if existing answers should be overwritten (default: false)
+    */
+    populateAnswers(_resources: Resource[], _overWriteExistingAnswers?: boolean): void {
+        let resources = {};
+        _resources.forEach(r => {
+            if (r.resourceType) {
+                resources[r.resourceType.toLowerCase()] = r;
+            }
+        });
+        const recursivelyPopulate = (_items: IQuestion[]) => {
+            _items.forEach(item => {
+                if (item.subItems) {
+                    recursivelyPopulate(item.subItems);
+                }
+                if ((_overWriteExistingAnswers || item.selectedAnswers.length === 0) && item.options && item.options.initialExpression) {
+                    const expression = item.options.initialExpression;
+                    if (expression.indexOf('%') == -1) {
+                        console.warn('QuestionnaireData: Can not populate with initialExpression for item ' + item.id + ': initialExpression does not specify context variable (' + expression + ')');
+                    } else {
+                        const type = expression.split('.')[0].substring(1).toLowerCase();
+                        const resource = resources[type];
+                        if (resource) {
+                            const value = fhirpath.evaluate(resource, expression.substring(type.length + 2))[0];
+                            let populatedAnswer: IAnswerOption = { answer: {}, code: {} };
+                            this.availableLanguages.forEach(l => {
+                                populatedAnswer.answer[l] = value;
+                            })
+
+                            // todo handle correct way for every type
+                            switch(item.type) {
+                                case QuestionnaireItemType.CHOICE:
+                                    populatedAnswer = this.findAccordingAnswerOption(value, item.answerOptions) || populatedAnswer;
+                                    break;
+                                case QuestionnaireItemType.STRING:
+                                    populatedAnswer.code.valueString = value.toString();
+                                    break;
+                                case QuestionnaireItemType.INTEGER:
+                                    populatedAnswer.code.valueInteger = Number(value);
+                                    break;
+                                case QuestionnaireItemType.BOOLEAN:
+                                    populatedAnswer.code.valueBoolean = value.toLowerCase() === 'true';
+                                    break;
+                                case QuestionnaireItemType.DATE:
+                                    populatedAnswer.code.valueDate = value.toString();
+                                    break;
+                                case QuestionnaireItemType.DATETIME:
+                                    populatedAnswer.code.valueDateTime = value.toString();
+                                    break;
+                                case QuestionnaireItemType.DECIMAL:
+                                    populatedAnswer.code.valueDecimal = Number(value);
+                                    break;
+                                case QuestionnaireItemType.QUANTITY:
+                                    populatedAnswer.code.valueQuantity = {
+                                        value: Number(value.split(' ')[0]),
+                                        unit: value.split(' ')[1]
+                                    }
+                                    break;
+                                case QuestionnaireItemType.TIME:
+                                    populatedAnswer.code.valueTime = value.toString();
+                                    break;
+                                case QuestionnaireItemType.REFERENCE:
+                                    populatedAnswer.code.valueReference = {
+                                        reference: value.toString()
+                                    };
+                                    break;
+                                default:
+                                    console.log('Population of items of type' + item.type + ' is currently not supported by QuestionnaireData. Please inform the developer or create an issue on Github with specifying the missing type.');
+                            }
+                            if (populatedAnswer) {
+                                this.updateQuestionAnswers(item, populatedAnswer)
+                            }
+                        } else {
+                            console.warn('QuestionnaireData: Can not populate with initialExpression for item ' + item.id + ': Missing context resource of type ' + type);
+                        }
+                    }
+                }
+            });
+        };
+        recursivelyPopulate(this.items);
+    }
+
+    /**
+    * Finds the answerOption that matches a criterium, so on choice question, populated answers are exactly like the answer option.
+    * AnswerOptions of type valueAttachment can't be found like that.
+    * @param criterium      Can be just a string, or a QuestionnaireResponseItemAnswer. Defines which answer option should be found
+    * @param answerOptions  The answerOptions of an item, array that will be searched.
+    **/
+    private findAccordingAnswerOption(criterium: string | QuestionnaireResponseItemAnswer, answerOptions: IAnswerOption[]): IAnswerOption | undefined {
+        return answerOptions.find((answerOption) => {
+            let foundIt = false;
+            // first check the primitive types
+            PRIMITIVE_VALUE_X.forEach((valueX) => {
+                if (!foundIt) {
+                    const comparator = typeof criterium === 'string'
+                                        ? criterium
+                                        : criterium[valueX];
+                    if (comparator && answerOption.code[valueX]) {
+                        foundIt = answerOption.code[valueX].toString() === comparator.toString();
+                    }
+                }
+            });
+
+            // if not sucessful, check the complex types
+            COMPLEX_VALUE_X.forEach((valueX) => {
+                if (!foundIt) {
+                    let comparator = criterium;
+                    if (typeof criterium === 'string') {
+                        // we just assume the string has the matching code system / unit / whatever for the complex type.
+                        comparator = JSON.parse(JSON.stringify(answerOption.code)) as QuestionnaireResponseItemAnswer;
+                        if (comparator.valueCoding) {
+                            comparator.valueCoding.code = criterium;
+                        }
+                        if (comparator.valueQuantity) {
+                            comparator.valueQuantity.value = Number(criterium)
+                        }
+                        if (comparator.valueReference) {
+                            comparator.valueReference.reference = criterium;
+                        }
+                    }
+                    foundIt = valueX.isMatching(comparator as QuestionnaireResponseItemAnswer, answerOption);
+                }
+            });
+            return foundIt;
+        });
     }
 
     /**

@@ -5,11 +5,6 @@ export enum ItemControlType {
     SLIDER = 'slider'
 }
 
-export enum PopulateType {
-    '80904-6' = 'BIRTH_YEAR',
-    '46098-0' = 'SEX'
-}
-
 export interface IQuestion {
     id: string; // represents linkId in QuestionnaireItem
     type: QuestionnaireItemType;
@@ -49,6 +44,6 @@ export interface IQuestionOptions {
     sliderStep?: number;
     unit?: Coding;
     format?: string;
-    populateType?: PopulateType;
+    initialExpression?: string;
     calculatedExpression?: string;
 }
