@@ -475,7 +475,7 @@ export class QuestionnaireData {
                 isComplete = isComplete
                 ? this.recursivelyCheckCompleteness(question.subItems, _onlyRequired)
                 : false;
-            } else if (question.readOnly) {
+            } else if (question.readOnly || !question.isEnabled) {
                 // do nothing
             } else {
                 if (question.required || !_onlyRequired) {
@@ -955,54 +955,59 @@ export class QuestionnaireData {
                         const resource = resources[type];
                         if (resource) {
                             const value = fhirpath.evaluate(resource, expression.substring(type.length + 2))[0];
-                            let populatedAnswer: IAnswerOption = { answer: {}, code: {} };
-                            this.availableLanguages.forEach(l => {
-                                populatedAnswer.answer[l] = value;
-                            })
+                            if (value) {
+                                let populatedAnswer: IAnswerOption = { answer: {}, code: {} };
+                                this.availableLanguages.forEach(l => {
+                                    populatedAnswer.answer[l] = value;
+                                })
 
-                            // todo handle correct way for every type
-                            switch(item.type) {
-                                case QuestionnaireItemType.CHOICE:
-                                    populatedAnswer = this.findAccordingAnswerOption(value, item.answerOptions) || populatedAnswer;
-                                    break;
-                                case QuestionnaireItemType.STRING:
-                                    populatedAnswer.code.valueString = value.toString();
-                                    break;
-                                case QuestionnaireItemType.INTEGER:
-                                    populatedAnswer.code.valueInteger = Number(value);
-                                    break;
-                                case QuestionnaireItemType.BOOLEAN:
-                                    populatedAnswer.code.valueBoolean = value.toLowerCase() === 'true';
-                                    break;
-                                case QuestionnaireItemType.DATE:
-                                    populatedAnswer.code.valueDate = value.toString();
-                                    break;
-                                case QuestionnaireItemType.DATETIME:
-                                    populatedAnswer.code.valueDateTime = value.toString();
-                                    break;
-                                case QuestionnaireItemType.DECIMAL:
-                                    populatedAnswer.code.valueDecimal = Number(value);
-                                    break;
-                                case QuestionnaireItemType.QUANTITY:
-                                    populatedAnswer.code.valueQuantity = {
-                                        value: Number(value.split(' ')[0]),
-                                        unit: value.split(' ')[1]
-                                    }
-                                    break;
-                                case QuestionnaireItemType.TIME:
-                                    populatedAnswer.code.valueTime = value.toString();
-                                    break;
-                                case QuestionnaireItemType.REFERENCE:
-                                    populatedAnswer.code.valueReference = {
-                                        reference: value.toString()
-                                    };
-                                    break;
-                                default:
-                                    console.log('Population of items of type' + item.type + ' is currently not supported by QuestionnaireData. Please inform the developer or create an issue on Github with specifying the missing type.');
+                                // todo handle correct way for every type
+                                switch(item.type) {
+                                    case QuestionnaireItemType.CHOICE:
+                                        populatedAnswer = this.findAccordingAnswerOption(value, item.answerOptions) || populatedAnswer;
+                                        break;
+                                    case QuestionnaireItemType.STRING:
+                                        populatedAnswer.code.valueString = value.toString();
+                                        break;
+                                    case QuestionnaireItemType.INTEGER:
+                                        populatedAnswer.code.valueInteger = Number(value);
+                                        break;
+                                    case QuestionnaireItemType.BOOLEAN:
+                                        populatedAnswer.code.valueBoolean = value.toLowerCase() === 'true';
+                                        break;
+                                    case QuestionnaireItemType.DATE:
+                                        populatedAnswer.code.valueDate = value.toString();
+                                        break;
+                                    case QuestionnaireItemType.DATETIME:
+                                        populatedAnswer.code.valueDateTime = value.toString();
+                                        break;
+                                    case QuestionnaireItemType.DECIMAL:
+                                        populatedAnswer.code.valueDecimal = Number(value);
+                                        break;
+                                    case QuestionnaireItemType.QUANTITY:
+                                        populatedAnswer.code.valueQuantity = {
+                                            value: Number(value.split(' ')[0]),
+                                            unit: value.split(' ')[1]
+                                        }
+                                        break;
+                                    case QuestionnaireItemType.TIME:
+                                        populatedAnswer.code.valueTime = value.toString();
+                                        break;
+                                    case QuestionnaireItemType.REFERENCE:
+                                        populatedAnswer.code.valueReference = {
+                                            reference: value.toString()
+                                        };
+                                        break;
+                                    default:
+                                        console.log('Population of items of type' + item.type + ' is currently not supported by QuestionnaireData. Please inform the developer or create an issue on Github with specifying the missing type.');
+                                }
+                                if (populatedAnswer.code !== {}) {
+                                    this.updateQuestionAnswers(item, populatedAnswer)
+                                }
+                            } else {
+                                console.log('No value found for expression ' + expression + '.');
                             }
-                            if (populatedAnswer) {
-                                this.updateQuestionAnswers(item, populatedAnswer)
-                            }
+
                         } else {
                             console.warn('QuestionnaireData: Can not populate with initialExpression for item ' + item.id + ': Missing context resource of type ' + type);
                         }
