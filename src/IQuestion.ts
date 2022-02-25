@@ -1,4 +1,4 @@
-import { code, Coding, QuestionnaireResponseItemAnswer, QuestionnaireItemType, QuestionnaireItemOperator, QuestionnaireEnableWhenBehavior } from '@i4mi/fhir_r4';
+import { code, Coding, QuestionnaireResponseItemAnswer, QuestionnaireItemType, QuestionnaireItemOperator, QuestionnaireEnableWhenBehavior, QuestionnaireItemInitial } from '@i4mi/fhir_r4';
 
 export enum ItemControlType {
     SPINNER = 'spinner',
@@ -28,6 +28,7 @@ export interface IQuestion {
     subItems?: IQuestion[];
     relatedResourceId?: string;
     isInvalid?: boolean;
+    initial?: QuestionnaireItemInitial[];
     options?: IQuestionOptions;
 }
 

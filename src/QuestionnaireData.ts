@@ -401,10 +401,22 @@ export class QuestionnaireData {
                         case QuestionnaireItemType.DECIMAL:
                             calculatedAnswer = { valueDecimal: fhirpath.evaluate(fhirResponse, item.item.options.calculatedExpression)[0] };
                             break;
+                        case  QuestionnaireItemType.QUANTITY:
+                            const initial = item.item.initial?.find(i => i.valueQuantity != undefined)?.valueQuantity;
+                            if (initial) {
+                                calculatedAnswer = {
+                                    value: fhirpath.evaluate(fhirResponse, item.item.options.calculatedExpression)[0],
+                                    unit: initial.unit,
+                                    system: initial.system,
+                                    code: initial.code
+                                }
+                            } else {
+                                console.warn('Calculated answer for item type QUANTITY needs an initial element for defining the unit.');
+                            }
+                            break;
                         default:
                             console.warn('Calculated answer for item type ' + item.item.type + 'is currently not implemented.');
                     }
-
                     if (item.item.allowsMultipleAnswers) {
                         item.item.selectedAnswers.push(calculatedAnswer);
                     } else {
@@ -571,6 +583,7 @@ export class QuestionnaireData {
             dependingQuestions: [],
             dependingQuestionsEnableBehaviour: _FHIRItem.enableBehavior,
             isEnabled: true,
+            initial: _FHIRItem.initial,
             readOnly: _FHIRItem.readOnly ? _FHIRItem.readOnly : false,
             options: this.setOptionsFromExtensions(_FHIRItem)
         }
@@ -747,7 +760,7 @@ export class QuestionnaireData {
             } else if (_FHIRItem.type === QuestionnaireItemType.DISPLAY) {
                 question.readOnly = true;
             } else if (_FHIRItem.type === QuestionnaireItemType.QUANTITY) {
-                if (question.options && question.options.controlType == ItemControlType.SLIDER && question.options.min !== undefined &&  question.options.max !== undefined) {
+                if (question.options && question.options.controlType == ItemControlType.SLIDER && question.options.min !== undefined && question.options.max !== undefined) {
                     question.answerOptions = [
                         {
                             answer: {
@@ -768,7 +781,9 @@ export class QuestionnaireData {
                         }
                     ]
                 } else {
-                    console.warn('QuestionnaireData: Item type QUANTITY is currently only supported with slider extension', _FHIRItem);
+                    if (!this.hasExtension(HIDDEN_EXTENSION, undefined, _FHIRItem)) {
+                        console.warn('QuestionnaireData: Item type QUANTITY is currently only supported with slider extension', _FHIRItem);
+                    }
                 }
             } else if (_FHIRItem.type === QuestionnaireItemType.DATE) {
                 // nothing to do
