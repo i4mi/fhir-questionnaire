@@ -405,17 +405,19 @@ export class QuestionnaireData {
                             const initial = item.item.initial?.find(i => i.valueQuantity != undefined)?.valueQuantity;
                             if (initial) {
                                 calculatedAnswer = {
-                                    value: fhirpath.evaluate(fhirResponse, item.item.options.calculatedExpression)[0],
-                                    unit: initial.unit,
-                                    system: initial.system,
-                                    code: initial.code
+                                    valueQuantity: {
+                                        value: fhirpath.evaluate(fhirResponse, item.item.options.calculatedExpression)[0],
+                                        unit: initial.unit,
+                                        system: initial.system,
+                                        code: initial.code
+                                    }
                                 }
                             } else {
                                 console.warn('Calculated answer for item type QUANTITY needs an initial element for defining the unit.');
                             }
                             break;
                         default:
-                            console.warn('Calculated answer for item type ' + item.item.type + 'is currently not implemented.');
+                            console.warn('Calculated answer for item type ' + item.item.type.toUpperCase() + ' is currently not implemented.', item.item);
                     }
                     if (item.item.allowsMultipleAnswers) {
                         item.item.selectedAnswers.push(calculatedAnswer);
@@ -781,7 +783,7 @@ export class QuestionnaireData {
                         }
                     ]
                 } else {
-                    if (!this.hasExtension(HIDDEN_EXTENSION, undefined, _FHIRItem)) {
+                    if (this.hasExtension(HIDDEN_EXTENSION, undefined, _FHIRItem) == undefined) {
                         console.warn('QuestionnaireData: Item type QUANTITY is currently only supported with slider extension', _FHIRItem);
                     }
                 }
