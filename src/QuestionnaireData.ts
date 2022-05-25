@@ -599,6 +599,7 @@ export class QuestionnaireData {
             case QuestionnaireItemType.DISPLAY:
             case QuestionnaireItemType.QUANTITY:
             case QuestionnaireItemType.DATE:
+            case QuestionnaireItemType.TEXT:
             case QuestionnaireItemType.OPEN_CHOICE:
                 question.type = _FHIRItem.type;
                 break;
@@ -791,9 +792,11 @@ export class QuestionnaireData {
                 // nothing to do
             } else if (_FHIRItem.type === QuestionnaireItemType.OPEN_CHOICE) {
                 // nothing to do
+            } else if (_FHIRItem.type === QuestionnaireItemType.TEXT) {
+                // nothing to do
             } else {
                 // TODO: implement other answerOptions
-                console.warn('QuestionnaireData: Currently only items of type CHOICE, INTEGER, STRING, QUANTITY, DATE, OPEN_CHOICE or DISPLAY are supported.', _FHIRItem);
+                console.warn('QuestionnaireData: Currently only items of type GROUP, CHOICE, INTEGER, STRING, TEXT QUANTITY, DATE, OPEN_CHOICE or DISPLAY are supported.', _FHIRItem);
             }
         }
         return question as IQuestion;

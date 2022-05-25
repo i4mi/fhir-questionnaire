@@ -1,6 +1,6 @@
 {
   "name": "@i4mi/fhir_questionnaire",
-  "version": "0.0.9",
+  "version": "0.0.10",
   "description": "TS Package for handling FHIR Questionnaire and generating QuestionnaireRespones.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
