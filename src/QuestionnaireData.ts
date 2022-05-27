@@ -189,6 +189,7 @@ export class QuestionnaireData {
         if (_answer === undefined
            || (_question.type === QuestionnaireItemType.INTEGER && _answer.code.valueInteger == undefined)
            || (_question.type === QuestionnaireItemType.STRING && _answer.code.valueString == '')
+           || (_question.type === QuestionnaireItemType.TEXT && _answer.code.valueString == '')
            || (_question.type === QuestionnaireItemType.DATE && _answer.code.valueDate == '')) {
                // remove previous given answers
             _question.selectedAnswers.splice(0,_question.selectedAnswers.length);
@@ -987,6 +988,7 @@ export class QuestionnaireData {
                                         populatedAnswer = this.findAccordingAnswerOption(value, item.answerOptions) || populatedAnswer;
                                         break;
                                     case QuestionnaireItemType.STRING:
+                                    case QuestionnaireItemType.TEXT:
                                         populatedAnswer.code.valueString = value.toString();
                                         break;
                                     case QuestionnaireItemType.INTEGER:
