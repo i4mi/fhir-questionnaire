@@ -86,9 +86,9 @@ export class QuestionnaireData {
         item: IQuestion,
         parentLinkId?: string
     }[];
-    lastRestored: Date | undefined;
     availableLanguages: string[];
-    responseIdToSynchronize: string | undefined;
+    lastRestored?: Date;
+    responseIdToSynchronize?: string;
 
     constructor(_questionnaire: Questionnaire, _availableLanguages?: string[], _valueSets?: {[url: string]: ValueSet}, _items?: IQuestion[], _hiddenFhirItems?: {item: IQuestion, parentLinkId?: string}[]){
         this.fhirQuestionnaire = _questionnaire;
@@ -121,6 +121,63 @@ export class QuestionnaireData {
         } else {
             this.items = new Array<IQuestion>();
             this.resetResponse();
+        }
+    }
+
+    /**
+     * Returns the storeable data of the object as a string, not including the questionnaire.
+     * When rehydrating with a serialized QuestionnaireData string, you can create a new 
+     * QuestionnaireData object using the Questionnaire and then call .unserialize() on it, 
+     * passing the serialized string
+     * @returns a string representing the QuestionnaireData object _without_ containing 
+     *              - the fhir Questionnaire
+     * @see     unserialize()
+     */
+    serialize(): string {
+        return JSON.stringify({
+            valueSets: this.valueSets,
+            items: this.items,
+            hiddenFhirItems: this.hiddenFhirItems,
+            lastRestored: this.lastRestored,
+            availableLanguages: this.availableLanguages,
+            responseIdToSynchronize: this.responseIdToSynchronize
+        });
+    }
+
+    /**
+     * Populates the QuestionnaireData object with data from a previously serialized 
+     * QuestionnaireData Object. This can be either passed on as a string from serialize() or 
+     * as a JSON object that was created with JSON.stringify() from a QuestionnaireData
+     * @param   _data   The serialized data from a QuestionnaireData as string or JSON
+     * @throws          An error if the data is passed as a string with no items property
+     *                  (which is used to detect if it is a serialized QuestionnaireData)
+     * @see     serialize()
+     */
+    unserialize(_data: string | {
+        valueSets: {
+            [url: string]: ValueSet
+        };
+        items: IQuestion[];
+        hiddenFhirItems: {
+            item: IQuestion,
+            parentLinkId?: string
+        }[];
+        lastRestored?: Date;
+        availableLanguages: string[];
+        responseIdToSynchronize?: string;
+    }): void {
+        let data = typeof _data === 'string'
+            ? JSON.parse(_data)
+            : _data;
+        if (
+            !Object.prototype.hasOwnProperty.call(data, 'items')
+        ) {
+            console.log('Can not unserialize, passed string seems not to be a serialized QuestionnaireData.', data);
+            throw new Error('Can not unserialize, passed string seems not to be a serialized QuestionnaireData.');
+        }
+        Object.assign(this, data);
+        if (this.lastRestored) {
+            this.lastRestored = new Date(this.lastRestored);
         }
     }
 
@@ -726,11 +783,11 @@ export class QuestionnaireData {
                             // check if we have multi-language support
                             if (answerOption.valueCoding._display && answerOption.valueCoding._display.extension) {
                                 Object.keys(answerOptionText).forEach(key => {
-                                    answerOptionText[key] = this.getTranslationsFromExtension(answerOption.valueCoding._display as {extension: Array<{extension: Array<any>}>})[key]
+                                    answerOptionText[key] = this.getTranslationsFromExtension(answerOption.valueCoding?._display as {extension: Array<{extension: Array<any>}>})[key]
                                 });
                             } else { // when not, use the same text for every language
                                 Object.keys(answerOptionText).forEach(key => {
-                                    answerOptionText[key] = answerOption.valueCoding.display || '';
+                                    answerOptionText[key] = answerOption.valueCoding?.display || '';
                                 });
                             }
 
