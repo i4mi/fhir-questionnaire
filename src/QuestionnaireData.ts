@@ -1,6 +1,6 @@
 import fhirpath from 'fhirpath';
 import { Questionnaire, QuestionnaireResponse, QuestionnaireResponseStatus, QuestionnaireResponseItem, QuestionnaireItemType,
-    Resource, ValueSet, QuestionnaireItem, Reference, QuestionnaireResponseItemAnswer, Extension, code, QuestionnaireItemOperator} from "@i4mi/fhir_r4";
+    Resource, ValueSet, QuestionnaireItem, Reference, QuestionnaireResponseItemAnswer, Extension, code, QuestionnaireItemOperator, readI18N} from "@i4mi/fhir_r4";
 import { IQuestion, IAnswerOption, IQuestionOptions, ItemControlType } from "./IQuestion";
 
 const UNSELECT_OTHERS_EXTENSION = "http://midata.coop/extensions/valueset-unselect-others";
@@ -90,7 +90,7 @@ export class QuestionnaireData {
     lastRestored?: Date;
     responseIdToSynchronize?: string;
 
-    constructor(_questionnaire: Questionnaire, _availableLanguages?: string[], _valueSets?: {[url: string]: ValueSet}, _items?: IQuestion[], _hiddenFhirItems?: {item: IQuestion, parentLinkId?: string}[]){
+    constructor(_questionnaire: Questionnaire, _availableLanguages: string[], _valueSets?: {[url: string]: ValueSet}, _items?: IQuestion[], _hiddenFhirItems?: {item: IQuestion, parentLinkId?: string}[]){
         this.fhirQuestionnaire = _questionnaire;
         this.items = new Array<IQuestion>();
         this.hiddenFhirItems = new Array<{item: IQuestion,parentLinkId?: string}>();
@@ -348,14 +348,16 @@ export class QuestionnaireData {
     }
 
     /**
-    * Returns the questionnaire title in a given language.
-    * @param _language the language code of the wanted language
+    * Returns the questionnaire title in a given language. 
+    * Falls back to default language of the questionnaire, 
+    * if the wanted language is not available.
+    * @param _language the language code of the wanted language. 
     **/
     getQuestionnaireTitle(_language: string): string | undefined {
         if (this.fhirQuestionnaire._title && this.fhirQuestionnaire._title.extension) {
-            return this.getTranslationsFromExtension(this.fhirQuestionnaire._title as {extension: Array<{extension: Array<any>}>})[_language]
+            return readI18N(this.fhirQuestionnaire._title, _language);
         } else {
-            return undefined;
+            return this.fhirQuestionnaire.title;
         }
     }
 
@@ -419,15 +421,27 @@ export class QuestionnaireData {
 
     /**
     * Gets the QuestionnaireResponse resource with all the currently set answers.
-    * @param _language the shorthand for the language the QuestionnaireResponse should be in
-    * @param _patient? a Reference to the FHIR Patient who filled out the Questionnaire
-    * @param _date?    the date when the Questionnaire was filled out (current date by default)
-    * @param _includeID include FHIR resource ID of a potential previously restored QuestionnaireResponse (default: false)
+    * @param _language the shorthand for the language the QuestionnaireResponse should be in (eg 'de' or 'en')
+    * @param _options  Options object that can contain zero, one or many of the following properties:
+    *                  - date:      the date when the Questionnaire was filled out (current date by default)
+    *                  - includeID: boolean that determines if to include FHIR resource ID of a potential 
+    *                               previously restored QuestionnaireResponse (default: false)
+    *                  - patient:   a Reference to the FHIR Patient who filled out the Questionnaire
+    *                  - reset:     should the questionnaire be reseted after creating the response (default: false)
     * @returns         a QuestionnaireResponse FHIR resource containing all the answers the user gave
     * @throws          an error if the QuestionnaireResponse is not valid for the corresponding
     *                  Questionnaire, e.g. when a required answer is missing
     **/
-    getQuestionnaireResponse(_language: string, _patient?: Reference, _date?: Date, _includeID?: boolean): QuestionnaireResponse {
+    getQuestionnaireResponse(
+        _language: string, 
+        _options?: {
+            date?: Date;
+            includeID?: boolean;
+            patient?: Reference;
+            reset?: boolean;
+        }
+    ): QuestionnaireResponse {
+        const options = _options || {};
         // usual questionnaire response
         const fhirResponse = {
             status: this.isResponseComplete() ? QuestionnaireResponseStatus.COMPLETED : QuestionnaireResponseStatus.IN_PROGRESS,
@@ -439,9 +453,9 @@ export class QuestionnaireData {
                                 : {}
             }],
             questionnaire: this.getQuestionnaireURLwithVersion(),
-            authored: _date ? _date.toISOString() : new Date().toISOString(),
-            source: _patient ? _patient : undefined,
-            id: _includeID ? this.responseIdToSynchronize : undefined,
+            authored: options.date ? options.date.toISOString() : new Date().toISOString(),
+            source: options.patient,
+            id: options.includeID ? this.responseIdToSynchronize : undefined,
             meta: {},
             item: this.mapIQuestionToQuestionnaireResponseItem(this.items, new Array<QuestionnaireResponseItem>(),_language)
         };
@@ -513,7 +527,10 @@ export class QuestionnaireData {
                 fhirResponse.item.push(this.mapIQuestionToQuestionnaireResponseItem([item.item], new Array<QuestionnaireResponseItem>(), _language)[0]);
             }
         });
-        return fhirResponse;
+        if (options.reset) {
+            this.resetResponse();
+        }
+        return {...fhirResponse};
     }
 
     /**
@@ -530,8 +547,8 @@ export class QuestionnaireData {
     /**
     * Checks a QuestionnaireResponse for completeness.
     * @param   onlyRequired optional parameter, to specify if only questions with
-    the required attribute need to be answered or all questions;
-    default value is: false
+    *          the required attribute need to be answered or all questions;
+    *           default value is: false
     * @returns true if all questions are answered
     *          false if at least one answer is not answered
     */
@@ -572,17 +589,21 @@ export class QuestionnaireData {
     **/
     private mapIQuestionToQuestionnaireResponseItem(_question: IQuestion[], _responseItems: QuestionnaireResponseItem[], _language: string): QuestionnaireResponseItem[] {
         _question.forEach((question) => {
+            question.isInvalid = false;
             if (question.type === QuestionnaireItemType.GROUP) {
                 if (question.subItems && question.subItems.length > 0) {
                     _responseItems = this.mapIQuestionToQuestionnaireResponseItem(question.subItems, _responseItems, _language);
                 } else {
+                    question.isInvalid = true;
                     throw new Error(`Invalid question set: IQuestion with id ${question.id} is group type, but has no subItems.`);
                 }
             } else if (question.isEnabled){
                 // some validation
                 if (question.required && question.selectedAnswers.length === 0) {
+                    question.isInvalid = true;
                     throw new Error(`Invalid answer set: IQuestion with id ${question.id} is mandatory, but not answered.`);
                 } else if (!question.allowsMultipleAnswers && question.selectedAnswers.length > 1){
+                    question.isInvalid = true;
                     throw new Error(`Invalid answer set: IQuestion with id ${question.id} allows only one answer, but has more.`);
                 } else {
                     const responseItem = {
@@ -665,8 +686,13 @@ export class QuestionnaireData {
                 console.warn(`QuestionnaireData.ts: Item type ${_FHIRItem.type} is currently not supported.`)
                 //return undefined; // TODO : check this
         }
-
-        question.label = this.getTranslationsFromExtension(_FHIRItem._text as {extension: Array<{extension: Array<any>}>});
+        const labels = {};
+        this.availableLanguages.map(language => {
+            labels[language] = _FHIRItem._text 
+                ? readI18N(_FHIRItem._text, language) || _FHIRItem.text
+                : _FHIRItem.text || '';
+        });
+        question.label = labels;
 
         // first handle group items with subitems
         if (_FHIRItem.item && _FHIRItem.item.length > 0) {
@@ -783,7 +809,10 @@ export class QuestionnaireData {
                             // check if we have multi-language support
                             if (answerOption.valueCoding._display && answerOption.valueCoding._display.extension) {
                                 Object.keys(answerOptionText).forEach(key => {
-                                    answerOptionText[key] = this.getTranslationsFromExtension(answerOption.valueCoding?._display as {extension: Array<{extension: Array<any>}>})[key]
+                                    const text = answerOption.valueCoding && answerOption.valueCoding._display
+                                        ? readI18N(answerOption.valueCoding?._display, key)
+                                        : answerOption.valueCoding?.display;
+                                    answerOptionText[key] = text || '';
                                 });
                             } else { // when not, use the same text for every language
                                 Object.keys(answerOptionText).forEach(key => {
@@ -796,8 +825,10 @@ export class QuestionnaireData {
                                 if (answerOption[valueX]) {
                                     if (answerOption['_' + valueX]) {
                                         Object.keys(answerOptionText).forEach(key => {
-                                            answerOptionText[key] = this.getTranslationsFromExtension(answerOption['_' + valueX] as {extension: Array<{extension: Array<any>}>})[key]
+                                            const text = readI18N(answerOption['_' + valueX], key);
+                                            answerOptionText[key] = text || answerOption[valueX];
                                         });
+                                        
                                     } else {
                                         Object.keys(answerOptionText).forEach(key => {
                                             answerOptionText[key] = answerOption[valueX];
@@ -1143,7 +1174,8 @@ export class QuestionnaireData {
     }
 
     /**
-    * Recursively searches for a IQuestion by ID.
+    * Recursively searches for a IQuestion by ID. This is useful if a Questionnaires questions
+    * are nested on multiple layers.
     * @param _id the id of the IQuestion to find
     * @param _data the (nested) array of IQuestion to search in
     */
@@ -1159,16 +1191,6 @@ export class QuestionnaireData {
             }
         });
         return result;
-    }
-
-    getTranslationsFromExtension(languageExtensions: {extension: Array<{extension: Array<any>}>}): {[language: string]: string} {
-        let translations: {[language: string]: string} = {};
-        Array.prototype.forEach.call(languageExtensions.extension, (extension) => {
-            const languageCode = extension.extension.find((extensionItem: { url: string; valueCode: string }) => extensionItem.url === 'lang').valueCode;
-            const content = extension.extension.find((extensionItem: { url: string; valueString: string }) => extensionItem.url === 'content').valueString;
-            translations[languageCode] = content;
-        });
-        return translations;
     }
 
     private getTranslationsFromDesignation(languageDesignations: any): {[language: string]: string} {
