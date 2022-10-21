@@ -421,7 +421,8 @@ export class QuestionnaireData {
 
     /**
     * Gets the QuestionnaireResponse resource with all the currently set answers.
-    * @param _language the shorthand for the language the QuestionnaireResponse should be in (eg 'de' or 'en')
+    * @param _language the shorthand for the language the QuestionnaireResponse (eg. 'de' or 'en'),
+    *                  should be in the set of available languages
     * @param _options  Options object that can contain zero, one or many of the following properties:
     *                  - date:      the date when the Questionnaire was filled out (current date by default)
     *                  - includeID: boolean that determines if to include FHIR resource ID of a potential 
