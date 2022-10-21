@@ -32,6 +32,18 @@
         }}</label>
       </li>
     </ul>
+
+    <!-- SUB Questions-->
+    <div v-if="question.subItems && question.subItems.length > 0">
+      <QuestionComponent
+        v-for="subquestion of question.subItems"
+        :question="subquestion"
+        :key="subquestion.id"
+        :isSelected="isSelected"
+        :onAnswer="onAnswer"
+        language="language"
+      />
+    </div>
   </div>
 </template>
 

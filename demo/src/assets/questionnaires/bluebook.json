@@ -65,12 +65,12 @@
               {
                 "linkId": "birthWeight",
                 "text": "Birth weight (kg)",
-                "type": "decimal"
+                "type": "integer"
               },
               {
                 "linkId": "birthLength",
                 "text": "Birth length (cm)",
-                "type": "decimal"
+                "type": "integer"
               },
               {
                 "linkId": "vitaminKgiven",
@@ -108,12 +108,12 @@
                       {
                         "linkId": "vitaminiKDose1",
                         "text": "1st dose",
-                        "type": "dateTime"
+                        "type": "date"
                       },
                       {
                         "linkId": "vitaminiKDose2",
                         "text": "2nd dose",
-                        "type": "dateTime"
+                        "type": "date"
                       }
                     ]
                   }

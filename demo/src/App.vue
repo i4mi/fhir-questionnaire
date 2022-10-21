@@ -34,7 +34,12 @@
       </p>
     </main>
 
-    <div v-if="showOwnQuestionnaireModal" id="ownQuestionnaireModal">
+    <!-- OWN QUESTIONNAIRE MODAL-->
+    <div
+      v-if="showOwnQuestionnaireModal"
+      class="modal"
+      id="ownQuestionnaireModal"
+    >
       <textarea v-model="ownQuestionnaire"></textarea>
       <button
         @click="
@@ -50,6 +55,12 @@
         laden
       </button>
     </div>
+
+    <!-- RESPONSE MODAL-->
+    <div v-if="response" class="modal" id="responseModal">
+      <pre>{{ JSON.stringify(response) }}></pre>
+      <button @click="response = undefined">schliessen</button>
+    </div>
   </div>
 </template>
 
@@ -58,6 +69,7 @@ import { defineComponent } from "vue";
 import QuestionComponent from "./components/Question.vue";
 import ZARIT from "@/assets/questionnaires/zarit.json";
 import BLUEBOOK from "@/assets/questionnaires/bluebook.json";
+import SITUATION from "@/assets/questionnaires/situation.json";
 import { Questionnaire } from "@i4mi/fhir_r4";
 import { QuestionnaireData } from "@i4mi/fhir_questionnaire";
 
@@ -85,8 +97,15 @@ export default defineComponent({
         },
         {
           name: "Bluebook",
-          description: "Irgend ein Fragebogen, den ich im Netz gefunden habe.",
+          description:
+            "Irgend ein Neonatologie-Fragebogen, den ich im Netz gefunden habe.",
           questionnaire: BLUEBOOK as Questionnaire,
+        },
+        {
+          name: "Situation",
+          description:
+            "Fragebogen aus dem Corona Science Projekt, mit dem die aktuelle Situation der Befragen erfasst wird.",
+          questionnaire: SITUATION as Questionnaire,
         },
         {
           name: OWN_QUESTIONNAIRE,
@@ -96,6 +115,7 @@ export default defineComponent({
       ],
       ownQuestionnaire: "",
       showOwnQuestionnaireModal: false,
+      response: undefined,
     };
   },
   mounted() {},
@@ -131,12 +151,11 @@ export default defineComponent({
     setAnswers(): void {
       if (!this.qData) return;
       try {
-        console.log(
-          this.qData.getQuestionnaireResponse(this.lang, {
+        this.response = this.qData.getQuestionnaireResponse(this.lang, {
             reset: true,
             includeID: true,
-          })
-        );
+          });
+        console.log(this.response);
         this.qData.resetResponse();
       } catch (error) {
         console.log("Es ging etwas schief beim Questionnaire speichern", error);
@@ -178,7 +197,7 @@ main {
   margin: 1em;
   font-weight: light;
 }
-#ownQuestionnaireModal {
+.modal {
   background-color: #ddd;
   width: 50%;
   height: 10em;
