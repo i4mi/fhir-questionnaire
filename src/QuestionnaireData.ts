@@ -665,6 +665,7 @@ export class QuestionnaireData {
             dependingQuestions: [],
             dependingQuestionsEnableBehaviour: _FHIRItem.enableBehavior,
             isEnabled: true,
+            isInvalid: false,
             initial: _FHIRItem.initial,
             readOnly: _FHIRItem.readOnly ? _FHIRItem.readOnly : false,
             options: this.setOptionsFromExtensions(_FHIRItem)

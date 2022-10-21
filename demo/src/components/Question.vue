@@ -69,7 +69,7 @@ export default defineComponent({
 <style scoped>
 .question {
   border-left: solid 1px white;
-  border-radius: 0.3em;
+  border-radius: 1px;
   padding: 0.3em 0.5em;
   margin-bottom: 0.5em;
 }
@@ -85,6 +85,7 @@ export default defineComponent({
 
 .question.invalid {
   border-left: solid 3px #d73e2e;
+  border-radius: 3px;
   background-color: #533;
 }
 

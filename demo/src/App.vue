@@ -33,6 +33,23 @@
         Es wurde noch kein Fragebogen ausgewählt.
       </p>
     </main>
+
+    <div v-if="showOwnQuestionnaireModal" id="ownQuestionnaireModal">
+      <textarea v-model="ownQuestionnaire"></textarea>
+      <button
+        @click="
+          () => {
+            showOwnQuestionnaireModal = false;
+            ownQuestionnaire = '';
+          }
+        "
+      >
+        abbrechen
+      </button>
+      <button :disabled="ownQuestionnaire === ''" @click="loadOwnQuestionnaire">
+        laden
+      </button>
+    </div>
   </div>
 </template>
 
@@ -77,6 +94,8 @@ export default defineComponent({
           questionnaire: {} as Questionnaire,
         },
       ],
+      ownQuestionnaire: "",
+      showOwnQuestionnaireModal: false,
     };
   },
   mounted() {},
@@ -89,17 +108,25 @@ export default defineComponent({
       if (q.questionnaire) {
         if (confirm(q.description + "\n\nDiesen Fragebogen laden?")) {
           if (q.name === OWN_QUESTIONNAIRE) {
-            console.log('eigener laden');
+            this.showOwnQuestionnaireModal = true;
           } else {
             this.qData = new QuestionnaireData(
               q.questionnaire,
               this.availableLanguages
             );
+            console.log(this.qData.getQuestions());
           }
         }
       } else {
         this.qData = undefined;
       }
+    },
+    loadOwnQuestionnaire() {
+      this.showOwnQuestionnaireModal = false;
+      this.qData = new QuestionnaireData(
+        JSON.parse(this.ownQuestionnaire),
+        this.availableLanguages
+      );
     },
     setAnswers(): void {
       if (!this.qData) return;
@@ -150,5 +177,18 @@ header #questionnaire-selector {
 main {
   margin: 1em;
   font-weight: light;
+}
+#ownQuestionnaireModal {
+  background-color: #ddd;
+  width: 50%;
+  height: 10em;
+  position: absolute;
+  margin-left: 25%;
+  padding: 1em;
+}
+
+#ownQuestionnaireModal textarea {
+  width: 100%;
+  height: 9em;
 }
 </style>
