@@ -27,7 +27,7 @@ export interface IQuestion {
     selectedAnswers: QuestionnaireResponseItemAnswer[];
     subItems?: IQuestion[];
     relatedResourceId?: string;
-    isInvalid?: boolean;
+    isInvalid: boolean;
     initial?: QuestionnaireItemInitial[];
     options?: IQuestionOptions;
 }
