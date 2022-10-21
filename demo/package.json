@@ -14,6 +14,7 @@
     "@i4mi/fhir_r4": "^2.0.0-beta.1",
     "vue": "^3.2.38"
   },
+  "author": "Gabriel Hess @ Institute for Medical Informatics (I4MI) - Bern University of Applied Science (BFH)",
   "devDependencies": {
     "@rushstack/eslint-patch": "^1.1.4",
     "@types/node": "^16.11.56",
