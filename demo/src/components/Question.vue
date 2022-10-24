@@ -1,35 +1,22 @@
 <template>
   <div
     v-if="question.isEnabled"
-    :class="
-      'question ' +
-      'question-' +
-      question.type +
-      (question.isInvalid ? ' invalid' : '')
-    "
-  >
+    :class="'question ' + 'question-' + question.type + (question.isInvalid ? ' invalid' : '')">
     <h2>
-      {{
-        (question.prefix ? question.prefix + ": " : "") +
-        question.label[language]
-      }}
+      {{ (question.prefix ? question.prefix + ': ' : '') + question.label[language] }}
     </h2>
     <!-- CHOICE Question -->
     <ul v-if="question.type === 'choice'">
       <li
         v-for="answer in question.answerOptions"
         :key="question.id + '-' + answer.code"
-        @click="onAnswer(question, answer)"
-      >
+        @click="onAnswer(question, answer)">
         <input
           :type="question.allowsMultipleAnswers ? 'checkbox' : 'radio'"
           :checked="isSelected(question, answer)"
           :name="question.id"
-          :id="answer.code.toString()"
-        />
-        <label for="answer.code.toString()">{{
-          answer.answer[language]
-        }}</label>
+          :id="answer.code.toString()" />
+        <label for="answer.code.toString()">{{ answer.answer[language] }}</label>
       </li>
     </ul>
 
@@ -41,40 +28,38 @@
         :key="subquestion.id"
         :isSelected="isSelected"
         :onAnswer="onAnswer"
-        language="language"
-      />
+        language="language" />
     </div>
   </div>
 </template>
 
 <script lang="ts">
-import { defineComponent } from "vue";
-import { IAnswerOption, IQuestion } from "@i4mi/fhir_questionnaire";
+import {defineComponent} from 'vue';
 
 export default defineComponent({
-  name: "QuestionComponent",
+  name: 'QuestionComponent',
   data() {
     return {};
   },
   props: {
     question: {
       type: Object, // as PropType<IQuestion>,
-      required: true,
+      required: true
     },
     onAnswer: {
       type: Function, //as PropType<(q: IQuestion, a: IAnswerOption) => void>,
-      required: true,
+      required: true
     },
     isSelected: {
       type: Function, // as PropType<(q: IQuestion, a: IAnswerOption) => boolean>,
-      required: true,
+      required: true
     },
     language: {
       type: String,
-      required: true,
-    },
+      required: true
+    }
   },
-  methods: {},
+  methods: {}
 });
 </script>
 
