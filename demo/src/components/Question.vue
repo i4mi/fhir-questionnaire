@@ -28,7 +28,7 @@
         :key="subquestion.id"
         :isSelected="isSelected"
         :onAnswer="onAnswer"
-        language="language" />
+        :language="language" />
     </div>
   </div>
 </template>

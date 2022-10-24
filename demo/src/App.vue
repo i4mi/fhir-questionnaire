@@ -100,17 +100,17 @@ export default defineComponent({
             'Der ZARIT Fragebogen dient pflegenden Angehörigen dazu, ihre eigene Belastung zu evaluieren. Der Fragebogen ist verfügbar in deutsch und französisch.',
           questionnaire: ZARIT as Questionnaire
         },
-        // {
-        //   name: 'Bluebook',
-        //   description: 'Irgend ein Neonatologie-Fragebogen, den ich im Netz gefunden habe.',
-        //   questionnaire: BLUEBOOK as Questionnaire
-        // },
-        // {
-        //   name: 'Situation',
-        //   description:
-        //     'Fragebogen aus dem Corona Science Projekt, mit dem die aktuelle Situation der Befragen erfasst wird.',
-        //   questionnaire: SITUATION as Questionnaire
-        // },
+        {
+          name: 'Bluebook',
+          description: 'Irgend ein Neonatologie-Fragebogen, den ich im Netz gefunden habe.',
+          questionnaire: BLUEBOOK as Questionnaire
+        },
+        {
+          name: 'Situation',
+          description:
+            'Fragebogen aus dem Corona Science Projekt, mit dem die aktuelle Situation der Befragen erfasst wird.',
+          questionnaire: SITUATION as Questionnaire
+        },
         {
           name: OWN_QUESTIONNAIRE,
           description: 'Laden Sie Ihren eigenen FHIR Questionnaire.',
