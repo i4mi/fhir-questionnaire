@@ -75,7 +75,7 @@ import QuestionComponent from './components/Question.vue';
 import ZARIT from '@/assets/questionnaires/zarit.json';
 import BLUEBOOK from '@/assets/questionnaires/bluebook.json';
 import SITUATION from '@/assets/questionnaires/situation.json';
-import {Questionnaire, QuestionnaireResponse} from '@i4mi/fhir_r4';
+import type {Questionnaire, QuestionnaireResponse} from '@i4mi/fhir_r4';
 import {QuestionnaireData} from '@i4mi/fhir_questionnaire';
 
 const OWN_QUESTIONNAIRE = '[ eigener Fragebogen ]';

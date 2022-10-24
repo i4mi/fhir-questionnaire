@@ -7,6 +7,10 @@ QuestionnaireData is a class that facilitates the rendering and handling of FHIR
 - ❗️ The class is based on the FHIR R4 (4.0.1) version of the Questionnaire ressource.
 
 See also the documentation of the [FHIR Questionnaire](http://hl7.org/fhir/R4/questionnaire.html) and [FHIR QuestionnaireResponse](http://hl7.org/fhir/R4/questionnaireresponse.html) ressources.
+
+## Demo App
+There is a [small demo app](./demo) written in Vue.js, that demonstrates the use of the library with different FHIR Questionnaires.
+
 ## Basic use
 ### Setup
 For every questionnaire you want to handle, you need to initialize a QuestionnaireData instance, providing the FHIR questionnaire resource as a JSON object, and at least one shorthand for an available language:
