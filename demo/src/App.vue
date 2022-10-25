@@ -108,7 +108,7 @@ export default defineComponent({
         {
           name: 'COVID Situation',
           description:
-            'Fragebogen aus dem Corona Science Projekt, mit dem die aktuelle Situation der Befragen erfasst wird.',
+            'Fragebogen aus dem Corona Science Projekt, mit dem die aktuelle Situation der Befragen erfasst wird. Dieser Fragebogen verfügt über voneinander abhängige Fragen sowie über die "unselect-others"-Extension, bei der eine Antwort auf eine Multiple-Choice-Frage andere Antworten ausschliessen kann.',
           questionnaire: SITUATION as Questionnaire
         },
         {

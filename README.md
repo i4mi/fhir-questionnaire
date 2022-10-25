@@ -123,9 +123,9 @@ Not all types of QuestionnaireItems are currently supported by QuestionnaireData
 |REFERENCE| 🟩 supported        | 🟩 supported     | 🟥 not implemented     | 🟥 not implemented  |
 |QUANTITY | 🟩 supported        | 🟩 supported     | 🟩 supported (1)       | 🟥 not implemented  |
 
-(1) QUANTITY items need an initial value for calculated expressions to work.
-(2) Support of depending questions is different for different operators.
-(3) Support depends on type of the choice items, only for single choice questions.
+- (1) QUANTITY items need an initial value for calculated expressions to work.
+- (2) Support of depending questions is different for different operators.
+- (3) Support depends on type of the choice items, only for single choice questions.
 
 ## Methods
 ### serialize(): string
