@@ -1,6 +1,6 @@
 import fhirpath from 'fhirpath';
-import { Questionnaire, QuestionnaireResponse, QuestionnaireResponseStatus, QuestionnaireResponseItem, QuestionnaireItemType,
-    Resource, ValueSet, QuestionnaireItem, Reference, QuestionnaireResponseItemAnswer, Extension, code, QuestionnaireItemOperator, readI18N} from "@i4mi/fhir_r4";
+import { Questionnaire, QuestionnaireResponse, QuestionnaireEnableWhenBehavior, Reference, QuestionnaireResponseStatus, QuestionnaireResponseItem, QuestionnaireItemType,
+    Resource, ValueSet, QuestionnaireItem, QuestionnaireResponseItemAnswer, Extension, code, QuestionnaireItemOperator, readI18N} from "@i4mi/fhir_r4";
 import { IQuestion, IAnswerOption, IQuestionOptions, ItemControlType } from "./IQuestion";
 
 const UNSELECT_OTHERS_EXTENSION = "http://midata.coop/extensions/valueset-unselect-others";
@@ -73,6 +73,231 @@ const COMPLEX_VALUE_X = [
         }
     }
 ];
+
+/**
+* Evaluates a given answer with a criterium and an operator, for enabling and disabling depending questions.
+* @param _answer        the given answer, as string (also for code etc) or as a number (when using GE, GT, LE & LT operator)
+* @param _criterium     the criterium against which the given answer is compared
+* @param _operator      defines if the answer and criterium must be equal or not equal etc.
+* @returns              true if answer and criterium match with the given operator, false if not so.
+**/
+function evaluateAnswersForDependingQuestion(_answer: string | number | boolean | Array<any>, _criterium: string | number | boolean, _operator: QuestionnaireItemOperator): boolean {
+    // make sure we have both comparants as number if one is
+    if (typeof _answer === 'number' && typeof _criterium !== 'number') {
+        _criterium = Number(_criterium);
+    } else if (typeof _criterium === 'number' && typeof _answer !== 'number') {
+        _answer = Number(_answer);
+    }
+
+    switch (_operator) {
+        case QuestionnaireItemOperator.EXISTS:
+            if (_criterium) {
+                return Array.isArray(_answer)
+                    ? _answer.length > 0
+                    : _answer !== undefined;
+            } else {
+                return Array.isArray(_answer)
+                ? _answer.length === 0
+                : _answer === undefined;
+            }
+        case QuestionnaireItemOperator.E:
+            return _answer === _criterium;
+        case QuestionnaireItemOperator.NE:
+            return _answer != _criterium && _answer !== undefined;
+        case QuestionnaireItemOperator.GE:
+            return _answer >= _criterium;
+        case QuestionnaireItemOperator.LE:
+            return _answer <= _criterium;
+        case QuestionnaireItemOperator.GT:
+            return _answer > _criterium;
+        case QuestionnaireItemOperator.LT:
+            return _answer < _criterium;
+        default: return false;
+    }
+}
+
+/**
+ * Recursively iterates through question items to check for completeness
+ * @param _question       the question that should be checked for completeness with all its subquestions
+ * @param _onlyRequired   parameter that indicates if only questions that are actually are marked 
+ *                        as required should be required
+ * @returns               true if the question and all its subquestions are complete
+ *                        false if at least one (sub)question is not complete
+ */
+function recursivelyCheckCompleteness(_question: IQuestion[], _onlyRequired: boolean): boolean {
+    var isComplete = true;
+    _question.forEach((question) => {
+        if (question.type === 'group' && question.subItems) {
+            isComplete = isComplete
+            ? recursivelyCheckCompleteness(question.subItems, _onlyRequired)
+            : false;
+        } else if (question.readOnly || !question.isEnabled) {
+            // do nothing
+        } else {
+            if (question.required || !_onlyRequired) {
+                isComplete = isComplete
+                ? question.selectedAnswers && question.selectedAnswers.length > 0
+                : false;
+            }
+        }
+        // after the first item is not complete, we don't have to look any further
+        if (!isComplete) return false;
+    });
+    return isComplete;
+}
+
+/**
+* Recursively iterates through nested IQuestions and extracts the given answers and adds
+* it to a given array as FHIR QuestionnaireResponseItem
+* @param question      an array of (possibly nested) IQuestions
+* @param responseItems the array to fill with the FHIR QuestionnaireResponseItems
+* @returns             the given array
+* @throws              an error if answers are not valid
+**/
+function mapIQuestionToQuestionnaireResponseItem(_question: IQuestion[], _responseItems: QuestionnaireResponseItem[], _language: string): QuestionnaireResponseItem[] {
+    _question.forEach((question) => {
+        question.isInvalid = false;
+        if (question.type === QuestionnaireItemType.GROUP) {
+            if (question.subItems && question.subItems.length > 0) {
+                _responseItems = mapIQuestionToQuestionnaireResponseItem(question.subItems, _responseItems, _language);
+            } else {
+                question.isInvalid = true;
+                throw new Error(`Invalid question set: IQuestion with id ${question.id} is group type, but has no subItems.`);
+            }
+        } else if (question.isEnabled){
+            // some validation
+            if (question.required && question.selectedAnswers.length === 0) {
+                question.isInvalid = true;
+                throw new Error(`Invalid answer set: IQuestion with id ${question.id} is mandatory, but not answered.`);
+            } else if (!question.allowsMultipleAnswers && question.selectedAnswers.length > 1){
+                question.isInvalid = true;
+                throw new Error(`Invalid answer set: IQuestion with id ${question.id} allows only one answer, but has more.`);
+            } else {
+                const responseItem = {
+                    linkId: question.id,
+                    text: question.label[_language],
+                    answer: new Array<QuestionnaireResponseItemAnswer>()
+                };
+                question.selectedAnswers.forEach((answer) => {
+                    if (answer.valueCoding) {
+                        // find translated display for answer valueCoding
+                        const answerDisplayAllLanguages = (question.answerOptions.find((answerOption) => {
+                            return answerOption.code.valueCoding && answer.valueCoding && answerOption.code.valueCoding.code === answer.valueCoding.code;
+                        }) || {answer: ''}).answer;
+                        // some answer options (e.g. zip code locations) have only one language set
+                        const answerDisplay = answerDisplayAllLanguages
+                                                ? answerDisplayAllLanguages[_language]
+                                                    ? answerDisplayAllLanguages[_language]
+                                                    : answerDisplayAllLanguages[Object.keys(answerDisplayAllLanguages)[0]]
+                                                : '';
+                        responseItem.answer.push({
+                            valueCoding: {
+                                system: answer.valueCoding.system,
+                                code: answer.valueCoding.code,
+                                display: answerDisplay,
+                                extension: answer.valueCoding.extension
+                            }
+                        });
+                    } else {
+                        responseItem.answer.push(answer);
+                    }
+                });
+
+                if (question.subItems && question.subItems.length > 0) {
+                    (responseItem as QuestionnaireResponseItem).item = [];
+                    mapIQuestionToQuestionnaireResponseItem(question.subItems, (responseItem as QuestionnaireResponseItem).item || [], _language);
+                }
+                // add to array
+                _responseItems.push(responseItem);
+            }
+
+        }
+    });
+    return _responseItems;
+}
+
+/*
+* Checks if a item has a given extension, and returns the value of the extension (when one of the following:
+*   - valueCodeableConcept
+*   - valueDuration
+*   - valueString
+*   - valueInteger
+*   - valueDate
+*   - valueExpression
+*   - valueBoolean (CAVE: when the valueBoolean is FALSE, the method will return FALSE!)
+*   )
+*   If the extension exists with another value, the method returns TRUE.
+*   If the extension does not exist, the method returns UNDEFINED.
+*/
+function hasExtension(_extensionURL: string, _extensionSystem: string | undefined, _item: QuestionnaireItem): any {
+    let returnValue: any = undefined;
+    if (_item.extension) {
+        _item.extension.forEach((extension) => {
+            if (!returnValue && extension.url === _extensionURL) {
+                if (_extensionSystem && extension.valueCodeableConcept && extension.valueCodeableConcept.coding) {
+                    extension.valueCodeableConcept.coding.forEach((coding) => {
+                        if (coding.system === _extensionSystem) {
+                            returnValue = coding;
+                        }
+                    });
+                }
+                if (extension.valueDuration && extension.valueDuration.system && extension.valueDuration.system === _extensionSystem) {
+                    returnValue = extension.valueDuration;
+                }
+                if (extension.valueInteger != undefined) {
+                    returnValue = extension.valueInteger;
+                }
+                if (extension.valueString) {
+                    returnValue = extension.valueString;
+                }
+                if (extension.valueBoolean) {
+                    returnValue = extension.valueBoolean;
+                }
+                if (extension.valueDate) {
+                    returnValue = extension.valueDate;
+                }
+                if (extension.valueExpression && extension.valueExpression.language && extension.valueExpression.language=== _extensionSystem) {
+                    returnValue = extension.valueExpression;
+                }
+                return (returnValue
+                    ? returnValue
+                    : true);
+            }
+        });
+    }
+
+    return returnValue;
+}
+
+/**
+ * Extracts IQuestionOptions from a QuestionnaireItem
+ * @param _FHIRItem     the QuestionnaireItem to extract the options from
+ * @returns             an IQuestionOptions object
+ */
+function setOptionsFromExtensions(_FHIRItem: QuestionnaireItem): IQuestionOptions {
+    const itemControlExtension = hasExtension(ITEM_CONTROL_EXTENSION, ITEM_CONTROL_EXTENSION_SYSTEM, _FHIRItem);
+    const calculatedExpressionExtension = hasExtension(CALCULATED_EXPRESSION_EXTENSION, 'text/fhirpath', _FHIRItem);
+    const initialExpressionExtension = hasExtension(INITIAL_EXPRESSION_EXTENSION, 'text/fhirpath', _FHIRItem);
+
+    let returnValue: IQuestionOptions = {
+        min: hasExtension(MIN_VALUE_EXTENSION, undefined, _FHIRItem),
+        max: hasExtension(MAX_VALUE_EXTENSION, undefined, _FHIRItem),
+        format: hasExtension(ENTRY_FORMAT_EXTENSION, undefined, _FHIRItem),
+        sliderStep: hasExtension(SLIDER_STEP_VALUE_EXTENSION, undefined, _FHIRItem),
+        unit: hasExtension(UNIT_EXTENSION, 'https://ucum.org', _FHIRItem),
+        calculatedExpression: calculatedExpressionExtension ? calculatedExpressionExtension.expression : undefined,
+        initialExpression: initialExpressionExtension ? initialExpressionExtension.expression : undefined
+    };
+
+    if (itemControlExtension) {
+        Object.values(ItemControlType).forEach((typeCode) => {
+            if (!returnValue.controlType && itemControlExtension.code === typeCode) {
+                returnValue.controlType = typeCode;
+            }
+        });
+    }
+    return returnValue;
+}
 
 export class QuestionnaireData {
     // the FHIR resources we work on
@@ -283,58 +508,44 @@ export class QuestionnaireData {
         }
 
         _question.dependingQuestions.forEach((dependingQuestion) => {
-            dependingQuestion.dependingQuestion.isEnabled = (_question.dependingQuestionsEnableBehaviour == 'all'); // when it's all we start with true, when undefined or any with false
+            dependingQuestion.dependingQuestion.isEnabled = (_question.dependingQuestionsEnableBehaviour == QuestionnaireEnableWhenBehavior.ALL); // when it's all we start with true, when undefined or any with false
             dependingQuestion.criteria.forEach(criterium => {
-                let evaluatesToTrue = false;
+                /**
+                let evaluatesToTrue = false; 
                 if (criterium.answer.valueCoding && criterium.answer.valueCoding.code
                     && _answer.code.valueCoding && _answer.code.valueCoding.code) {
-
-                    evaluatesToTrue = this.evaluateAnswersForDependingQuestion(_answer.code.valueCoding.code, criterium.answer.valueCoding.code, criterium.operator);
+                    evaluatesToTrue = evaluateAnswersForDependingQuestion(_answer.code.valueCoding.code, criterium.answer.valueCoding.code, criterium.operator);
                 } // check if we have valueString and question is not already enabled
                 else if (criterium.answer.valueString && _answer.code.valueString && !dependingQuestion.dependingQuestion.isEnabled) {
-                    evaluatesToTrue = this.evaluateAnswersForDependingQuestion(_answer.code.valueString, criterium.answer.valueString, criterium.operator);
+                    evaluatesToTrue = evaluateAnswersForDependingQuestion(_answer.code.valueString, criterium.answer.valueString, criterium.operator);
                 }
-                dependingQuestion.dependingQuestion.isEnabled = (_question.dependingQuestionsEnableBehaviour == 'all')
+                */
+                let evaluatesToTrue = false;
+                const crit = criterium.answer.valueBoolean ||
+                    criterium.answer.valueCoding?.code ||
+                    criterium.answer.valueDate ||
+                    criterium.answer.valueDateTime ||
+                    criterium.answer.valueTime ||
+                    criterium.answer.valueDecimal ||
+                    criterium.answer.valueString ||
+                    criterium.answer.valueInteger;
+                const answ = _answer.code.valueBoolean ||
+                    _answer.code.valueCoding?.code ||
+                    _answer.code.valueDate ||
+                    _answer.code.valueDateTime ||
+                    _answer.code.valueDecimal ||
+                    _answer.code.valueString ||
+                    _answer.code.valueInteger;
+                if (crit && answ) {
+                    evaluatesToTrue = evaluateAnswersForDependingQuestion (crit, answ, criterium.operator)
+                }
+
+                dependingQuestion.dependingQuestion.isEnabled = (_question.dependingQuestionsEnableBehaviour == QuestionnaireEnableWhenBehavior.ALL)
                                                                     ? (evaluatesToTrue && dependingQuestion.dependingQuestion.isEnabled) // only true, when criteria before were true
                                                                     : (evaluatesToTrue || dependingQuestion.dependingQuestion.isEnabled) // true when evaluates to true or questions before were true
             });
         });
     }
-
-    /**
-    * Evaluates a given answer with a criterium and an operator, for enabling and disabling depending questions.
-    * @param _answer        the given answer, as string (also for code etc) or as a number (when using GE, GT, LE & LT operator)
-    * @param _criterium     the criterium against which the given answer is compared
-    * @param _operator      defines if the answer and criterium must be equal or not equal etc.
-    * @returns              true if answer and criterium match with the given operator, false if not so.
-    **/
-    private evaluateAnswersForDependingQuestion(_answer: string | number , _criterium: string | number, _operator: QuestionnaireItemOperator): boolean {
-        // make sure we have both comparants as number if one is
-        if (typeof _answer === 'number' && typeof _criterium === 'string') {
-            _criterium = Number(_criterium);
-        } else if (typeof _criterium === 'number' && typeof _answer === 'string') {
-            _answer = Number(_answer);
-        }
-
-        switch (_operator) {
-            case QuestionnaireItemOperator.EXISTS:
-                return _answer !== undefined;
-            case QuestionnaireItemOperator.E:
-                return _answer === _criterium;
-            case QuestionnaireItemOperator.GE:
-                return _answer >= _criterium;
-            case QuestionnaireItemOperator.LE:
-                return _answer <= _criterium;
-            case QuestionnaireItemOperator.GT:
-                return _answer > _criterium;
-            case QuestionnaireItemOperator.LT:
-                return _answer < _criterium;
-            case QuestionnaireItemOperator.NE:
-                return _answer != _criterium && _answer !== undefined;
-            default: return false;
-        }
-    }
-
 
     /**
     * Checks if a given IAnswerOption is already selected for a IQuestion.
@@ -458,7 +669,7 @@ export class QuestionnaireData {
             source: options.patient,
             id: options.includeID ? this.responseIdToSynchronize : undefined,
             meta: {},
-            item: this.mapIQuestionToQuestionnaireResponseItem(this.items, new Array<QuestionnaireResponseItem>(),_language)
+            item: mapIQuestionToQuestionnaireResponseItem(this.items, new Array<QuestionnaireResponseItem>(),_language)
         };
 
         // stuff to do for items with calculated expression
@@ -519,13 +730,13 @@ export class QuestionnaireData {
                 let parentItem = recursivelyFindId(item.parentLinkId, fhirResponse.item);
                 if (parentItem) {
                     if (parentItem.item) {
-                        parentItem.item.push(this.mapIQuestionToQuestionnaireResponseItem([item.item], new Array<QuestionnaireResponseItem>(), _language)[0]);
+                        parentItem.item.push(mapIQuestionToQuestionnaireResponseItem([item.item], new Array<QuestionnaireResponseItem>(), _language)[0]);
                     } else {
-                        parentItem.item = [this.mapIQuestionToQuestionnaireResponseItem([item.item], new Array<QuestionnaireResponseItem>(), _language)[0]];
+                        parentItem.item = [mapIQuestionToQuestionnaireResponseItem([item.item], new Array<QuestionnaireResponseItem>(), _language)[0]];
                     }
                 }
             } else {
-                fhirResponse.item.push(this.mapIQuestionToQuestionnaireResponseItem([item.item], new Array<QuestionnaireResponseItem>(), _language)[0]);
+                fhirResponse.item.push(mapIQuestionToQuestionnaireResponseItem([item.item], new Array<QuestionnaireResponseItem>(), _language)[0]);
             }
         });
         if (options.reset) {
@@ -555,99 +766,7 @@ export class QuestionnaireData {
     */
     isResponseComplete(_onlyRequired?: boolean): boolean {
         _onlyRequired = _onlyRequired === true ? true : false;
-        return this.recursivelyCheckCompleteness(this.items, _onlyRequired);
-    }
-
-    private recursivelyCheckCompleteness(_question: IQuestion[], _onlyRequired: boolean): boolean {
-        var isComplete = true;
-        _question.forEach((question) => {
-            if (question.type === 'group' && question.subItems) {
-                isComplete = isComplete
-                ? this.recursivelyCheckCompleteness(question.subItems, _onlyRequired)
-                : false;
-            } else if (question.readOnly || !question.isEnabled) {
-                // do nothing
-            } else {
-                if (question.required || !_onlyRequired) {
-                    isComplete = isComplete
-                    ? question.selectedAnswers && question.selectedAnswers.length > 0
-                    : false;
-                }
-            }
-            // after the first item is not complete, we don't have to look any further
-            if (!isComplete) return false;
-        });
-        return isComplete;
-    }
-
-    /**
-    * Recursively iterates through nested IQuestions and extracts the given answers and adds
-    * it to a given array as FHIR QuestionnaireResponseItem
-    * @param question      an array of (possibly nested) IQuestions
-    * @param responseItems the array to fill with the FHIR QuestionnaireResponseItems
-    * @returns             the given array
-    * @throws              an error if answers are not valid
-    **/
-    private mapIQuestionToQuestionnaireResponseItem(_question: IQuestion[], _responseItems: QuestionnaireResponseItem[], _language: string): QuestionnaireResponseItem[] {
-        _question.forEach((question) => {
-            question.isInvalid = false;
-            if (question.type === QuestionnaireItemType.GROUP) {
-                if (question.subItems && question.subItems.length > 0) {
-                    _responseItems = this.mapIQuestionToQuestionnaireResponseItem(question.subItems, _responseItems, _language);
-                } else {
-                    question.isInvalid = true;
-                    throw new Error(`Invalid question set: IQuestion with id ${question.id} is group type, but has no subItems.`);
-                }
-            } else if (question.isEnabled){
-                // some validation
-                if (question.required && question.selectedAnswers.length === 0) {
-                    question.isInvalid = true;
-                    throw new Error(`Invalid answer set: IQuestion with id ${question.id} is mandatory, but not answered.`);
-                } else if (!question.allowsMultipleAnswers && question.selectedAnswers.length > 1){
-                    question.isInvalid = true;
-                    throw new Error(`Invalid answer set: IQuestion with id ${question.id} allows only one answer, but has more.`);
-                } else {
-                    const responseItem = {
-                        linkId: question.id,
-                        text: question.label[_language],
-                        answer: new Array<QuestionnaireResponseItemAnswer>()
-                    };
-                    question.selectedAnswers.forEach((answer) => {
-                        if (answer.valueCoding) {
-                            // find translated display for answer valueCoding
-                            const answerDisplayAllLanguages = (question.answerOptions.find((answerOption) => {
-                                return answerOption.code.valueCoding && answer.valueCoding && answerOption.code.valueCoding.code === answer.valueCoding.code;
-                            }) || {answer: ''}).answer;
-                            // some answer options (e.g. zip code locations) have only one language set
-                            const answerDisplay = answerDisplayAllLanguages
-                                                    ? answerDisplayAllLanguages[_language]
-                                                        ? answerDisplayAllLanguages[_language]
-                                                        : answerDisplayAllLanguages[Object.keys(answerDisplayAllLanguages)[0]]
-                                                    : '';
-                            responseItem.answer.push({
-                                valueCoding: {
-                                    system: answer.valueCoding.system,
-                                    code: answer.valueCoding.code,
-                                    display: answerDisplay,
-                                    extension: answer.valueCoding.extension
-                                }
-                            });
-                        } else {
-                            responseItem.answer.push(answer);
-                        }
-                    });
-
-                    if (question.subItems && question.subItems.length > 0) {
-                        (responseItem as QuestionnaireResponseItem).item = [];
-                        this.mapIQuestionToQuestionnaireResponseItem(question.subItems, (responseItem as QuestionnaireResponseItem).item || [], _language);
-                    }
-                    // add to array
-                    _responseItems.push(responseItem);
-                }
-
-            }
-        });
-        return _responseItems;
+        return recursivelyCheckCompleteness(this.items, _onlyRequired);
     }
 
     /**
@@ -668,20 +787,27 @@ export class QuestionnaireData {
             isInvalid: false,
             initial: _FHIRItem.initial,
             readOnly: _FHIRItem.readOnly ? _FHIRItem.readOnly : false,
-            options: this.setOptionsFromExtensions(_FHIRItem)
+            options: setOptionsFromExtensions(_FHIRItem)
         }
 
         // detect question type
         switch (_FHIRItem.type)  {
             case QuestionnaireItemType.GROUP:
-            case QuestionnaireItemType.CHOICE:
-            case QuestionnaireItemType.INTEGER:
-            case QuestionnaireItemType.STRING:
             case QuestionnaireItemType.DISPLAY:
-            case QuestionnaireItemType.QUANTITY:
+            case QuestionnaireItemType.BOOLEAN:
+            case QuestionnaireItemType.DECIMAL:
+            case QuestionnaireItemType.INTEGER:
             case QuestionnaireItemType.DATE:
+            case QuestionnaireItemType.DATETIME:
+            case QuestionnaireItemType.TIME:
+            case QuestionnaireItemType.STRING:
             case QuestionnaireItemType.TEXT:
+            case QuestionnaireItemType.CHOICE:
             case QuestionnaireItemType.OPEN_CHOICE:
+            case QuestionnaireItemType.REFERENCE: 
+            case QuestionnaireItemType.ATTACHMENT:
+            case QuestionnaireItemType.URL:
+            case QuestionnaireItemType.QUANTITY:
                 question.type = _FHIRItem.type;
                 break;
             default:
@@ -767,14 +893,13 @@ export class QuestionnaireData {
                     }
 
                     // now we know all answerOptions, we can link the dependingAnswers from the temp array
-
                     answerOptionsToUnselect.forEach((answerPair) => {
                         if (question.answerOptions) {
                             const disabler = question.answerOptions.find((answerOption) => {
                                                 return answerOption.code.valueCoding && answerOption.code.valueCoding.code === answerPair.disabler;
                                             });
                             let answersToBeDisabled: Array<code> = new Array<code>();
-                            if (answerPair.toBeDisabled == {mustAllOthersBeDisabled: true}) {
+                            if ((answerPair.toBeDisabled as {mustAllOthersBeDisabled: boolean}).mustAllOthersBeDisabled) {
                                 // add all but the disabler option to array
                                 question.answerOptions.map((answerOption) => {
                                     if (answerOption.code.valueCoding && answerOption.code.valueCoding.code && answerOption.code.valueCoding.code !== answerPair.disabler) {
@@ -818,7 +943,7 @@ export class QuestionnaireData {
                                 });
                             } else { // when not, use the same text for every language
                                 Object.keys(answerOptionText).forEach(key => {
-                                    answerOptionText[key] = answerOption.valueCoding?.display || '';
+                                    answerOptionText[key] = answerOption.valueCoding?.display || answerOption.valueCoding?.code || '';
                                 });
                             }
 
@@ -839,7 +964,7 @@ export class QuestionnaireData {
                                 }
                             });
                         }
-
+                      
                         return {
                             answer: answerOptionText,
                             code: answerOption
@@ -849,8 +974,20 @@ export class QuestionnaireData {
                 } else { // no answerValueSet available
                     console.warn('CHOICE questiony need answerOptions or an answerValueSet. No embedded answerValueSet found for ' + _FHIRItem.answerValueSet);
                 }
-            } else if (_FHIRItem.type === QuestionnaireItemType.INTEGER || _FHIRItem.type === QuestionnaireItemType.STRING) {
-                // TODO: really nothing to do here?
+            } else if (
+                _FHIRItem.type === QuestionnaireItemType.INTEGER || 
+                _FHIRItem.type === QuestionnaireItemType.DECIMAL ||
+                _FHIRItem.type === QuestionnaireItemType.REFERENCE || 
+                _FHIRItem.type === QuestionnaireItemType.DATE ||  
+                _FHIRItem.type === QuestionnaireItemType.DATETIME || 
+                _FHIRItem.type === QuestionnaireItemType.TIME || 
+                _FHIRItem.type === QuestionnaireItemType.TEXT || 
+                _FHIRItem.type === QuestionnaireItemType.STRING ||
+                _FHIRItem.type === QuestionnaireItemType.BOOLEAN ||
+                _FHIRItem.type === QuestionnaireItemType.ATTACHMENT ||
+                _FHIRItem.type === QuestionnaireItemType.URL
+            ) {
+                // these do not need preset answer options, so nothing to do here
             } else if (_FHIRItem.type === QuestionnaireItemType.DISPLAY) {
                 question.readOnly = true;
             } else if (_FHIRItem.type === QuestionnaireItemType.QUANTITY) {
@@ -875,47 +1012,18 @@ export class QuestionnaireData {
                         }
                     ]
                 } else {
-                    if (this.hasExtension(HIDDEN_EXTENSION, undefined, _FHIRItem) == undefined) {
+                    if (hasExtension(HIDDEN_EXTENSION, undefined, _FHIRItem) == undefined) {
                         console.warn('QuestionnaireData: Item type QUANTITY is currently only supported with slider extension', _FHIRItem);
                     }
                 }
-            } else if (_FHIRItem.type === QuestionnaireItemType.DATE) {
-                // nothing to do
+
             } else if (_FHIRItem.type === QuestionnaireItemType.OPEN_CHOICE) {
                 // nothing to do
-            } else if (_FHIRItem.type === QuestionnaireItemType.TEXT) {
-                // nothing to do
             } else {
-                // TODO: implement other answerOptions
-                console.warn('QuestionnaireData: Currently only items of type GROUP, CHOICE, INTEGER, STRING, TEXT QUANTITY, DATE, OPEN_CHOICE or DISPLAY are supported.', _FHIRItem);
+                console.warn('QuestionnaireData: Currently items of type ' + _FHIRItem.type +' are not supported!', _FHIRItem);
             }
         }
         return question as IQuestion;
-    }
-
-    private setOptionsFromExtensions(_FHIRItem: QuestionnaireItem): IQuestionOptions | undefined {
-        const itemControlExtension = this.hasExtension(ITEM_CONTROL_EXTENSION, ITEM_CONTROL_EXTENSION_SYSTEM, _FHIRItem);
-        const calculatedExpressionExtension = this.hasExtension(CALCULATED_EXPRESSION_EXTENSION, 'text/fhirpath', _FHIRItem);
-        const initialExpressionExtension = this.hasExtension(INITIAL_EXPRESSION_EXTENSION, 'text/fhirpath', _FHIRItem);
-
-        let returnValue: IQuestionOptions = {
-            min: this.hasExtension(MIN_VALUE_EXTENSION, undefined, _FHIRItem),
-            max: this.hasExtension(MAX_VALUE_EXTENSION, undefined, _FHIRItem),
-            format: this.hasExtension(ENTRY_FORMAT_EXTENSION, undefined, _FHIRItem),
-            sliderStep: this.hasExtension(SLIDER_STEP_VALUE_EXTENSION, undefined, _FHIRItem),
-            unit: this.hasExtension(UNIT_EXTENSION, 'https://ucum.org', _FHIRItem),
-            calculatedExpression: calculatedExpressionExtension ? calculatedExpressionExtension.expression : undefined,
-            initialExpression: initialExpressionExtension ? initialExpressionExtension.expression : undefined
-        };
-
-        if (itemControlExtension) {
-            Object.values(ItemControlType).forEach((typeCode) => {
-                if (!returnValue.controlType && itemControlExtension.code === typeCode) {
-                    returnValue.controlType = typeCode;
-                }
-            });
-        }
-        return returnValue;
     }
 
     /**
@@ -934,7 +1042,7 @@ export class QuestionnaireData {
             if (item.item) {
                 item.item = this.filterOutHiddenItems(item.item, item);
             }
-            const hasHidden = this.hasExtension(HIDDEN_EXTENSION, undefined, item)
+            const hasHidden = hasExtension(HIDDEN_EXTENSION, undefined, item)
             if ( hasHidden ) {
                 this.hiddenFhirItems.push({
                     item: this.mapQuestionnaireItemToIQuestion(item),
@@ -960,82 +1068,73 @@ export class QuestionnaireData {
         }
 
         if (_FHIRItem.enableWhen) {
+            console.log('link depending question', _FHIRItem, _currentQuestion);
             _currentQuestion.isEnabled = false;
             _FHIRItem.enableWhen.forEach((determinator) => {
-                if (determinator.answerString || determinator.answerCoding) {
-                    dependingQuestions.push({
-                        id: determinator.question,
-                        reference: _currentQuestion,
-                        operator: determinator.operator,
-                        answer: determinator.answerCoding
-                                    ? {
-                                        valueCoding: determinator.answerCoding
-                                    }
-                                    : {
-                                        valueString: determinator.answerString
-                                    }
-                    });
-                } else {
-                    // TODO: implement other types when needed
-                    console.warn(`QuestionnaireData.ts: Currently only answerCoding and answerString supported for depending questions (Question ${_FHIRItem.linkId})`);
+                const dependingObject = {
+                    id: determinator.question,
+                    reference: _currentQuestion,
+                    operator: determinator.operator,
+                    answer: undefined as QuestionnaireResponseItemAnswer | undefined
+                };
+                switch(determinator.operator) {
+                    case QuestionnaireItemOperator.EXISTS:
+                        if (determinator.answerBoolean) {
+                            dependingObject.answer = { valueBoolean: determinator.answerBoolean };
+                        } else {
+                            console.warn(`QuestionnaireData.ts: Depending questions with operator EXISTS needs answerBoolean (Question ${_FHIRItem.linkId})`);
+                        }
+                        break;
+                    case QuestionnaireItemOperator.NE:
+                    case QuestionnaireItemOperator.E:
+                        if (determinator.answerString) {
+                            dependingObject.answer = { valueString: determinator.answerString };
+                        } else if (determinator.answerCoding) {
+                            dependingObject.answer = { valueCoding: determinator.answerCoding };
+                        } else if (determinator.answerDecimal) {
+                            dependingObject.answer = { valueDecimal: determinator.answerDecimal };
+                        } else if (determinator.answerInteger) {
+                            dependingObject.answer = { valueInteger: determinator.answerInteger };
+                        } else if (determinator.answerDate) {
+                            dependingObject.answer = { valueDate: determinator.answerDate };
+                        } else if (determinator.answerDateTime) {
+                            dependingObject.answer = { valueDateTime: determinator.answerDateTime };
+                        } else if (determinator.answerTime) {
+                            dependingObject.answer = { valueTime: determinator.answerTime };
+                        } else if (determinator.answerBoolean) {
+                                dependingObject.answer = { valueBoolean: determinator.answerBoolean };
+                        } else {
+                            console.warn(`QuestionnaireData.ts: Currently only answerCoding, answerString, answerDecimal, answerInteger, answerDate, answerDateTime, answerBoolean and answerTime are supported for depending questions with operators "=" and "!=" (Question ${_FHIRItem.linkId})`);
+                        }
+                        break;
+                    case QuestionnaireItemOperator.GT:
+                    case QuestionnaireItemOperator.LT:
+                    case QuestionnaireItemOperator.GE:
+                    case QuestionnaireItemOperator.LE:
+                        if (determinator.answerDecimal) {
+                            dependingObject.answer = { valueDecimal: determinator.answerDecimal };
+                        } else if (determinator.answerInteger) {
+                            dependingObject.answer = { valueInteger: determinator.answerInteger };
+                        } else if (determinator.answerDate) {
+                            dependingObject.answer ={ valueDate: determinator.answerDate };
+                        } else if (determinator.answerDateTime) {
+                            dependingObject.answer = { valueDateTime: determinator.answerDateTime };
+                        } else if (determinator.answerTime) {
+                            dependingObject.answer = { valueTime: determinator.answerTime };
+                        } else {
+                            console.warn(`QuestionnaireData.ts: Currently only answerDecimal, answerInteger, answerDate, answerDateTime and answerTime are supported for depending questions with operators "<", ">", ">=" and ">=" (Question ${_FHIRItem.linkId})`);
+                        }
+                        break;
+                }
+                if (dependingObject.answer) {
+                    dependingQuestions.push(dependingObject);
                 }
             });
         }
         return dependingQuestions;
     }
 
-    /*
-    * Checks if a item has a given extension, and returns the value of the extension (when one of the following:
-    *   - valueCodeableConcept
-    *   - valueDuration
-    *   - valueString
-    *   - valueInteger
-    *   - valueDate
-    *   - valueExpression
-    *   - valueBoolean (CAVE: when the valueBoolean is FALSE, the method will return FALSE!)
-    *   )
-    *   If the extension exists with another value, the method returns TRUE.
-    *   If the extension does not exist, the method returns UNDEFINED.
-    */
-    private hasExtension(_extensionURL: string, _extensionSystem: string | undefined, _item: QuestionnaireItem): any {
-        let returnValue: any = undefined;
-        if (_item.extension) {
-            _item.extension.forEach((extension) => {
-                if (!returnValue && extension.url === _extensionURL) {
-                    if (_extensionSystem && extension.valueCodeableConcept && extension.valueCodeableConcept.coding) {
-                        extension.valueCodeableConcept.coding.forEach((coding) => {
-                            if (coding.system === _extensionSystem) {
-                                returnValue = coding;
-                            }
-                        });
-                    }
-                    if (extension.valueDuration && extension.valueDuration.system && extension.valueDuration.system === _extensionSystem) {
-                        returnValue = extension.valueDuration;
-                    }
-                    if (extension.valueInteger != undefined) {
-                        returnValue = extension.valueInteger;
-                    }
-                    if (extension.valueString) {
-                        returnValue = extension.valueString;
-                    }
-                    if (extension.valueBoolean) {
-                        returnValue = extension.valueBoolean;
-                    }
-                    if (extension.valueDate) {
-                        returnValue = extension.valueDate;
-                    }
-                    if (extension.valueExpression && extension.valueExpression.language && extension.valueExpression.language=== _extensionSystem) {
-                        returnValue = extension.valueExpression;
-                    }
-                    return (returnValue
-                        ? returnValue
-                        : true);
-                }
-            });
-        }
 
-        return returnValue;
-    }
 
     /**
     * Populates the questions with initialExpression FHIRPath extensions with data from given resources.
@@ -1113,7 +1212,7 @@ export class QuestionnaireData {
                                     default:
                                         console.log('Population of items of type' + item.type + ' is currently not supported by QuestionnaireData. Please inform the developer or create an issue on Github with specifying the missing type.');
                                 }
-                                if (populatedAnswer.code !== {}) {
+                                if (Object.keys(populatedAnswer.code).length > 0) {
                                     this.updateQuestionAnswers(item, populatedAnswer)
                                 }
                             } else {

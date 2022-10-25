@@ -97,20 +97,20 @@ export default defineComponent({
         {
           name: 'ZARIT',
           description:
-            'Der ZARIT Fragebogen dient pflegenden Angehörigen dazu, ihre eigene Belastung zu evaluieren. Der Fragebogen ist verfügbar in deutsch und französisch.',
+            'Der ZARIT Fragebogen dient pflegenden Angehörigen dazu, ihre eigene Belastung zu evaluieren. Der Fragebogen ist verfügbar in deutsch und französisch. Das letzte Item der QuestionnaireReponse ist ein Score, der automatisch berechnet wird.',
           questionnaire: ZARIT as Questionnaire
         },
-        // {
-        //   name: 'Bluebook',
-        //   description: 'Irgend ein Neonatologie-Fragebogen, den ich im Netz gefunden habe.',
-        //   questionnaire: BLUEBOOK as Questionnaire
-        // },
-        // {
-        //   name: 'Situation',
-        //   description:
-        //     'Fragebogen aus dem Corona Science Projekt, mit dem die aktuelle Situation der Befragen erfasst wird.',
-        //   questionnaire: SITUATION as Questionnaire
-        // },
+        {
+          name: 'Neonatology Bluebook',
+          description: 'A questionnaire about new born children.',
+          questionnaire: BLUEBOOK as Questionnaire
+        },
+        {
+          name: 'COVID Situation',
+          description:
+            'Fragebogen aus dem Corona Science Projekt, mit dem die aktuelle Situation der Befragen erfasst wird.',
+          questionnaire: SITUATION as Questionnaire
+        },
         {
           name: OWN_QUESTIONNAIRE,
           description: 'Laden Sie Ihren eigenen FHIR Questionnaire.',
@@ -153,7 +153,6 @@ export default defineComponent({
           null,
           2
         );
-        console.log(this.response);
       } catch (error) {
         console.log('Es ging etwas schief beim Questionnaire speichern', error);
       }

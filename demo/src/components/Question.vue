@@ -19,6 +19,39 @@
         <label for="answer.code.toString()">{{ answer.answer[language] }}</label>
       </li>
     </ul>
+    <!-- STRING | DECIMAL Question -->
+    <input
+      v-if="question.type === 'string' || question.type === 'decimal'"
+      v-model="value"
+      @change="updateValue(value, question.type)" />
+
+    <!-- INTEGER Question -->
+    <input
+      v-if="question.type === 'integer'"
+      v-model="value"
+      type="number"
+      @change="updateValue(value, question.type)" />
+
+    <!-- DATE Question -->
+    <input
+      v-if="question.type === 'date'"
+      v-model="value"
+      type="date"
+      @change="updateValue(value, question.type)" />
+
+    <!-- TEXT Question -->
+    <textarea
+      v-if="question.type === 'text'"
+      v-model="value"
+      @change="updateValue(value, question.type)">
+    </textarea>
+
+    <!-- BOOLEAN Question -->
+    <input
+      v-if="question.type === 'boolean'"
+      type="checkbox"
+      v-model="booleanValue"
+      @change="updateValue(booleanValue, question.type)" />
 
     <!-- SUB Questions-->
     <div v-if="question.subItems && question.subItems.length > 0">
@@ -28,18 +61,23 @@
         :key="subquestion.id"
         :isSelected="isSelected"
         :onAnswer="onAnswer"
-        language="language" />
+        :language="language" />
     </div>
   </div>
 </template>
 
 <script lang="ts">
+import {QuestionnaireItemType} from '@i4mi/fhir_r4';
 import {defineComponent} from 'vue';
+import type {IAnswerOption} from '@i4mi/fhir_questionnaire';
 
 export default defineComponent({
   name: 'QuestionComponent',
   data() {
-    return {};
+    return {
+      value: '' as string | number,
+      booleanValue: false
+    };
   },
   props: {
     question: {
@@ -59,7 +97,44 @@ export default defineComponent({
       required: true
     }
   },
-  methods: {}
+  methods: {
+    updateValue(value: string | number | boolean, type: QuestionnaireItemType) {
+      const answer: IAnswerOption = {
+        answer: {},
+        code: {}
+      };
+      switch (type) {
+        case QuestionnaireItemType.STRING:
+        case QuestionnaireItemType.TEXT: {
+          answer.answer[this.language] = value as string;
+          answer.code.valueString = value as string;
+          break;
+        }
+        case QuestionnaireItemType.DECIMAL: {
+          answer.answer[this.language] = value as string;
+          answer.code.valueDecimal = value as number;
+          break;
+        }
+        case QuestionnaireItemType.INTEGER: {
+          answer.answer[this.language] = value as string;
+          answer.code.valueInteger = value as number;
+          break;
+        }
+        case QuestionnaireItemType.BOOLEAN: {
+          answer.answer[this.language] = value as string;
+          answer.code.valueBoolean = value as boolean;
+          break;
+        }
+        case QuestionnaireItemType.DATE: {
+          const date = new Date(value as string);
+          answer.answer[this.language] = date.toLocaleTimeString();
+          answer.code.valueDate = date.toISOString();
+          break;
+        }
+      }
+      this.onAnswer(this.question, answer);
+    }
+  }
 });
 </script>
 

@@ -247,7 +247,7 @@
       },
       "type": "choice",
       "required": true,
-      "repeats": true,
+      "repeats": false,
       "answerValueSet": "#ZARIT-III-LIKERT-Valueset"
     },
     {

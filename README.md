@@ -104,26 +104,28 @@ All of the options are optional.
 ## Supported types
 Not all types of QuestionnaireItems are currently supported by QuestionnaireData. If you need a type that is currently not supported, you can implement it and make a pull request. If you don't see yourself able to do so, please raise an issue //TODO: links. 
 
-|Type     | Generate IQuestion  | Populate Answer | Calculated Expressions |
-|---------|---------------------|-----------------|------------------------|
-|GROUP    | 🟩 supported        | ⬜️ not applicable| ⬜️ not applicable|
-|DISPLAY  | 🟩 supported        | 🟥 not implemented | 🟥 not implemented |
-|BOOLEAN  | 🟩 supported        | 🟩 supported     | 🟥 not implemented |
-|DECIMAL  | 🟩 supported        | 🟩 supported     | 🟩 supported     |
-|INTEGER  | 🟩 supported        | 🟩 supported     | 🟩 supported     |
-|DATE     | 🟩 supported        | 🟩 supported     | 🟥 not implemented |
-|DATETIME | 🟩 supported        | 🟩 supported     | 🟥 not implemented |
-|TIME     | 🟩 supported        | 🟩 supported     | 🟥 not implemented |
-|STRING   | 🟩 supported        | 🟩 supported     | 🟥 not implemented |
-|TEXT     | 🟩 supported        | 🟩 supported     | 🟥 not implemented |
-|URL      | 🟥 not implemented  | 🟥 not implemented | 🟥 not implemented |
-|CHOICE   | 🟩 supported        | 🟩 supported     | 🟥 not implemented |
-|OPEN_CHOICE| 🟩 supported      | 🟥 not implemented | 🟥 not implemented |
-|ATTACHMENT| 🟥 not implemented | 🟥 not implemented | 🟥 not implemented |
-|REFERENCE| 🟩 supported        | 🟩 supported     | 🟥 not implemented |
-|QUANTITY | 🟩 supported        | 🟩 supported     | 🟩 supported (1)     |
+|Type     | Generate IQuestion  | Populate Answer | Calculated Expressions | Depending Questions |
+|---------|---------------------|-----------------|------------------------|---------------------|
+|GROUP    | 🟩 supported        | ⬜️ not applicable| ⬜️ not applicable      | ⬜️ not applicable   |
+|DISPLAY  | 🟩 supported        | 🟥 not implemented | 🟥 not implemented   | ⬜️ not applicable   |
+|BOOLEAN  | 🟩 supported        | 🟩 supported     | 🟥 not implemented     | 🟩 supported (2)    |
+|DECIMAL  | 🟩 supported        | 🟩 supported     | 🟩 supported           | 🟩 supported (2)    |
+|INTEGER  | 🟩 supported        | 🟩 supported     | 🟩 supported           | 🟩 supported (2)    |
+|DATE     | 🟩 supported        | 🟩 supported     | 🟥 not implemented     | 🟩 supported (2)    |
+|DATETIME | 🟩 supported        | 🟩 supported     | 🟥 not implemented     | 🟩 supported (2)    |
+|TIME     | 🟩 supported        | 🟩 supported     | 🟥 not implemented     | 🟩 supported (2)    |
+|STRING   | 🟩 supported        | 🟩 supported     | 🟥 not implemented     | 🟩 supported (2)    |
+|TEXT     | 🟩 supported        | 🟩 supported     | 🟥 not implemented     | 🟩 supported (2)    |
+|URL      | 🟩 supported  | 🟥 not implemented | 🟥 not implemented         | 🟥 not implemented  |
+|CHOICE   | 🟩 supported        | 🟩 supported     | 🟥 not implemented     | 🟨 partially implemented (3)|
+|OPEN_CHOICE| 🟩 supported      | 🟥 not implemented | 🟥 not implemented   | 🟥 not implemented  |
+|ATTACHMENT| 🟩 supported | 🟥 not implemented | 🟥 not implemented         | 🟥 not implemented  |
+|REFERENCE| 🟩 supported        | 🟩 supported     | 🟥 not implemented     | 🟥 not implemented  |
+|QUANTITY | 🟩 supported        | 🟩 supported     | 🟩 supported (1)       | 🟥 not implemented  |
 
 (1) QUANTITY items need an initial value for calculated expressions to work.
+(2) Support of depending questions is different for different operators.
+(3) Support depends on type of the choice items, only for single choice questions.
 
 ## Methods
 ### serialize(): string
