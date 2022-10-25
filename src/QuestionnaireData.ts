@@ -1068,6 +1068,7 @@ export class QuestionnaireData {
         }
 
         if (_FHIRItem.enableWhen) {
+            console.log('link depending question', _FHIRItem, _currentQuestion);
             _currentQuestion.isEnabled = false;
             _FHIRItem.enableWhen.forEach((determinator) => {
                 const dependingObject = {
@@ -1100,8 +1101,10 @@ export class QuestionnaireData {
                             dependingObject.answer = { valueDateTime: determinator.answerDateTime };
                         } else if (determinator.answerTime) {
                             dependingObject.answer = { valueTime: determinator.answerTime };
+                        } else if (determinator.answerBoolean) {
+                                dependingObject.answer = { valueBoolean: determinator.answerBoolean };
                         } else {
-                            console.warn(`QuestionnaireData.ts: Currently only answerCoding, answerString, answerDecimal, answerInteger, answerDate, answerDateTime and answerTime are supported for depending questions with operators "=" and "!=" (Question ${_FHIRItem.linkId})`);
+                            console.warn(`QuestionnaireData.ts: Currently only answerCoding, answerString, answerDecimal, answerInteger, answerDate, answerDateTime, answerBoolean and answerTime are supported for depending questions with operators "=" and "!=" (Question ${_FHIRItem.linkId})`);
                         }
                         break;
                     case QuestionnaireItemOperator.GT:
