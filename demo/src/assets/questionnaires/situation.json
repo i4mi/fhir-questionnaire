@@ -1670,6 +1670,17 @@
                           }
                       ]
                   },
+                  "extension": [
+                    {
+                      "url": "http://midata.coop/extensions/valueset-unselect-others",
+                      "extension": [
+                        {
+                          "url": "concept",
+                          "valueCode": "nothing"
+                        }
+                      ]
+                    }
+                  ],
                   "type": "choice",
                   "repeats": true,
                   "answerValueSet": "#QR1.IE2.valueset"
