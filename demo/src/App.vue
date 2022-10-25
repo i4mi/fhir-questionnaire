@@ -153,7 +153,6 @@ export default defineComponent({
           null,
           2
         );
-        console.log(this.response);
       } catch (error) {
         console.log('Es ging etwas schief beim Questionnaire speichern', error);
       }

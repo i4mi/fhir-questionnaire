@@ -125,6 +125,13 @@
                 "type": "boolean",
                 "item": [
                   {
+                    "enableWhen": [
+                      {
+                        "question": "hepBgiven",
+                        "operator": "=",
+                        "answerBoolean": true
+                      }
+                    ],
                     "linkId": "hepBgivenDate",
                     "text": "Date given",
                     "type": "date"
@@ -134,7 +141,7 @@
               {
                 "linkId": "abnormalitiesAtBirth",
                 "text": "Abnormalities noted at birth",
-                "type": "string"
+                "type": "text"
               }
             ]
           }
