@@ -108,7 +108,7 @@ export default defineComponent({
         {
           name: 'COVID Situation',
           description:
-            'Fragebogen aus dem Corona Science Projekt, mit dem die aktuelle Situation der Befragen erfasst wird.',
+            'Fragebogen aus dem Corona Science Projekt, mit dem die aktuelle Situation der Befragen erfasst wird. Dieser Fragebogen verfügt über voneinander abhängige Fragen sowie über die "unselect-others"-Extension, bei der eine Antwort auf eine Multiple-Choice-Frage andere Antworten ausschliessen kann.',
           questionnaire: SITUATION as Questionnaire
         },
         {
@@ -126,16 +126,12 @@ export default defineComponent({
   methods: {
     setQuestionnaire(q: {name: string; description: string; questionnaire: Questionnaire | undefined}): void {
       if (q.questionnaire) {
-        if (confirm(q.description + '\n\nDiesen Fragebogen laden?')) {
-          if (q.name === OWN_QUESTIONNAIRE) {
-            this.showOwnQuestionnaireModal = true;
-          } else {
-            this.qData = new QuestionnaireData(q.questionnaire, this.availableLanguages);
-            console.log(this.qData.getQuestions());
-          }
+        if (q.name === OWN_QUESTIONNAIRE) {
+          this.showOwnQuestionnaireModal = true;
+        } else {
+          this.qData = new QuestionnaireData(q.questionnaire, this.availableLanguages);
+          console.log(this.qData.getQuestions());
         }
-      } else {
-        this.qData = undefined;
       }
     },
     loadOwnQuestionnaire() {

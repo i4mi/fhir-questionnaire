@@ -10,7 +10,7 @@
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --ignore-path .gitignore"
   },
   "dependencies": {
-    "@i4mi/fhir_questionnaire": "0.1.0-beta.10",
+    "@i4mi/fhir_questionnaire": "0.1.0",
     "@i4mi/fhir_r4": "^2.0.0-beta.1",
     "vue": "^3.2.38"
   },
