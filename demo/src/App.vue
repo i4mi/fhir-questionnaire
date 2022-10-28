@@ -126,16 +126,12 @@ export default defineComponent({
   methods: {
     setQuestionnaire(q: {name: string; description: string; questionnaire: Questionnaire | undefined}): void {
       if (q.questionnaire) {
-        if (confirm(q.description + '\n\nDiesen Fragebogen laden?')) {
-          if (q.name === OWN_QUESTIONNAIRE) {
-            this.showOwnQuestionnaireModal = true;
-          } else {
-            this.qData = new QuestionnaireData(q.questionnaire, this.availableLanguages);
-            console.log(this.qData.getQuestions());
-          }
+        if (q.name === OWN_QUESTIONNAIRE) {
+          this.showOwnQuestionnaireModal = true;
+        } else {
+          this.qData = new QuestionnaireData(q.questionnaire, this.availableLanguages);
+          console.log(this.qData.getQuestions());
         }
-      } else {
-        this.qData = undefined;
       }
     },
     loadOwnQuestionnaire() {
