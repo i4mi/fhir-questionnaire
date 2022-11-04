@@ -5,11 +5,13 @@
       <h1>FHIR Questionnaire Demo</h1>
       <div id="questionnaire-selector">
         <span> Fragebogen auswählen: </span>
-        <select name="questionnaire-selector">
+        <select
+          v-model="questionnaire"
+          name="questionnaire-selector"
+          @change="setQuestionnaire">
           <option
             v-for="questionnaire in questionnaires"
-            :key="questionnaire.name"
-            @click="setQuestionnaire(questionnaire)">
+            :key="questionnaire.name">
             {{ questionnaire.name }}
           </option>
         </select>
@@ -88,6 +90,7 @@ export default defineComponent({
       lang: 'de',
       availableLanguages: ['de', 'en', 'fr'],
       qData: undefined as QuestionnaireData | undefined,
+      questionnaire: undefined,
       questionnaires: [
         {
           name: '',
@@ -114,7 +117,7 @@ export default defineComponent({
         {
           name: OWN_QUESTIONNAIRE,
           description: 'Laden Sie Ihren eigenen FHIR Questionnaire.',
-          questionnaire: {} as Questionnaire
+          questionnaire: {resourceType: 'Questionnaire'} as Questionnaire
         }
       ],
       ownQuestionnaire: '',
@@ -124,12 +127,13 @@ export default defineComponent({
   },
   mounted() {},
   methods: {
-    setQuestionnaire(q: {name: string; description: string; questionnaire: Questionnaire | undefined}): void {
-      if (q.questionnaire) {
-        if (q.name === OWN_QUESTIONNAIRE) {
+    setQuestionnaire(): void {
+      const questionnaire = this.questionnaires.find(q => q.name === this.questionnaire);
+      if (questionnaire && questionnaire.questionnaire) {
+        if (questionnaire.name === OWN_QUESTIONNAIRE) {
           this.showOwnQuestionnaireModal = true;
         } else {
-          this.qData = new QuestionnaireData(q.questionnaire, this.availableLanguages);
+          this.qData = new QuestionnaireData(questionnaire.questionnaire, this.availableLanguages);
           console.log(this.qData.getQuestions());
         }
       }
