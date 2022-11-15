@@ -12,9 +12,19 @@ See also the documentation of the [FHIR Questionnaire](http://hl7.org/fhir/R4/qu
 There is a [small demo app](./demo) written in Vue.js, that demonstrates the use of the library with different FHIR Questionnaires.
 
 ## Basic use
+### Install
+Before you can use this package in your project, you need to install it, using npm. Point your terminal to the root directory of your project (where also `package.json`is located) and enter the following command.
+```bash
+npm install @i4mi/fhir_questionnaire
+```
+Wait for the install to complete and you are ready to set up QuestionnaireData.
 ### Setup
 For every questionnaire you want to handle, you need to initialize a QuestionnaireData instance, providing the FHIR questionnaire resource as a JSON object, and at least one shorthand for an available language:
 ```typescript
+import {QuestionnaireData} from '@i4mi/fhir_questionnaire';
+
+// ... other code
+
 const qData = new QuestionnaireData(fhirQuestionnaire, ['en']);
 ```
 //TODO: describe additional options
