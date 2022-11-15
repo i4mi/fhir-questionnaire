@@ -1,6 +1,6 @@
 import fhirpath from 'fhirpath';
 import { Questionnaire, QuestionnaireResponse, QuestionnaireEnableWhenBehavior, Reference, QuestionnaireResponseStatus, QuestionnaireResponseItem, QuestionnaireItemType,
-    Resource, ValueSet, QuestionnaireItem, QuestionnaireResponseItemAnswer, Extension, code, QuestionnaireItemOperator, readI18N} from "@i4mi/fhir_r4";
+    Resource, ValueSet, QuestionnaireItem, QuestionnaireResponseItemAnswer, Extension, code, QuestionnaireItemOperator, readI18N, ValueSetComposeIncludeConceptDesignation} from "@i4mi/fhir_r4";
 import { IQuestion, IAnswerOption, IQuestionOptions, ItemControlType } from "./IQuestion";
 
 const UNSELECT_OTHERS_EXTENSION = "http://midata.coop/extensions/valueset-unselect-others";
@@ -853,7 +853,9 @@ export class QuestionnaireData {
                         answerValueSet.compose.include[0].concept.forEach((concept) => {
                             // build answerOption objects with translations
                             const answerOption: IAnswerOption = {
-                                answer: this.getTranslationsFromDesignation(concept.designation),
+                                answer: concept.designation 
+                                    ? this.getTranslationsFromDesignation(concept.designation)
+                                    : this.getFallbackTranslationStrings(concept.display || '?'),
                                 code: {
                                     valueCoding:
                                     {
@@ -1294,11 +1296,31 @@ export class QuestionnaireData {
         return result;
     }
 
-    private getTranslationsFromDesignation(languageDesignations: any): {[language: string]: string} {
+    /**
+     * Gets translations from designation like in an embedded valueset.
+     * @param languageDesignations  the designations from the valueset
+     * @returns                     an object key/value pair with the languages
+     *                              and the matching strings
+     */
+    private getTranslationsFromDesignation(languageDesignations: ValueSetComposeIncludeConceptDesignation[]): {[language: string]: string} {
         let translations: {[language: string]: string} = {};
         Array.prototype.forEach.call(languageDesignations, (designation: { language: string; value: string; }) => {
             translations[designation.language] = designation.value;
         })
         return translations;
+    }
+
+    /**
+     * Creates a fallback I18N object with a string for when no I18N is available. All available languages will have 
+     * the same, fallback, translation string
+     * @param _text     the fallback string
+     * @returns         an object key/value pair with each available language having set the translation string 
+     */
+     private getFallbackTranslationStrings(_text: string): {[lang: string]: string} {
+        const returnObject: {[lang: string]: string} = {};
+        this.availableLanguages.forEach((lang) => {
+            returnObject[lang] = _text;
+        });
+        return returnObject;
     }
 }
