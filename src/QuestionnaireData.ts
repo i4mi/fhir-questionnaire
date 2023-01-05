@@ -1070,7 +1070,6 @@ export class QuestionnaireData {
         }
 
         if (_FHIRItem.enableWhen) {
-            console.log('link depending question', _FHIRItem, _currentQuestion);
             _currentQuestion.isEnabled = false;
             _FHIRItem.enableWhen.forEach((determinator) => {
                 const dependingObject = {

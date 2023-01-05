@@ -134,7 +134,6 @@ export default defineComponent({
           this.showOwnQuestionnaireModal = true;
         } else {
           this.qData = new QuestionnaireData(questionnaire.questionnaire, this.availableLanguages);
-          console.log(this.qData.getQuestions());
         }
       }
     },
