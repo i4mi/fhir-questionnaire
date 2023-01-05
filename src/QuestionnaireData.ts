@@ -565,11 +565,15 @@ export class QuestionnaireData {
     * @param _language the language code of the wanted language. 
     **/
     getQuestionnaireTitle(_language: string): string | undefined {
-        if (this.fhirQuestionnaire._title && this.fhirQuestionnaire._title.extension) {
-            return readI18N(this.fhirQuestionnaire._title, _language);
-        } else {
-            return this.fhirQuestionnaire.title;
-        }
+        let title: string | undefined = undefined;
+        if (
+            this.fhirQuestionnaire._title && 
+            this.fhirQuestionnaire._title.extension && 
+            this.availableLanguages.includes(_language)
+        ) {
+            title = readI18N(this.fhirQuestionnaire._title, _language);
+        } 
+        return title || this.fhirQuestionnaire.title;
     }
 
     /**
