@@ -751,9 +751,10 @@ export class QuestionnaireData {
 
     /**
     * Returns the questionnaire URL with version number in FHIR canonical format.
-    * @return a canonical questionnaire URL
+    * @return a canonical questionnaire URL, or an empty string if no URL is available
     **/
     getQuestionnaireURLwithVersion(): string {
+        if (!this.fhirQuestionnaire.url) return '';
         return this.fhirQuestionnaire.url + ( this.fhirQuestionnaire.version
             ? ('|'+  this.fhirQuestionnaire.version)
             : ''

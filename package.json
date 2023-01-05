@@ -6,7 +6,7 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "rm -rf ./dist && npm i && tsc",
-    "test": "jest --config jestconfig.json --coverage --silent"
+    "test": "tsc && jest --config jestconfig.json --coverage --silent"
   },
   "repository": {
     "type": "git",
