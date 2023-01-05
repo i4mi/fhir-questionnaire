@@ -1283,10 +1283,11 @@ export class QuestionnaireData {
     /**
     * Recursively searches for a IQuestion by ID. This is useful if a Questionnaires questions
     * are nested on multiple layers.
-    * @param _id the id of the IQuestion to find
-    * @param _data the (nested) array of IQuestion to search in
+    * @param _id    the id of the IQuestion to find
+    * @param _data? the (nested) array of IQuestion to search in. If no data is provided, search is
+    *               performed over all questions of the QuestionnaireData  
     */
-    findQuestionById(_id: string, _data: IQuestion[]): IQuestion | undefined {
+    findQuestionById(_id: string, _data: IQuestion[] = this.getQuestions()): IQuestion | undefined {
         let result: IQuestion | undefined = undefined;
         _data.forEach((question) => {
             if (!result) {
