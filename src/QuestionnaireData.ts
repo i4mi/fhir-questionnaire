@@ -578,16 +578,25 @@ export class QuestionnaireData {
 
     /**
     * Processes a QuestionnaireResponse and parses the given answers to the local iQuestion array
-    * @param _fhirResponse a QuestionnaireResponse that matches the Questionnaire
+    * @param _fhirResponse a QuestionnaireResponse that matches the Questionnaire. If the item array of the
+    *                      _fhirResponse is empty, the existing answers will not be overwritten. If the item
+    *                      array of the _fhirResponse contains at least one item, the existing answers are all
+    *                      overwritten.
     * @throws an error if the questionnaire response is not matching the questionnaire
     **/
     restoreAnswersFromQuestionnaireResponse(_fhirResponse: QuestionnaireResponse): void {
+        const questionnaireUrl = _fhirResponse.questionnaire
+        ? _fhirResponse.questionnaire.split('|')[0]
+        : '';
+        if (this.fhirQuestionnaire.url && questionnaireUrl !== this.fhirQuestionnaire.url.split('|')[0]) {
+            throw new Error('Invalid argument: QuestionnaireResponse does not match Questionnaire!');
+        }
         const answerMatchingIQuestionItemWithFhirResponseItem = (_fhirItems: QuestionnaireResponseItem[]): void => {
             _fhirItems.forEach((answerItem) => {
                 const item = this.findQuestionById(answerItem.linkId, this.items);
                 if (item) {
                     item.selectedAnswers = [];
-                    if (item.answerOptions && item.answerOptions.length > 0 && answerItem.answer) {
+                    if (item.answerOptions !== undefined && answerItem.answer) {
                         answerItem.answer.forEach((answer) => {
                             const answerAsAnswerOption = this.findAccordingAnswerOption(answer, item.answerOptions);
 
@@ -616,21 +625,17 @@ export class QuestionnaireData {
         }
 
         // only restore, if it is not already up to date
-        if (this.lastRestored == undefined || (_fhirResponse.authored && this.lastRestored < new Date(_fhirResponse.authored))) {
+        if (
+            _fhirResponse.item && _fhirResponse.item.length > 0 &&
+            (this.lastRestored == undefined || (_fhirResponse.authored && this.lastRestored < new Date(_fhirResponse.authored)))
+        ) {
             this.lastRestored = _fhirResponse.authored
                                     ? new Date(_fhirResponse.authored)
                                     : new Date();
             this.responseIdToSynchronize = _fhirResponse.id;
-            const questionnaireUrl = _fhirResponse.questionnaire
-                                        ? _fhirResponse.questionnaire.split('|')[0]
-                                        : '';
-            if (this.fhirQuestionnaire.url && questionnaireUrl !== this.fhirQuestionnaire.url.split('|')[0]) {
-                throw new Error('Invalid argument: QuestionnaireResponse does not match Questionnaire!');
-            }
-            if (_fhirResponse.item) {
-                answerMatchingIQuestionItemWithFhirResponseItem(_fhirResponse.item);
-            }
-
+           
+            answerMatchingIQuestionItemWithFhirResponseItem(_fhirResponse.item);
+            //console.log('restored', JSON.stringify(this.getQuestions()));
         }
     }
 
@@ -641,12 +646,14 @@ export class QuestionnaireData {
     * @param _options  Options object that can contain zero, one or many of the following properties:
     *                  - date:      the date when the Questionnaire was filled out (current date by default)
     *                  - includeID: boolean that determines if to include FHIR resource ID of a potential 
-    *                               previously restored QuestionnaireResponse (default: false)
+    *                               previously restored QuestionnaireResponse (default: false) (if the previous response has
+    *                               no id, the id of the generated response will be undefined)
     *                  - patient:   a Reference to the FHIR Patient who filled out the Questionnaire
     *                  - reset:     should the questionnaire be reseted after creating the response (default: false)
     * @returns         a QuestionnaireResponse FHIR resource containing all the answers the user gave
-    * @throws          an error if the QuestionnaireResponse is not valid for the corresponding
+    * @throws          - an error if the QuestionnaireResponse is not valid for the corresponding
     *                  Questionnaire, e.g. when a required answer is missing
+    *                  - an error if the _language given is not in the set of available languages
     **/
     getQuestionnaireResponse(
         _language: string, 
@@ -657,6 +664,12 @@ export class QuestionnaireData {
             reset?: boolean;
         }
     ): QuestionnaireResponse {
+        if (!this.availableLanguages.includes(_language)) {
+            throw new Error(
+                'getQuestionnaireResponse(): Provided _language (' + 
+                _language + 
+                ') is not supported by this Questionnaire. (Supported languages: ' + this.availableLanguages + ').');
+        }
         const options = _options || {};
         // usual questionnaire response
         const fhirResponse = {
@@ -674,7 +687,8 @@ export class QuestionnaireData {
             id: options.includeID ? this.responseIdToSynchronize : undefined,
             meta: {},
             item: mapIQuestionToQuestionnaireResponseItem(this.items, new Array<QuestionnaireResponseItem>(),_language)
-        };
+        }; 
+        
 
         // stuff to do for items with calculated expression
         const itemsWithCalculatedExpression = this.hiddenFhirItems.filter(i => i.item.options && i.item.options.calculatedExpression !== undefined);
