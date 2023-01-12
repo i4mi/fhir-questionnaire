@@ -117,7 +117,7 @@ Not all types of QuestionnaireItems are currently supported by QuestionnaireData
 |Type     | Generate IQuestion  | Populate Answer | Calculated Expressions | Depending Questions |
 |---------|---------------------|-----------------|------------------------|---------------------|
 |GROUP    | 🟩 supported        | ⬜️ not applicable| ⬜️ not applicable      | ⬜️ not applicable   |
-|DISPLAY  | 🟩 supported        | 🟥 not implemented | 🟥 not implemented   | ⬜️ not applicable   |
+|DISPLAY  | 🟩 supported        | ⬜️ not applicable| 🟥 not implemented   | ⬜️ not applicable   |
 |BOOLEAN  | 🟩 supported        | 🟩 supported     | 🟥 not implemented     | 🟩 supported (2)    |
 |DECIMAL  | 🟩 supported        | 🟩 supported     | 🟩 supported           | 🟩 supported (2)    |
 |INTEGER  | 🟩 supported        | 🟩 supported     | 🟩 supported           | 🟩 supported (2)    |

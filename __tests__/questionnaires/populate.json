@@ -1,0 +1,105 @@
+{
+    "resourceType": "Questionnaire",
+    "id": "Populate-Test-Questionnaire",
+    "url": "http://i4mi.bfh.ch/populate-test-questionnaire",
+    "title": "Test Questionnaire for populating",
+    "description": "A questionnaire that can be populated by a Patient resource",
+    "status": "draft",
+    "version": "1.0",
+    "date": "2023-01-12",
+    "publisher": "I4MI BFH",
+    "item": [
+        {
+            "linkId": "1",
+            "text": "Name",
+            "type": "string",
+            "required": true,
+            "extension": [
+                {
+                    "url": "http://hl7.org/fhir/uv/sdc/StructureDefinition/sdc-questionnaire-initialExpression",
+                    "valueExpression": {
+                        "language": "text/fhirpath",
+                        "expression": "%patient.name.where(use='official').given.first() + ' ' + name.where(use='official').family.first()"
+                    }
+                }
+            ]
+        },
+        {
+            "linkId": "2",
+            "text": "Deceased",
+            "type": "boolean",
+            "required": true,
+            "extension": [
+                {
+                    "url": "http://hl7.org/fhir/uv/sdc/StructureDefinition/sdc-questionnaire-initialExpression",
+                    "valueExpression": {
+                        "language": "text/fhirpath",
+                        "expression": "%patient. exists(deceasedBoolean) and deceasedBoolean or exists(deceasedDateTime)"
+                    }
+                }
+            ]
+        },
+        {
+            "linkId": "3",
+            "text": "Number of contacts",
+            "type": "integer",
+            "required": true,
+            "extension": [
+                {
+                    "url": "http://hl7.org/fhir/uv/sdc/StructureDefinition/sdc-questionnaire-initialExpression",
+                    "valueExpression": {
+                        "language": "text/fhirpath",
+                        "expression": "%patient.contact.count()"
+                    }
+                }
+            ]
+        },
+        {
+            "linkId": "4",
+            "text": "Birthdate",
+            "type": "date",
+            "required": true,
+            "extension": [
+                {
+                    "url": "http://hl7.org/fhir/uv/sdc/StructureDefinition/sdc-questionnaire-initialExpression",
+                    "valueExpression": {
+                        "language": "text/fhirpath",
+                        "expression": "%patient.birthDate"
+                    }
+                }
+            ]
+        },
+        {
+            "linkId": "5",
+            "text": "Sex",
+            "type": "choice",
+            "answerOption": [
+                {
+                    "valueCoding": {
+                        "code": "female"
+                    }
+                },
+                {
+                    "valueCoding": {
+                        "code": "male"
+                    }
+                },
+                {
+                    "valueCoding": {
+                        "code": "other"
+                    }
+                }
+            ],
+            "required": true,
+            "extension": [
+                {
+                    "url": "http://hl7.org/fhir/uv/sdc/StructureDefinition/sdc-questionnaire-initialExpression",
+                    "valueExpression": {
+                        "language": "text/fhirpath",
+                        "expression": "%patient.gender"
+                    }
+                }
+            ]
+        }
+    ]
+}

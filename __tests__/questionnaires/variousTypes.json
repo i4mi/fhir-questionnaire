@@ -1,0 +1,208 @@
+{
+    "resourceType": "Questionnaire",
+    "id": "Various-Questions-Test-Questionnaire",
+    "url": "http://i4mi.bfh.ch/various-types-questionnaire",
+    "title": "Various Questions Test Questionnaire",
+    "description": "Based on the Blue Book questionnaire, enhanced by @heg2 for testing various question types.",
+    "status": "draft",
+    "version": "1.0",
+    "date": "2023-01-05",
+    "publisher": "I4MI BFH",
+    "item": [
+        {
+            "linkId": "1-group",
+            "text": "Birth details - To be completed by health professional",
+            "type": "group",
+            "item": [
+                {
+                    "linkId": "1.1-subGroup",
+                    "type": "group",
+                    "item": [
+                        {
+                            "linkId": "1.1.1-string",
+                            "text": "Name of child",
+                            "type": "string",
+                            "required": true
+                        },
+                        {
+                            "linkId": "1.1.2-choice",
+                            "text": "Sex",
+                            "type": "choice",
+                            "required": true,
+                            "answerOption": [
+                                {
+                                    "valueCoding": {
+                                        "code": "F"
+                                    }
+                                },
+                                {
+                                    "valueCoding": {
+                                        "code": "M"
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "linkId": "1.2-subGroup",
+                    "text": "Neonatal Information",
+                    "type": "group",
+                    "item": [
+                        {
+                            "linkId": "1.2.1-decimal",
+                            "text": "Birth weight (kg)",
+                            "type": "decimal",
+                            "required": true
+                        },
+                        {
+                            "linkId": "1.2.2-integer",
+                            "text": "Birth length (cm)",
+                            "type": "integer",
+                            "required": true
+                        },
+                        {
+                            "linkId": "1.2.3-choice",
+                            "text": "Vitamin K given",
+                            "type": "choice",
+                            "required": true,
+                            "answerOption": [
+                                {
+                                    "valueCoding": {
+                                        "code": "INJECTION"
+                                    }
+                                },
+                                {
+                                    "valueCoding": {
+                                        "code": "INTRAVENOUS"
+                                    }
+                                },
+                                {
+                                    "valueCoding": {
+                                        "code": "ORAL"
+                                    }
+                                }
+                            ],
+                            "item": [
+                                {
+                                    "linkId": "1.2.3-dependingGroup",
+                                    "type": "group",
+                                    "enableWhen": [
+                                        {
+                                            "question": "1.2.3-choice",
+                                            "operator": "exists",
+                                            "answerBoolean": true
+                                        }
+                                    ],
+                                    "item": [
+                                        {
+                                            "linkId": "1.2.3.1-date",
+                                            "text": "1st dose",
+                                            "type": "date"
+                                        },
+                                        {
+                                            "linkId": "1.2.3.2-date",
+                                            "text": "2nd dose",
+                                            "type": "date"
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "linkId": "1.2.4-boolean",
+                            "text": "Hep B given y / n",
+                            "type": "boolean",
+                            "required": true,
+                            "item": [
+                                {
+                                    "enableWhen": [
+                                        {
+                                            "question": "1.2.4-boolean",
+                                            "operator": "=",
+                                            "answerBoolean": true
+                                        }
+                                    ],
+                                    "linkId": "1.2.4.1-dependingDate",
+                                    "text": "Date given",
+                                    "type": "date"
+                                }
+                            ]
+                        },
+                        {
+                            "linkId": "1.2.5-text",
+                            "text": "Abnormalities noted at birth",
+                            "type": "text"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "linkId": "2-multiple-choice",
+            "text": "Birth is exhausting. Order some pizza. Which toppings do you want on it?",
+            "type": "choice",
+            "repeats": true,
+            "answerOption": [
+                {
+                    "valueCoding": {
+                        "system": "http://snomed.info/sct",
+                        "display": "nothing",
+                        "code": "260414001"
+                    }
+                },
+                {
+                    "valueCoding": {
+                        "system": "http://snomed.info/sct",
+                        "display": "Mozzarella cheese",
+                        "code": "226837009"
+                    }
+                },
+                {
+                    "valueCoding": {
+                        "system": "http://snomed.info/sct",
+                        "display": "Tomato",
+                        "code": "734881000"
+                    }
+                },
+                {
+                    "valueCoding": {
+                        "system": "http://snomed.info/sct",
+                        "display": "Salami",
+                        "code": "227018006"
+                    }
+                },
+                {
+                    "valueCoding": {
+                        "system": "http://snomed.info/sct",
+                        "display": "Gorgonzola cheese",
+                        "code": "710041006"
+                    }
+                },
+                {
+                    "valueCoding": {
+                        "system": "http://snomed.info/sct",
+                        "display": "Mushroom",
+                        "code": "735045008"
+                    }
+                }
+            ],
+            "extension": [
+                {
+                    "url": "http://midata.coop/extensions/valueset-unselect-others",
+                    "extension": [
+                        {
+                            "url": "concept",
+                            "valueCode": "260414001"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "linkId": "3-display",
+            "text": "This is a question that doesn't have to be answered. Because it can't. It's just for display.",
+            "type": "display"
+        }
+    ]
+}
