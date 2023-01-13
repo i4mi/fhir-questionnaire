@@ -1184,8 +1184,9 @@ export class QuestionnaireData {
                         const type = expression.split('.')[0].substring(1).toLowerCase();
                         const resource = resources[type];
                         if (resource) {
-                            const value = fhirpath.evaluate(resource, expression.substring(type.length + 2))[0];
-                            if (value) {
+                            const cleanExpression = expression.replaceAll('%' + type + '.', '');
+                            const value = fhirpath.evaluate(resource, cleanExpression)[0];
+                            if (value != undefined) {
                                 let populatedAnswer: IAnswerOption = { answer: {}, code: {} };
                                 this.availableLanguages.forEach(l => {
                                     populatedAnswer.answer[l] = value;
@@ -1204,7 +1205,9 @@ export class QuestionnaireData {
                                         populatedAnswer.code.valueInteger = Number(value);
                                         break;
                                     case QuestionnaireItemType.BOOLEAN:
-                                        populatedAnswer.code.valueBoolean = value.toLowerCase() === 'true';
+                                        populatedAnswer.code.valueBoolean = typeof value === 'string'
+                                            ? value.toLowerCase() === 'true'
+                                            : value;
                                         break;
                                     case QuestionnaireItemType.DATE:
                                         populatedAnswer.code.valueDate = value.toString();
@@ -1236,7 +1239,7 @@ export class QuestionnaireData {
                                     this.updateQuestionAnswers(item, populatedAnswer)
                                 }
                             } else {
-                                console.log('No value found for expression ' + expression + '.');
+                                console.log('No value found for expression ' + cleanExpression + '.');
                             }
 
                         } else {
