@@ -4,7 +4,7 @@ QuestionnaireData is a class that facilitates the rendering and handling of FHIR
 - ❗️ Not all features of FHIR Questionnaire are supported, and a lot of functionality is not yet documented. 
 - ❗️ There are probably minor and major bugs (if you find one - [raise an issue on github](https://github.com/i4mi/fhir-questionnaire/issues)).
 - ❗️ We do not recommend using this for production projects.
-- ❗️ The class is based on the FHIR R4 (4.0.1) version of the Questionnaire ressource.
+- ❗️ The class is based on the FHIR R4 (4.0.1) version of the Questionnaire resource.
 
 See also the documentation of the [FHIR Questionnaire](http://hl7.org/fhir/R4/questionnaire.html) and [FHIR QuestionnaireResponse](http://hl7.org/fhir/R4/questionnaireresponse.html) ressources.
 
@@ -199,7 +199,7 @@ Checks a QuestionnaireResponse for completeness.
 
 ### populateAnswers(_resources, _overWriteExistingAnswers?): void     
 Populates the questions with initialExpression FHIRPath extensions with data from given resources.
-The FHIRPath resources need to specify the needed resource type with %type as first node of the FHIRPath expressions (e.g. `'%patient.name.given.first()'`).
+The FHIRPath resources need to specify the needed resource type with %type as first node of the FHIRPath expressions (e.g. `'%patient.name.given.first()'`). You can use more complicated expressions with %type syntax (for example `%patient.name.where(use='official').given.first() + ' ' + %patient.name.where(use='official').family.first()`. An expression can only be populated from one resource, however a questionnaire can have multiple expression with different resources. When populating an item of type quantity, the result of the expression must be a string with value and unit separated by a space (e.g. `123 cm`).
 - parameter ** _resources**: an Array of resources used to populate the answers (e.g. Patient resource). Each resource type can only be in the array once.
 - parameter **_overWriteExistingAnswers**: optional parameter, specifies if existing answers should be overwritten (default: false)
 

@@ -19,7 +19,7 @@
                     "url": "http://hl7.org/fhir/uv/sdc/StructureDefinition/sdc-questionnaire-initialExpression",
                     "valueExpression": {
                         "language": "text/fhirpath",
-                        "expression": "%patient.name.where(use='official').given.first() + ' ' + name.where(use='official').family.first()"
+                        "expression": "%patient.name.where(use='official').given.first() + ' ' + %patient.name.where(use='official').family.first()"
                     }
                 }
             ]
@@ -34,7 +34,7 @@
                     "url": "http://hl7.org/fhir/uv/sdc/StructureDefinition/sdc-questionnaire-initialExpression",
                     "valueExpression": {
                         "language": "text/fhirpath",
-                        "expression": "%patient. exists(deceasedBoolean) and deceasedBoolean or exists(deceasedDateTime)"
+                        "expression": "%patient.exists(deceasedBoolean) and %patient.deceasedBoolean or exists(%patient.deceasedDateTime)"
                     }
                 }
             ]
@@ -97,6 +97,21 @@
                     "valueExpression": {
                         "language": "text/fhirpath",
                         "expression": "%patient.gender"
+                    }
+                }
+            ]
+        },
+        {
+            "linkId": "6",
+            "text": "Height",
+            "type": "quantity",
+            "required": false,
+            "extension": [
+                {
+                    "url": "http://hl7.org/fhir/uv/sdc/StructureDefinition/sdc-questionnaire-initialExpression",
+                    "valueExpression": {
+                        "language": "text/fhirpath",
+                        "expression": "%observation.valueQuantity.value.toString() + ' ' + %observation.valueQuantity.unit"
                     }
                 }
             ]

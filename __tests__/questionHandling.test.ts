@@ -1,4 +1,4 @@
-import { Patient, Questionnaire, QuestionnaireResponse, Reference } from '@i4mi/fhir_r4';
+import { Observation, Patient, Questionnaire, QuestionnaireResponse, Reference } from '@i4mi/fhir_r4';
 import { QuestionnaireData } from '../dist/QuestionnaireData';
 
 const VARIOUS = require('./questionnaires/variousTypes.json') as Questionnaire;
@@ -6,6 +6,7 @@ const POPULATE = require('./questionnaires/populate.json') as Questionnaire;
 const EMPTY_QUESTIONNAIRE = require('./questionnaires/empty.json') as Questionnaire;
 const RESPONSE = require('./questionnaires/variousResponse.json') as QuestionnaireResponse;
 const PATIENT = require('./questionnaires/patient.json') as Patient;
+const OBSERVATION = require('./questionnaires/observation.json') as Observation;
 
 const LANG = ['en'];
 
@@ -93,7 +94,22 @@ test('resetResponse()', () => {
 test('populateAnswers', () => {
     const testData = new QuestionnaireData(POPULATE, LANG);
     expect(() => testData.populateAnswers([PATIENT])).not.toThrow();
-    console.log(testData.getQuestionnaireResponse(LANG[0]));
+    expect(testData.isResponseComplete(true)).toBeTruthy();
+    expect(testData.isResponseComplete(false)).toBeFalsy();
+    expect(() => testData.populateAnswers([OBSERVATION])).not.toThrow();
+    expect(testData.isResponseComplete(false)).toBeTruthy();
+
+    testData.resetResponse();
+    // populate also not required questions, with multiple resources
+    expect(() => testData.populateAnswers([PATIENT, OBSERVATION])).not.toThrow();
+    expect(testData.isResponseComplete(true)).toBeTruthy();
+    expect(testData.isResponseComplete(false)).toBeTruthy(); // now all question should be answered;
+
+    testData.resetResponse();
+    // populate also not required questions, with multiple resources
+    expect(() => testData.populateAnswers([PATIENT, OBSERVATION])).not.toThrow();
+    expect(testData.isResponseComplete(true)).toBeTruthy();
+    expect(testData.isResponseComplete(false)).toBeTruthy(); // now all question should be answered;
 
 });
 

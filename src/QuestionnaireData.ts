@@ -1033,9 +1033,9 @@ export class QuestionnaireData {
                         }
                     ]
                 } else {
-                    if (hasExtension(HIDDEN_EXTENSION, undefined, _FHIRItem) == undefined) {
-                        console.warn('QuestionnaireData: Item type QUANTITY is currently only supported with slider extension', _FHIRItem);
-                    }
+                    // if (hasExtension(SLIDER_STEP_VALUE_EXTENSION, undefined, _FHIRItem) == undefined) {
+                    //     console.warn('QuestionnaireData: Item type QUANTITY is currently only supported with slider extension', _FHIRItem);
+                    // }
                 }
 
             } else if (_FHIRItem.type === QuestionnaireItemType.OPEN_CHOICE) {
@@ -1190,9 +1190,8 @@ export class QuestionnaireData {
                                 let populatedAnswer: IAnswerOption = { answer: {}, code: {} };
                                 this.availableLanguages.forEach(l => {
                                     populatedAnswer.answer[l] = value;
-                                })
-
-                                // todo handle correct way for every type
+                                });
+                                
                                 switch(item.type) {
                                     case QuestionnaireItemType.CHOICE:
                                         populatedAnswer = this.findAccordingAnswerOption(value, item.answerOptions) || populatedAnswer;
@@ -1236,12 +1235,11 @@ export class QuestionnaireData {
                                         console.log('Population of items of type' + item.type + ' is currently not supported by QuestionnaireData. Please inform the developer or create an issue on Github with specifying the missing type.');
                                 }
                                 if (Object.keys(populatedAnswer.code).length > 0) {
-                                    this.updateQuestionAnswers(item, populatedAnswer)
+                                    this.updateQuestionAnswers(item, populatedAnswer);
                                 }
                             } else {
                                 console.log('No value found for expression ' + cleanExpression + '.');
                             }
-
                         } else {
                             console.warn('QuestionnaireData: Can not populate with initialExpression for item ' + item.id + ': Missing context resource of type ' + type);
                         }

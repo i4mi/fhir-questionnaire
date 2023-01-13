@@ -6,7 +6,7 @@
         "jsx": "react",
         "esModuleInterop": true,
         "lib": [
-            "es2017",
+            "es2021",
             "dom"
         ],
         "module": "commonjs",
