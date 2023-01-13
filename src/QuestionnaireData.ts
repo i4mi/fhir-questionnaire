@@ -475,37 +475,36 @@ export class QuestionnaireData {
            || (_question.type === QuestionnaireItemType.DATE && _answer.code.valueDate == '')) {
                // remove previous given answers
             _question.selectedAnswers.splice(0,_question.selectedAnswers.length);
-            return;
-        }
-
-        const indexOfAnswer = _question.selectedAnswers.indexOf(_answer.code);
-        if (_question.allowsMultipleAnswers) {
-            // check if item is already selected
-            if (indexOfAnswer >= 0) { // answer is already selected
-                _question.selectedAnswers.splice(indexOfAnswer,1) // remove answer
+        } else {
+            const indexOfAnswer = _question.selectedAnswers.indexOf(_answer.code);
+            if (_question.allowsMultipleAnswers) {
+                // check if item is already selected
+                if (indexOfAnswer >= 0) { // answer is already selected
+                    _question.selectedAnswers.splice(indexOfAnswer,1) // remove answer
+                } else {
+                    // if not already selected, we select it now
+                    _question.selectedAnswers.push(_answer.code);
+    
+                    // and disable other answers when necessary
+                    if(_answer.disableOtherAnswers) {
+                        _answer.disableOtherAnswers.forEach((otherAnswer) => {
+                            const indexOfOtherAnswer = _question.selectedAnswers.findIndex(( selectedAnswer ) => {
+                                return selectedAnswer.valueCoding
+                                            ? selectedAnswer.valueCoding.code === otherAnswer
+                                            : undefined;
+                            });
+                            if (indexOfOtherAnswer >= 0) { // otherAnswer is selected
+                                _question.selectedAnswers.splice(indexOfOtherAnswer,1) // remove otherAnswer)
+                            } // no else needed, because we don't have to unselect already unselected answers
+                        })
+                    }
+                }
             } else {
-                // if not already selected, we select it now
-                _question.selectedAnswers.push(_answer.code);
-
-                // and disable other answers when necessary
-                if(_answer.disableOtherAnswers) {
-                    _answer.disableOtherAnswers.forEach((otherAnswer) => {
-                        const indexOfOtherAnswer = _question.selectedAnswers.findIndex(( selectedAnswer ) => {
-                            return selectedAnswer.valueCoding
-                                        ? selectedAnswer.valueCoding.code === otherAnswer
-                                        : undefined;
-                        });
-                        if (indexOfOtherAnswer >= 0) { // otherAnswer is selected
-                            _question.selectedAnswers.splice(indexOfOtherAnswer,1) // remove otherAnswer)
-                        } // no else needed, because we don't have to unselect already unselected answers
-                    })
+                if (indexOfAnswer < 0) {
+                    _question.selectedAnswers[0] = _answer.code;
                 }
             }
-        } else {
-            if (indexOfAnswer < 0) {
-                _question.selectedAnswers[0] = _answer.code;
-            }
-        }
+        };
 
         _question.dependingQuestions.forEach((dependingQuestion) => {
             dependingQuestion.dependingQuestion.isEnabled = (_question.dependingQuestionsEnableBehaviour == QuestionnaireEnableWhenBehavior.ALL); // when it's all we start with true, when undefined or any with false
@@ -529,15 +528,15 @@ export class QuestionnaireData {
                     criterium.answer.valueDecimal ||
                     criterium.answer.valueString ||
                     criterium.answer.valueInteger;
-                const answ = _answer.code.valueBoolean ||
-                    _answer.code.valueCoding?.code ||
-                    _answer.code.valueDate ||
-                    _answer.code.valueDateTime ||
-                    _answer.code.valueDecimal ||
-                    _answer.code.valueString ||
-                    _answer.code.valueInteger;
+                const answ = _answer?.code.valueBoolean ||
+                    _answer?.code.valueCoding?.code ||
+                    _answer?.code.valueDate ||
+                    _answer?.code.valueDateTime ||
+                    _answer?.code.valueDecimal ||
+                    _answer?.code.valueString ||
+                    _answer?.code.valueInteger;
                 if (crit && answ) {
-                    evaluatesToTrue = evaluateAnswersForDependingQuestion (crit, answ, criterium.operator)
+                    evaluatesToTrue = evaluateAnswersForDependingQuestion(crit, answ, criterium.operator);
                 }
 
                 dependingQuestion.dependingQuestion.isEnabled = (_question.dependingQuestionsEnableBehaviour == QuestionnaireEnableWhenBehavior.ALL)
