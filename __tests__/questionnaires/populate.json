@@ -10,22 +10,91 @@
     "publisher": "I4MI BFH",
     "item": [
         {
-            "linkId": "1",
-            "text": "Name",
-            "type": "string",
-            "required": true,
-            "extension": [
+            "linkId": "demographics",
+            "text": "Demographical information",
+            "type": "group",
+            "item": [
                 {
-                    "url": "http://hl7.org/fhir/uv/sdc/StructureDefinition/sdc-questionnaire-initialExpression",
-                    "valueExpression": {
-                        "language": "text/fhirpath",
-                        "expression": "%patient.name.where(use='official').given.first() + ' ' + %patient.name.where(use='official').family.first()"
-                    }
+                    "linkId": "1",
+                    "text": "Name",
+                    "type": "string",
+                    "required": true,
+                    "extension": [
+                        {
+                            "url": "http://hl7.org/fhir/uv/sdc/StructureDefinition/sdc-questionnaire-initialExpression",
+                            "valueExpression": {
+                                "language": "text/fhirpath",
+                                "expression": "%patient.name.where(use='official').given.first() + ' ' + %patient.name.where(use='official').family.first()"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "linkId": "2",
+                    "text": "Birthdate",
+                    "type": "date",
+                    "required": true,
+                    "extension": [
+                        {
+                            "url": "http://hl7.org/fhir/uv/sdc/StructureDefinition/sdc-questionnaire-initialExpression",
+                            "valueExpression": {
+                                "language": "text/fhirpath",
+                                "expression": "%patient.birthDate"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "linkId": "3",
+                    "text": "Sex",
+                    "type": "choice",
+                    "answerOption": [
+                        {
+                            "valueCoding": {
+                                "code": "female"
+                            }
+                        },
+                        {
+                            "valueCoding": {
+                                "code": "male"
+                            }
+                        },
+                        {
+                            "valueCoding": {
+                                "code": "other"
+                            }
+                        }
+                    ],
+                    "required": true,
+                    "extension": [
+                        {
+                            "url": "http://hl7.org/fhir/uv/sdc/StructureDefinition/sdc-questionnaire-initialExpression",
+                            "valueExpression": {
+                                "language": "text/fhirpath",
+                                "expression": "%patient.gender"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "linkId": "4",
+                    "text": "Height",
+                    "type": "quantity",
+                    "required": false,
+                    "extension": [
+                        {
+                            "url": "http://hl7.org/fhir/uv/sdc/StructureDefinition/sdc-questionnaire-initialExpression",
+                            "valueExpression": {
+                                "language": "text/fhirpath",
+                                "expression": "%observation.valueQuantity.value.toString() + ' ' + %observation.valueQuantity.unit"
+                            }
+                        }
+                    ]
                 }
             ]
         },
         {
-            "linkId": "2",
+            "linkId": "5",
             "text": "Deceased",
             "type": "boolean",
             "required": true,
@@ -40,7 +109,7 @@
             ]
         },
         {
-            "linkId": "3",
+            "linkId": "6",
             "text": "Number of contacts",
             "type": "integer",
             "required": true,
@@ -50,68 +119,6 @@
                     "valueExpression": {
                         "language": "text/fhirpath",
                         "expression": "%patient.contact.count()"
-                    }
-                }
-            ]
-        },
-        {
-            "linkId": "4",
-            "text": "Birthdate",
-            "type": "date",
-            "required": true,
-            "extension": [
-                {
-                    "url": "http://hl7.org/fhir/uv/sdc/StructureDefinition/sdc-questionnaire-initialExpression",
-                    "valueExpression": {
-                        "language": "text/fhirpath",
-                        "expression": "%patient.birthDate"
-                    }
-                }
-            ]
-        },
-        {
-            "linkId": "5",
-            "text": "Sex",
-            "type": "choice",
-            "answerOption": [
-                {
-                    "valueCoding": {
-                        "code": "female"
-                    }
-                },
-                {
-                    "valueCoding": {
-                        "code": "male"
-                    }
-                },
-                {
-                    "valueCoding": {
-                        "code": "other"
-                    }
-                }
-            ],
-            "required": true,
-            "extension": [
-                {
-                    "url": "http://hl7.org/fhir/uv/sdc/StructureDefinition/sdc-questionnaire-initialExpression",
-                    "valueExpression": {
-                        "language": "text/fhirpath",
-                        "expression": "%patient.gender"
-                    }
-                }
-            ]
-        },
-        {
-            "linkId": "6",
-            "text": "Height",
-            "type": "quantity",
-            "required": false,
-            "extension": [
-                {
-                    "url": "http://hl7.org/fhir/uv/sdc/StructureDefinition/sdc-questionnaire-initialExpression",
-                    "valueExpression": {
-                        "language": "text/fhirpath",
-                        "expression": "%observation.valueQuantity.value.toString() + ' ' + %observation.valueQuantity.unit"
                     }
                 }
             ]

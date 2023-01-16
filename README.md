@@ -158,7 +158,7 @@ Returns the questions as an array of IQuestion objects.
 ### updateQuestionAnswers(_question, _answer): void
 Updates the selected answer(s) of a question: adds the answer if it's not already selected and removes it, if it was selected.
 - parameter **_question**: the IQuestion to which the answer belongs
-- parameter **_answer**:   the selected / unselected QuestionnaireItemAnswerOption
+- parameter **_answer**:   the selected / unselected QuestionnaireItemAnswerOption. Important is the `code` property (it needs to contain a `valueString`, `valueInteger`, `valueCoding`, … ), the answer property must be present, but can be an empty object (`{}`).
 
 ### isAnswerOptionSelected(_question, _answer): boolean
 Checks if a given IAnswerOption is already selected for a IQuestion.

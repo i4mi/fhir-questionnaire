@@ -98,11 +98,13 @@
                                         {
                                             "linkId": "1.2.3.1-date",
                                             "text": "1st dose",
+                                            "required": true,
                                             "type": "date"
                                         },
                                         {
                                             "linkId": "1.2.3.2-date",
                                             "text": "2nd dose",
+                                            "required": true,
                                             "type": "date"
                                         }
                                     ]
@@ -113,7 +115,6 @@
                             "linkId": "1.2.4-boolean",
                             "text": "Hep B given y / n",
                             "type": "boolean",
-                            "required": true,
                             "item": [
                                 {
                                     "enableWhen": [
@@ -125,7 +126,8 @@
                                     ],
                                     "linkId": "1.2.4.1-dependingDate",
                                     "text": "Date given",
-                                    "type": "date"
+                                    "type": "date",
+                                    "required": true
                                 }
                             ]
                         },
@@ -140,7 +142,7 @@
         },
         {
             "linkId": "2-multiple-choice",
-            "text": "Birth is exhausting. Order some pizza. Which toppings do you want on it?",
+            "text": "Giving birth is exhausting. Order some pizza. Which toppings do you want on it?",
             "type": "choice",
             "repeats": true,
             "answerOption": [
