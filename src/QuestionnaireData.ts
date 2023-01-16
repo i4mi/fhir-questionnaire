@@ -125,18 +125,17 @@ function evaluateAnswersForDependingQuestion(_answer: string | number | boolean 
  *                        false if at least one (sub)question is not complete
  */
 function recursivelyCheckCompleteness(_question: IQuestion[], _onlyRequired: boolean): boolean {
-    var isComplete = true;
+    let isComplete = true;
     _question.forEach((question) => {
-        if (question.type === 'group' && question.subItems) {
-            isComplete = isComplete
-            ? recursivelyCheckCompleteness(question.subItems, _onlyRequired)
-            : false;
-        } else if (question.readOnly || !question.isEnabled) {
-            // do nothing
-        } else {
-            if (question.required || !_onlyRequired) {
+        if (isComplete && !question.readOnly && question.isEnabled) {
+            if (question.subItems) {
                 isComplete = isComplete
-                ? question.selectedAnswers && question.selectedAnswers.length > 0
+                ? recursivelyCheckCompleteness(question.subItems, _onlyRequired)
+                : false;
+            }
+            if ((question.required || !_onlyRequired) && question.type !== QuestionnaireItemType.DISPLAY && question.type !== QuestionnaireItemType.GROUP) {
+                isComplete = isComplete
+                ? question.selectedAnswers !== undefined && question.selectedAnswers.length > 0
                 : false;
             }
         }
