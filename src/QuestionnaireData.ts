@@ -81,7 +81,7 @@ const COMPLEX_VALUE_X = [
 * @param _operator      defines if the answer and criterium must be equal or not equal etc.
 * @returns              true if answer and criterium match with the given operator, false if not so.
 **/
-function evaluateAnswersForDependingQuestion(_answer: string | number | boolean | Array<any>, _criterium: string | number | boolean, _operator: QuestionnaireItemOperator): boolean {
+function evaluateAnswersForDependingQuestion(_answer: string | number | boolean | Array<any> | undefined, _criterium: string | number | boolean, _operator: QuestionnaireItemOperator): boolean {
     // make sure we have both comparants as number if one is
     if (typeof _answer === 'number' && typeof _criterium !== 'number') {
         _criterium = Number(_criterium);
@@ -105,13 +105,21 @@ function evaluateAnswersForDependingQuestion(_answer: string | number | boolean 
         case QuestionnaireItemOperator.NE:
             return _answer != _criterium && _answer !== undefined;
         case QuestionnaireItemOperator.GE:
-            return _answer >= _criterium;
+            return _answer == undefined
+                ? false
+                : _answer >= _criterium;
         case QuestionnaireItemOperator.LE:
-            return _answer <= _criterium;
+            return _answer == undefined
+                ? false
+                : _answer <= _criterium;
         case QuestionnaireItemOperator.GT:
-            return _answer > _criterium;
+            return _answer == undefined
+                ? false
+                : _answer > _criterium;
         case QuestionnaireItemOperator.LT:
-            return _answer < _criterium;
+            return _answer == undefined
+                ? false
+                : _answer < _criterium;
         default: return false;
     }
 }
@@ -249,7 +257,7 @@ function hasExtension(_extensionURL: string, _extensionSystem: string | undefine
                 if (extension.valueString) {
                     returnValue = extension.valueString;
                 }
-                if (extension.valueBoolean) {
+                if (extension.valueBoolean != undefined) {
                     returnValue = extension.valueBoolean;
                 }
                 if (extension.valueDate) {
@@ -258,9 +266,11 @@ function hasExtension(_extensionURL: string, _extensionSystem: string | undefine
                 if (extension.valueExpression && extension.valueExpression.language && extension.valueExpression.language=== _extensionSystem) {
                     returnValue = extension.valueExpression;
                 }
-                return (returnValue
-                    ? returnValue
-                    : true);
+                return (
+                    returnValue != undefined
+                        ? returnValue
+                        : true
+                );
             }
         });
     }
@@ -506,43 +516,49 @@ export class QuestionnaireData {
         };
 
         _question.dependingQuestions.forEach((dependingQuestion) => {
-            dependingQuestion.dependingQuestion.isEnabled = (_question.dependingQuestionsEnableBehaviour == QuestionnaireEnableWhenBehavior.ALL); // when it's all we start with true, when undefined or any with false
-            dependingQuestion.criteria.forEach(criterium => {
-                /**
-                let evaluatesToTrue = false; 
-                if (criterium.answer.valueCoding && criterium.answer.valueCoding.code
-                    && _answer.code.valueCoding && _answer.code.valueCoding.code) {
-                    evaluatesToTrue = evaluateAnswersForDependingQuestion(_answer.code.valueCoding.code, criterium.answer.valueCoding.code, criterium.operator);
-                } // check if we have valueString and question is not already enabled
-                else if (criterium.answer.valueString && _answer.code.valueString && !dependingQuestion.dependingQuestion.isEnabled) {
-                    evaluatesToTrue = evaluateAnswersForDependingQuestion(_answer.code.valueString, criterium.answer.valueString, criterium.operator);
-                }
-                */
-                let evaluatesToTrue = false;
-                const crit = criterium.answer.valueBoolean ||
-                    criterium.answer.valueCoding?.code ||
-                    criterium.answer.valueDate ||
-                    criterium.answer.valueDateTime ||
-                    criterium.answer.valueTime ||
-                    criterium.answer.valueDecimal ||
-                    criterium.answer.valueString ||
-                    criterium.answer.valueInteger;
-                const answ = _answer?.code.valueBoolean ||
-                    _answer?.code.valueCoding?.code ||
-                    _answer?.code.valueDate ||
-                    _answer?.code.valueDateTime ||
-                    _answer?.code.valueDecimal ||
-                    _answer?.code.valueString ||
-                    _answer?.code.valueInteger;
-                if (crit && answ) {
-                    evaluatesToTrue = evaluateAnswersForDependingQuestion(crit, answ, criterium.operator);
-                }
-
-                dependingQuestion.dependingQuestion.isEnabled = (_question.dependingQuestionsEnableBehaviour == QuestionnaireEnableWhenBehavior.ALL)
-                                                                    ? (evaluatesToTrue && dependingQuestion.dependingQuestion.isEnabled) // only true, when criteria before were true
-                                                                    : (evaluatesToTrue || dependingQuestion.dependingQuestion.isEnabled) // true when evaluates to true or questions before were true
-            });
+            dependingQuestion.dependingQuestion.isEnabled = this.checkIfDependingQuestionIsEnabled(_question, dependingQuestion, _answer)
         });
+    }
+
+    private checkIfDependingQuestionIsEnabled(
+        _dependant: IQuestion, 
+        _depending: {
+            dependingQuestion: IQuestion;
+            criteria: {
+                answer: QuestionnaireResponseItemAnswer;
+                operator: QuestionnaireItemOperator;
+            }[];
+        },
+        _answer: IAnswerOption | undefined
+    ): boolean {
+        // when it's all we start with true, when undefined or any with false
+        let isEnabled = (_dependant.dependingQuestionsEnableBehaviour == QuestionnaireEnableWhenBehavior.ALL);     
+        _depending.criteria.forEach(criterium => {
+            let evaluatesToTrue = false;
+            const crit = criterium.answer.valueBoolean||
+                criterium.answer.valueCoding?.code ||
+                criterium.answer.valueDate ||
+                criterium.answer.valueDateTime ||
+                criterium.answer.valueTime ||
+                criterium.answer.valueDecimal ||
+                criterium.answer.valueString ||
+                criterium.answer.valueInteger;
+            const answ = _answer?.code.valueBoolean ||
+                _answer?.code.valueCoding?.code ||
+                _answer?.code.valueDate ||
+                _answer?.code.valueDateTime ||
+                _answer?.code.valueDecimal ||
+                _answer?.code.valueString ||
+                _answer?.code.valueInteger;
+            if (crit != undefined) {
+                evaluatesToTrue = evaluateAnswersForDependingQuestion(answ, crit, criterium.operator);
+            }
+
+            isEnabled = (_dependant.dependingQuestionsEnableBehaviour == QuestionnaireEnableWhenBehavior.ALL)
+                                                                ? (evaluatesToTrue && isEnabled) // only true, when criteria before were true
+                                                                : (evaluatesToTrue || isEnabled) // true when evaluates to true or questions before were true
+        });
+        return isEnabled;
     }
 
     /**
@@ -1074,7 +1090,22 @@ export class QuestionnaireData {
         return returnArray;
     }
 
-    private linkDependingQuestions(_FHIRItem : QuestionnaireItem, _currentQuestion : IQuestion): {id: string, reference: IQuestion | undefined, operator: QuestionnaireItemOperator, answer: any}[]{
+    /**
+     * 
+     * @param _FHIRItem 
+     * @param _currentQuestion 
+     * @returns                 An array of objects describing the depending questions.
+     */
+    private linkDependingQuestions(
+            _FHIRItem : QuestionnaireItem, 
+            _currentQuestion : IQuestion
+        ): {
+            id: string, 
+            reference: IQuestion | undefined, 
+            operator: QuestionnaireItemOperator, 
+            answer: any
+        }[]{
+
         let dependingQuestions = new Array<{id: string, reference: IQuestion | undefined, operator: QuestionnaireItemOperator, answer: any}>();
 
         if (_FHIRItem.item && _FHIRItem.item.length > 0) {
@@ -1097,8 +1128,12 @@ export class QuestionnaireData {
                 };
                 switch(determinator.operator) {
                     case QuestionnaireItemOperator.EXISTS:
-                        if (determinator.answerBoolean) {
+                        if (determinator.answerBoolean != undefined) {
                             dependingObject.answer = { valueBoolean: determinator.answerBoolean };
+                            const dependant = this.findQuestionById(determinator.question);
+                            if (dependant) {
+                                _currentQuestion.isEnabled = (dependant.selectedAnswers.length > 0) === determinator.answerBoolean;
+                            }
                         } else {
                             console.warn(`QuestionnaireData.ts: Depending questions with operator EXISTS needs answerBoolean (Question ${_FHIRItem.linkId})`);
                         }
@@ -1119,7 +1154,7 @@ export class QuestionnaireData {
                             dependingObject.answer = { valueDateTime: determinator.answerDateTime };
                         } else if (determinator.answerTime) {
                             dependingObject.answer = { valueTime: determinator.answerTime };
-                        } else if (determinator.answerBoolean) {
+                        } else if (determinator.answerBoolean != undefined) {
                                 dependingObject.answer = { valueBoolean: determinator.answerBoolean };
                         } else {
                             console.warn(`QuestionnaireData.ts: Currently only answerCoding, answerString, answerDecimal, answerInteger, answerDate, answerDateTime, answerBoolean and answerTime are supported for depending questions with operators "=" and "!=" (Question ${_FHIRItem.linkId})`);
