@@ -5,6 +5,7 @@ import { QuestionnaireData } from '../dist/QuestionnaireData';
 const VARIOUS = require('./questionnaires/variousTypes.json') as Questionnaire;
 const POPULATE = require('./questionnaires/populate.json') as Questionnaire;
 const EMPTY_QUESTIONNAIRE = require('./questionnaires/empty.json') as Questionnaire;
+const DEPENDING = require('./questionnaires/depending.json') as Questionnaire;
 const RESPONSE = require('./questionnaires/variousResponse.json') as QuestionnaireResponse;
 const PATIENT = require('./questionnaires/patient.json') as Patient;
 const OBSERVATION = require('./questionnaires/observation.json') as Observation;
@@ -50,7 +51,6 @@ test('restoreAnswersFromQuestionnaireResponse', () => {
     expect(() => testData.restoreAnswersFromQuestionnaireResponse(emptyResponse)).not.toThrow();
     expect(testData.isResponseComplete(true)).toBeFalsy();
 });
-
 test('getQuestionnaireResponse', () => {
     const testData = new QuestionnaireData(VARIOUS, LANG);
     const newResponse = {...RESPONSE, authored: new Date().toISOString(),};
@@ -222,6 +222,90 @@ test('answerQuestions', () => {
     expect(testData.isResponseComplete(true)).toBeTruthy();
 });
 
+test('dependingQuestions', () => {
+    const testData = new QuestionnaireData(DEPENDING, LANG);
+    const dependantQuestion = testData.findQuestionById('dependant-boolean');
+    expect(dependantQuestion).toBeDefined();
+
+    expect(testData.findQuestionById('active-when-undefined')?.isEnabled).toBeTruthy();
+    expect(testData.findQuestionById('active-when-defined')?.isEnabled).toBeFalsy();
+
+    const answerFalse: IAnswerOption = {
+        answer: {en: 'false'},
+        code: {
+            valueBoolean: false
+        }
+    };
+    expect(() => testData.updateQuestionAnswers(dependantQuestion!, answerFalse)).not.toThrow();
+    expect(testData.findQuestionById('active-when-undefined')?.isEnabled).toBeFalsy();
+    expect(testData.findQuestionById('active-when-defined')?.isEnabled).toBeTruthy();
+    expect(testData.findQuestionById('active-when-false1')?.isEnabled).toBeTruthy();
+    expect(testData.findQuestionById('active-when-false2')?.isEnabled).toBeTruthy();
+    expect(testData.findQuestionById('active-when-true1')?.isEnabled).toBeFalsy();
+    expect(testData.findQuestionById('active-when-true2')?.isEnabled).toBeFalsy();
+
+    const answerTrue: IAnswerOption = {
+        answer: {en: 'true'},
+        code: {
+            valueBoolean: true
+        }
+    };
+    expect(() => testData.updateQuestionAnswers(dependantQuestion!, answerTrue)).not.toThrow();
+    expect(testData.findQuestionById('active-when-undefined')?.isEnabled).toBeFalsy();
+    expect(testData.findQuestionById('active-when-defined')?.isEnabled).toBeTruthy();
+    expect(testData.findQuestionById('active-when-false1')?.isEnabled).toBeFalsy();
+    expect(testData.findQuestionById('active-when-false2')?.isEnabled).toBeFalsy();
+    expect(testData.findQuestionById('active-when-true1')?.isEnabled).toBeTruthy();
+    expect(testData.findQuestionById('active-when-true2')?.isEnabled).toBeTruthy();
+
+    const dependantGroupQuestion = testData.findQuestionById('dependant-with-group');
+    expect(dependantGroupQuestion).toBeDefined();
+
+    const groupAnswerNo: IAnswerOption = {
+        answer: {en: 'no'},
+        code: {
+            valueString: 'no'
+        }
+    };
+    expect(() => testData.updateQuestionAnswers(dependantGroupQuestion!, groupAnswerNo)).not.toThrow();
+
+    const groupItem = testData.findQuestionById('depending-group');
+    expect(groupItem).toBeDefined();
+    expect(groupItem?.isEnabled).toBeFalsy() // the dependant question is not fulfilling the criteria
+
+    const subItem = testData.findQuestionById('depending-group-subitem');
+    expect(subItem).toBeDefined();
+    expect(subItem?.selectedAnswers.length).toBe(0); // not answered yet
+    expect(subItem?.isEnabled).toBeFalsy(); // as for specification: when the parent item is disabled, 
+                                           // child items are disabled as well, no matter their own possible enableWhen
+                                         
+    expect(testData.isResponseComplete(true)).toBeTruthy(); // only required item is in an inactive group
+
+    const conflictingSubItem = testData.findQuestionById('depending-group-subitem-conflicting');
+    expect(conflictingSubItem).toBeDefined();
+    expect(conflictingSubItem?.isEnabled).toBeFalsy();   // as for specification: when the parent item is disabled, 
+                                                        // child items are disabled as well, no matter their own possible enableWhen
+
+    const othersubItem = testData.findQuestionById('depending-group-subitem-conflicting');
+    expect(othersubItem).toBeDefined();
+    expect(othersubItem?.isEnabled).toBeFalsy();   // as for specification: when the parent item is disabled, 
+                                                        // child items are disabled as well, no matter their own possible enableWhen
+
+    const groupAnswerYes: IAnswerOption = {
+        answer: {en: 'yes'},
+        code: {
+            valueString: 'yes'
+        }
+    };
+    expect(() => testData.updateQuestionAnswers(dependantGroupQuestion!, groupAnswerYes)).not.toThrow();
+    expect(subItem?.isEnabled).toBeTruthy();
+    expect(testData.isResponseComplete(true)).toBeFalsy();
+    expect(conflictingSubItem?.isEnabled).toBeFalsy();  // when enabling, the items own rules override the rules of the parent 
+    expect(othersubItem?.isEnabled).toBeFalsy();        // when enabling, the items own rules override the rules of the parent 
+});
 
 // also test calculated expressions
 // also test isValid()
+// also test unselectOthersExtension
+// also test isAnswerOptionSelected
+// also test: only enabled in QuestionnaireResponse

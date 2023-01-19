@@ -42,7 +42,7 @@ const COMPLEX_VALUE_X = [
         type: 'valueAttachment',
         isMatching: (criterium: QuestionnaireResponseItemAnswer, answerOption: IAnswerOption) => {
             if (criterium.valueAttachment) {
-                console.log('Sorry, picking valueAttachment from AnswerOptions is currently not supported.');
+                console.warn('Sorry, picking valueAttachment from AnswerOptions is currently not supported.');
             }
             return false;
         }
@@ -94,11 +94,11 @@ function evaluateAnswersForDependingQuestion(_answer: string | number | boolean 
             if (_criterium) {
                 return Array.isArray(_answer)
                     ? _answer.length > 0
-                    : _answer !== undefined;
+                    : _answer != undefined;
             } else {
                 return Array.isArray(_answer)
                 ? _answer.length === 0
-                : _answer === undefined;
+                : _answer == undefined;
             }
         case QuestionnaireItemOperator.E:
             return _answer === _criterium;
@@ -141,10 +141,10 @@ function recursivelyCheckCompleteness(_question: IQuestion[], _onlyRequired: boo
                 ? recursivelyCheckCompleteness(question.subItems, _onlyRequired)
                 : false;
             }
-            if ((question.required || !_onlyRequired) && question.type !== QuestionnaireItemType.DISPLAY && question.type !== QuestionnaireItemType.GROUP) {
+            if (question.isEnabled && (question.required || !_onlyRequired) && question.type !== QuestionnaireItemType.DISPLAY && question.type !== QuestionnaireItemType.GROUP) {
                 isComplete = isComplete
-                ? question.selectedAnswers !== undefined && question.selectedAnswers.length > 0
-                : false;
+                    ? question.selectedAnswers !== undefined && question.selectedAnswers.length > 0
+                    : false;
             }
         }
         // after the first item is not complete, we don't have to look any further
@@ -406,7 +406,7 @@ export class QuestionnaireData {
         if (
             !Object.prototype.hasOwnProperty.call(data, 'items')
         ) {
-            console.log('Can not unserialize, passed string seems not to be a serialized QuestionnaireData.', data);
+            console.warn('Can not unserialize, passed string seems not to be a serialized QuestionnaireData.', data);
             throw new Error('Can not unserialize, passed string seems not to be a serialized QuestionnaireData.');
         }
         Object.assign(this, data);
@@ -515,8 +515,35 @@ export class QuestionnaireData {
             }
         };
 
+        const recursivelyDisableSubItems = (subItem: IQuestion) => {
+            subItem.isEnabled = false;
+            subItem.subItems?.forEach(sI => recursivelyDisableSubItems(sI));
+        };
+        const recursivelyEnableSubitems = (subItem: IQuestion) => {
+            subItem.isEnabled = true;
+
+            const fhirItem = this.findFhirItem(subItem.id);
+
+            fhirItem?.enableWhen?.forEach(enableWhen => {
+                const determinator = this.findQuestionById(enableWhen.question);
+                if (determinator) {
+                    const ewDefinition = determinator.dependingQuestions.find(dq => dq.dependingQuestion.id === subItem.id);
+                    subItem.isEnabled = this.checkIfDependingQuestionIsEnabled(determinator, ewDefinition!, {answer: {}, code: determinator.selectedAnswers[0]});
+                    // TODO: handle this for when parent item is a multiple choice item
+                }
+            });
+            if (subItem.isEnabled) subItem.subItems?.forEach(sI => recursivelyEnableSubitems(sI));
+        };
+
         _question.dependingQuestions.forEach((dependingQuestion) => {
-            dependingQuestion.dependingQuestion.isEnabled = this.checkIfDependingQuestionIsEnabled(_question, dependingQuestion, _answer)
+            dependingQuestion.dependingQuestion.isEnabled = this.checkIfDependingQuestionIsEnabled(_question, dependingQuestion, _answer);;
+            // specification says that if an item is not enabled, every subitem is not enabled, 
+            // no matter what their own enableWhen says
+            if (dependingQuestion.dependingQuestion.isEnabled === false) {
+                recursivelyDisableSubItems(dependingQuestion.dependingQuestion);
+            } else {
+                recursivelyEnableSubitems(dependingQuestion.dependingQuestion);
+            }
         });
     }
 
@@ -534,22 +561,27 @@ export class QuestionnaireData {
         // when it's all we start with true, when undefined or any with false
         let isEnabled = (_dependant.dependingQuestionsEnableBehaviour == QuestionnaireEnableWhenBehavior.ALL);     
         _depending.criteria.forEach(criterium => {
+
             let evaluatesToTrue = false;
-            const crit = criterium.answer.valueBoolean||
-                criterium.answer.valueCoding?.code ||
+            const crit = criterium.answer.valueCoding?.code ||
                 criterium.answer.valueDate ||
                 criterium.answer.valueDateTime ||
                 criterium.answer.valueTime ||
                 criterium.answer.valueDecimal ||
                 criterium.answer.valueString ||
-                criterium.answer.valueInteger;
-            const answ = _answer?.code.valueBoolean ||
-                _answer?.code.valueCoding?.code ||
+                criterium.answer.valueInteger || (
+                criterium.answer.valueBoolean == undefined 
+                    ? undefined 
+                    : criterium.answer.valueBoolean);
+            const answ = _answer?.code.valueCoding?.code ||
                 _answer?.code.valueDate ||
                 _answer?.code.valueDateTime ||
                 _answer?.code.valueDecimal ||
                 _answer?.code.valueString ||
-                _answer?.code.valueInteger;
+                _answer?.code.valueInteger || (
+                _answer?.code.valueBoolean == undefined 
+                    ? undefined 
+                    : _answer?.code.valueBoolean);
             if (crit != undefined) {
                 evaluatesToTrue = evaluateAnswersForDependingQuestion(answ, crit, criterium.operator);
             }
@@ -1155,7 +1187,7 @@ export class QuestionnaireData {
                         } else if (determinator.answerTime) {
                             dependingObject.answer = { valueTime: determinator.answerTime };
                         } else if (determinator.answerBoolean != undefined) {
-                                dependingObject.answer = { valueBoolean: determinator.answerBoolean };
+                                dependingObject.answer = { valueBoolean:  determinator.answerBoolean };
                         } else {
                             console.warn(`QuestionnaireData.ts: Currently only answerCoding, answerString, answerDecimal, answerInteger, answerDate, answerDateTime, answerBoolean and answerTime are supported for depending questions with operators "=" and "!=" (Question ${_FHIRItem.linkId})`);
                         }
@@ -1265,14 +1297,12 @@ export class QuestionnaireData {
                                         };
                                         break;
                                     default:
-                                        console.log('Population of items of type' + item.type + ' is currently not supported by QuestionnaireData. Please inform the developer or create an issue on Github with specifying the missing type.');
+                                        console.warn('Population of items of type' + item.type + ' is currently not supported by QuestionnaireData. Please inform the developer or create an issue on Github with specifying the missing type.');
                                 }
                                 if (Object.keys(populatedAnswer.code).length > 0) {
                                     this.updateQuestionAnswers(item, populatedAnswer);
                                 }
-                            } else {
-                                console.log('No value found for expression ' + cleanExpression + '.');
-                            }
+                            } 
                         } else {
                             console.warn('QuestionnaireData: Can not populate with initialExpression for item ' + item.id + ': Missing context resource of type ' + type);
                         }
@@ -1375,5 +1405,27 @@ export class QuestionnaireData {
             returnObject[lang] = _text;
         });
         return returnObject;
+    }
+
+    /**
+     * Searches for the QuestionnaireItem in the FHIR Questionnaire
+     * @param id        the id of the item to find
+     * @param subItems  optional (for recursivitiy): an array to search in
+     * @returns         the QuestionnaireItem, or undefined if no item can be found
+     */
+     private findFhirItem(id: string, subItems?: QuestionnaireItem[]): QuestionnaireItem | undefined {
+        let found: QuestionnaireItem | undefined;
+        const searchArray = subItems || this.fhirQuestionnaire.item;
+        searchArray?.forEach(item => {
+            if (!found) {
+                if (item.linkId === id) {
+                    found = item;
+                }
+                if (item.item) {
+                    found = this.findFhirItem(id, item.item);
+                }
+            }
+        });
+        return found;
     }
 }

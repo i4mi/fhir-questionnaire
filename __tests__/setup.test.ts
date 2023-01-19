@@ -10,6 +10,7 @@ const testData = new QuestionnaireData(VARIOUS, LANG);
 const emptyData = new QuestionnaireData(EMPTY_QUESTIONNAIRE, LANG);
 
 // TODO: test with external valuesets
+// TODO: test hidden items
 
 
 test('getQuestions()', () => {
