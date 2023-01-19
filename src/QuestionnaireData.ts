@@ -129,16 +129,18 @@ function evaluateAnswersForDependingQuestion(_answer: string | number | boolean 
  * @param _question       the question that should be checked for completeness with all its subquestions
  * @param _onlyRequired   parameter that indicates if only questions that are actually are marked 
  *                        as required should be required
+* @param   _markInvalid   optional parameter, to specify if not completed questions
+*                         should be updated to be invalid (see isInvalid property)
  * @returns               true if the question and all its subquestions are complete
  *                        false if at least one (sub)question is not complete
  */
-function recursivelyCheckCompleteness(_question: IQuestion[], _onlyRequired: boolean): boolean {
+function recursivelyCheckCompleteness(_question: IQuestion[], _onlyRequired: boolean, _markInvalid: boolean): boolean {
     let isComplete = true;
     _question.forEach((question) => {
         if (isComplete && !question.readOnly && question.isEnabled) {
             if (question.subItems) {
                 isComplete = isComplete
-                ? recursivelyCheckCompleteness(question.subItems, _onlyRequired)
+                ? recursivelyCheckCompleteness(question.subItems, _onlyRequired, _markInvalid)
                 : false;
             }
             if (question.isEnabled && (question.required || !_onlyRequired) && question.type !== QuestionnaireItemType.DISPLAY && question.type !== QuestionnaireItemType.GROUP) {
@@ -148,7 +150,10 @@ function recursivelyCheckCompleteness(_question: IQuestion[], _onlyRequired: boo
             }
         }
         // after the first item is not complete, we don't have to look any further
-        if (!isComplete) return false;
+        if (!isComplete) {
+            if (_markInvalid) question.isInvalid = true;
+            return false;
+        }
     });
     return isComplete;
 }
@@ -477,6 +482,7 @@ export class QuestionnaireData {
      * @param _answer       the selected / unselected QuestionnaireItemAnswerOption
      **/
     updateQuestionAnswers(_question: IQuestion, _answer: IAnswerOption | undefined): void {
+        _question.isInvalid = false; // assume it is not invalid anymore, until further check
         if (_answer === undefined
            || (_question.type === QuestionnaireItemType.INTEGER && _answer.code.valueInteger == undefined)
            || (_question.type === QuestionnaireItemType.STRING && _answer.code.valueString == '')
@@ -845,15 +851,19 @@ export class QuestionnaireData {
 
     /**
     * Checks a QuestionnaireResponse for completeness.
-    * @param   onlyRequired optional parameter, to specify if only questions with
+    * @param   _onlyRequired optional parameter, to specify if only questions with
     *          the required attribute need to be answered or all questions;
-    *           default value is: false
+    *          default value is: false
+    * @param   _markInvalid optional parameter, to specify if not completed questions
+    *          should be updated to be invalid (see isInvalid property)
+    *          default value is: true
     * @returns true if all questions are answered
     *          false if at least one answer is not answered
     */
-    isResponseComplete(_onlyRequired?: boolean): boolean {
+    isResponseComplete(_onlyRequired?: boolean, _markInvalid?: boolean): boolean {
         _onlyRequired = _onlyRequired === true ? true : false;
-        return recursivelyCheckCompleteness(this.items, _onlyRequired);
+        _markInvalid = _markInvalid == undefined ? true : _markInvalid;
+        return recursivelyCheckCompleteness(this.items, _onlyRequired, _markInvalid);
     }
 
     /**

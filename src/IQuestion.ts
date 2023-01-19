@@ -26,7 +26,6 @@ export interface IQuestion {
     readOnly: boolean;
     selectedAnswers: QuestionnaireResponseItemAnswer[];
     subItems?: IQuestion[];
-    relatedResourceId?: string;
     isInvalid: boolean;
     initial?: QuestionnaireItemInitial[];
     options?: IQuestionOptions;

@@ -86,7 +86,6 @@ Every Questionnaire item is converted to a IQuestion, which makes handling it ea
 - **readOnly**: (boolean): Describes if a question is read only and should not be changed by the user. You should take this into account when rendering your questions.
 - **selectedAnswers** (QuestionnaireResponseItemAnswer[], see below): Array of none to multiple answers the user has selected / given to the question.
 - **subItems**? (IQuestion[]): A question of type GROUP, but also other question, can have nested subquestions (which again, can have subquestions).
-- **relatedResourceId** (string): //TODO: I have no idea myself what this does 🤓
 - **isInvalid** (boolean): Indicates if the answer(s) to a question are invalid. This is not updated in real time, but on `getQuestionaireResponse()`
 - **initial** (QuestionnaireItemInitial[] from @i4mi/fhir_r4): Initial value of the item.
 - **options** (IQuestionOptions, see below): Options for this item.
