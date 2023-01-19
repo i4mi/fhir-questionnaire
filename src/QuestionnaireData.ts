@@ -595,11 +595,33 @@ export class QuestionnaireData {
 
     /**
     * Checks if a given IAnswerOption is already selected for a IQuestion.
+    * It is checking for the code of the IAnswerOption, not the display string.
     * @param _question     the IQuestion to which the answer belongs
     * @param _answer       the IAnswerOption in question
     **/
     isAnswerOptionSelected(_question: IQuestion, _answer: IAnswerOption): boolean {
         return _question.selectedAnswers.findIndex((selectedAnswer) => {
+            return (
+                _answer.code.valueBoolean != undefined && selectedAnswer.valueBoolean === _answer.code.valueBoolean ||
+                _answer.code.valueDate != undefined && selectedAnswer.valueDate === _answer.code.valueDate ||
+                _answer.code.valueDateTime != undefined && selectedAnswer.valueDateTime === _answer.code.valueDateTime ||
+                _answer.code.valueDecimal != undefined && selectedAnswer.valueDecimal === _answer.code.valueDecimal ||
+                _answer.code.valueInteger != undefined && selectedAnswer.valueInteger === _answer.code.valueInteger ||
+                _answer.code.valueQuantity != undefined && (
+                    selectedAnswer.valueQuantity?.value === _answer.code.valueQuantity.value && 
+                    selectedAnswer.valueQuantity?.system === _answer.code.valueQuantity.system ||
+                    selectedAnswer.valueQuantity?.unit === _answer.code.valueQuantity.unit
+                ) ||
+                _answer.code.valueReference != undefined && selectedAnswer.valueReference === _answer.code.valueReference ||
+                _answer.code.valueString != undefined && selectedAnswer.valueString === _answer.code.valueString ||
+                _answer.code.valueTime != undefined && selectedAnswer.valueTime === _answer.code.valueTime ||
+                _answer.code.valueUri != undefined && selectedAnswer.valueUri === _answer.code.valueUri ||
+                _answer.code.valueAttachment != undefined && selectedAnswer.valueAttachment === _answer.code.valueAttachment ||
+                _answer.code.valueCoding != undefined && (
+                    selectedAnswer.valueCoding?.code === _answer.code.valueCoding.code &&
+                    selectedAnswer.valueCoding?.system === _answer.code.valueCoding.system
+                )
+            );
             return JSON.stringify(selectedAnswer) == JSON.stringify(_answer.code);
         }) > -1;
     }
@@ -993,6 +1015,15 @@ export class QuestionnaireData {
                     });
 
                 } else if (_FHIRItem.answerOption) {
+                    // check if the valueset has an extension for items unselecting others
+                    let unselectOtherExtensions: Extension[];
+                    if (_FHIRItem.extension) {
+                        unselectOtherExtensions = _FHIRItem.extension.filter((extension) => {
+                            return extension.url === UNSELECT_OTHERS_EXTENSION;
+                        });
+                    }
+                    let answerOptionsToUnselect = new Array<{disabler: string, toBeDisabled: string | {mustAllOthersBeDisabled: true}}>();
+
                     question.answerOptions = _FHIRItem.answerOption.map((answerOption) => {
                         let answerOptionText: {[language: string]: string} = {};
                         this.availableLanguages.forEach(language => {
@@ -1014,6 +1045,28 @@ export class QuestionnaireData {
                                 });
                             }
 
+                            if (unselectOtherExtensions) {
+                                // prepare the unselect-others array when an answeroption unselects other options
+                                unselectOtherExtensions.forEach((extension) => {
+                                    extension = extension.extension
+                                                    ? extension.extension[0]
+                                                    : {url: ''};
+                                    if (answerOption.valueCoding && answerOption.valueCoding && extension.valueCode === answerOption.valueCoding.code && answerOption.valueCoding.code) {
+                                        answerOptionsToUnselect.push({
+                                            disabler: answerOption.valueCoding.code,
+                                            toBeDisabled: {mustAllOthersBeDisabled: true}
+                                        });
+                                    } else if (answerOption.valueCoding){
+                                        if (answerOption.valueCoding.code && extension.valueCode){
+                                            answerOptionsToUnselect.push({
+                                                disabler: answerOption.valueCoding.code,
+                                                toBeDisabled: extension.valueCode
+                                            });
+                                        }
+                                    }
+                                });
+                            }
+
                         } else {
                             ['valueString', 'valueDate', 'valueTime', 'valueInteger', 'valueReference'].forEach(valueX => {
                                 if (answerOption[valueX]) {
@@ -1031,12 +1084,46 @@ export class QuestionnaireData {
                                 }
                             });
                         }
+
                       
                         return {
                             answer: answerOptionText,
                             code: answerOption
                         };
-                    })
+                    });
+
+                     // now we know all answerOptions, we can link the dependingAnswers from the temp array
+                     answerOptionsToUnselect.forEach((answerPair) => {
+                        if (question.answerOptions) {
+                            const disabler = question.answerOptions.find((answerOption) => {
+                                                return answerOption.code.valueCoding && answerOption.code.valueCoding.code === answerPair.disabler;
+                                            });
+                            let answersToBeDisabled: Array<code> = new Array<code>();
+                            if ((answerPair.toBeDisabled as {mustAllOthersBeDisabled: boolean}).mustAllOthersBeDisabled) {
+                                // add all but the disabler option to array
+                                question.answerOptions.map((answerOption) => {
+                                    if (answerOption.code.valueCoding && answerOption.code.valueCoding.code && answerOption.code.valueCoding.code !== answerPair.disabler) {
+                                        answersToBeDisabled.push(answerOption.code.valueCoding.code);
+                                    }
+                                });
+                            } else {
+                                answersToBeDisabled = new Array<code>();
+                                // find the link to the disabled question
+                                const disabledQuestion = question.answerOptions.find((answerOption) => {
+                                    return answerOption.code.valueCoding
+                                                ? answerOption.code.valueCoding.code === answerPair.toBeDisabled
+                                                : false;
+                                });
+                                if (disabledQuestion && disabledQuestion.code.valueCoding && disabledQuestion.code.valueCoding.code) {
+                                    answersToBeDisabled.push(disabledQuestion.code.valueCoding.code);
+                                }
+                            }
+                            // finally assign the to be disabled questions to the disabler
+                            if (disabler) {
+                                disabler.disableOtherAnswers = answersToBeDisabled;
+                            };
+                        }
+                    });
 
                 } else { // no answerValueSet available
                     console.warn('CHOICE questiony need answerOptions or an answerValueSet. No embedded answerValueSet found for ' + _FHIRItem.answerValueSet);
