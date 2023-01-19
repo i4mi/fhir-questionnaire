@@ -281,6 +281,13 @@ test('dependingQuestions', () => {
                                          
     expect(testData.isResponseComplete(true)).toBeTruthy(); // only required item is in an inactive group
 
+    const response = testData.getQuestionnaireResponse(LANG[0]);
+    expect(response).toBeDefined();
+
+    // the response should not contain the not enabled items
+    expect(response.item?.find(i => i.linkId === 'active-when-false1')).toBeUndefined();
+    expect(response.item?.find(i => i.linkId === 'active-when-true1')).toBeDefined();
+
     const conflictingSubItem = testData.findQuestionById('depending-group-subitem-conflicting');
     expect(conflictingSubItem).toBeDefined();
     expect(conflictingSubItem?.isEnabled).toBeFalsy();   // as for specification: when the parent item is disabled, 
@@ -288,9 +295,8 @@ test('dependingQuestions', () => {
 
     const othersubItem = testData.findQuestionById('depending-group-subitem-conflicting');
     expect(othersubItem).toBeDefined();
-    expect(othersubItem?.isEnabled).toBeFalsy();   // as for specification: when the parent item is disabled, 
+    expect(othersubItem?.isEnabled).toBeFalsy();        // as for specification: when the parent item is disabled, 
                                                         // child items are disabled as well, no matter their own possible enableWhen
-
     const groupAnswerYes: IAnswerOption = {
         answer: {en: 'yes'},
         code: {
@@ -304,8 +310,58 @@ test('dependingQuestions', () => {
     expect(othersubItem?.isEnabled).toBeFalsy();        // when enabling, the items own rules override the rules of the parent 
 });
 
+test('multiple choice / unselectOthersExtension', () => {
+    const testData = new QuestionnaireData(VARIOUS, LANG);
+    const mcQuestion = testData.findQuestionById('2-multiple-choice');
+    expect(mcQuestion).toBeDefined();
+
+    const tomato = mcQuestion?.answerOptions.find(option => option.answer.en == 'Tomato');
+    expect(tomato).toBeDefined();
+    const mozzarella = mcQuestion?.answerOptions.find(option => option.answer.en == 'Mozzarella cheese');
+    expect (mozzarella).toBeDefined();
+    const salami = mcQuestion?.answerOptions.find(option => option.answer.en == 'Salami');
+    expect (salami).toBeDefined();
+    const nothing = mcQuestion?.answerOptions.find(option => option.answer.en == 'nothing');
+    expect (nothing).toBeDefined();
+
+    // add first option
+    expect(() => testData.updateQuestionAnswers(mcQuestion!, tomato)).not.toThrow();
+    // add second option
+    expect(() => testData.updateQuestionAnswers(mcQuestion!, mozzarella)).not.toThrow();
+    // and third option 
+    expect(() => testData.updateQuestionAnswers(mcQuestion!, salami)).not.toThrow();
+    // now we should have three answers selected
+    expect(mcQuestion!.selectedAnswers.length).toBe(3);
+    // actually, we don't want salami
+    expect(() => testData.updateQuestionAnswers(mcQuestion!, salami)).not.toThrow();
+    // now we should only two answers selected
+    expect(mcQuestion!.selectedAnswers.length).toBe(2);
+    expect(testData.isAnswerOptionSelected(mcQuestion!, salami!)).toBeFalsy();
+    expect(testData.isAnswerOptionSelected(mcQuestion!, mozzarella!)).toBeTruthy();
+
+    // check the option with the unselect-others-flag
+    expect(() => testData.updateQuestionAnswers(mcQuestion!, nothing)).not.toThrow();
+    expect(mcQuestion!.selectedAnswers.length).toBe(1);
+    expect(testData.isAnswerOptionSelected(mcQuestion!, mozzarella!)).toBeFalsy();
+
+    // it should also work the other way around
+    expect(() => testData.updateQuestionAnswers(mcQuestion!, tomato)).not.toThrow();
+    expect(mcQuestion!.selectedAnswers.length).toBe(1);
+    expect(testData.isAnswerOptionSelected(mcQuestion!, nothing!)).toBeFalsy();
+    expect(testData.isAnswerOptionSelected(mcQuestion!, tomato!)).toBeTruthy();
+    const tomatoOnlyCode: IAnswerOption = {
+        answer: {},
+        code: {
+            valueCoding: {
+            system: 'http://snomed.info/sct',
+            display: 'Tomato',
+            code: '734881000'
+        }}
+    };
+    expect(testData.isAnswerOptionSelected(mcQuestion!, tomatoOnlyCode)).toBeTruthy();
+
+
+});
+
 // also test calculated expressions
-// also test isValid()
-// also test unselectOthersExtension
-// also test isAnswerOptionSelected
-// also test: only enabled in QuestionnaireResponse
+// also test isInvalid

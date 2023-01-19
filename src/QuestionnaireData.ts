@@ -740,15 +740,9 @@ export class QuestionnaireData {
         }
         const options = _options || {};
         // usual questionnaire response
-        const fhirResponse = {
+        const fhirResponse: QuestionnaireResponse = {
             status: this.isResponseComplete() ? QuestionnaireResponseStatus.COMPLETED : QuestionnaireResponseStatus.IN_PROGRESS,
             resourceType: 'QuestionnaireResponse',
-            extension: [{
-                url: QUESTIONNAIRERESPONSE_CODING_EXTENSION_URL,
-                valueCoding: this.fhirQuestionnaire.code
-                                ? this.fhirQuestionnaire.code[0]
-                                : {}
-            }],
             questionnaire: this.getQuestionnaireURLwithVersion(),
             authored: options.date ? options.date.toISOString() : new Date().toISOString(),
             source: options.patient,
@@ -756,6 +750,12 @@ export class QuestionnaireData {
             meta: {},
             item: mapIQuestionToQuestionnaireResponseItem(this.items, new Array<QuestionnaireResponseItem>(),_language)
         }; 
+        if (this.fhirQuestionnaire.code) {
+            fhirResponse.extension = [{
+                url: QUESTIONNAIRERESPONSE_CODING_EXTENSION_URL,
+                valueCoding: this.fhirQuestionnaire.code[0]
+            }];
+        }
         
 
         // stuff to do for items with calculated expression
@@ -813,7 +813,7 @@ export class QuestionnaireData {
                     });
                     return itemWithId;
                 }
-                let parentItem = recursivelyFindId(item.parentLinkId, fhirResponse.item);
+                let parentItem = recursivelyFindId(item.parentLinkId, fhirResponse.item!);
                 if (parentItem) {
                     if (parentItem.item) {
                         parentItem.item.push(mapIQuestionToQuestionnaireResponseItem([item.item], new Array<QuestionnaireResponseItem>(), _language)[0]);
@@ -822,7 +822,7 @@ export class QuestionnaireData {
                     }
                 }
             } else {
-                fhirResponse.item.push(mapIQuestionToQuestionnaireResponseItem([item.item], new Array<QuestionnaireResponseItem>(), _language)[0]);
+                fhirResponse.item!.push(mapIQuestionToQuestionnaireResponseItem([item.item], new Array<QuestionnaireResponseItem>(), _language)[0]);
             }
         });
         if (options.reset) {
