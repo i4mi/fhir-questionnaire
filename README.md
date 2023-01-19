@@ -171,6 +171,12 @@ Falls back to default language of the questionnaire, if the wanted language is n
 - parameter **_language**: the language code of the wanted language.
 - returns: The title, when available in the requested language, else in the Questionnaires default language (or undefined, if no title is set in the Questionnaire) 
 
+###  getQuestionnaireDescription(_language): string | undefined
+Returns the questionnaire description in a given language. 
+Falls back to default language of the questionnaire, if the wanted language is not available.
+- parameter **_language**: the language code of the wanted language.
+- returns: The description, when available in the requested language, else in the Questionnaires default language (or undefined, if no description is set in the Questionnaire) 
+
 ### restoreAnswersFromQuestionnaireResponse(_fhirResponse): void 
 Processes a QuestionnaireResponse and sets its answers to the QuestionnaireData object.
 - parameter **_fhirResponse**: a QuestionnaireResponse that matches the Questionnaire

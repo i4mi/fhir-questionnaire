@@ -651,6 +651,24 @@ export class QuestionnaireData {
     }
 
     /**
+    * Returns the questionnaire description in a given language. 
+    * Falls back to default language of the questionnaire, 
+    * if the wanted language is not available.
+    * @param _language the language code of the wanted language. 
+    **/
+    getQuestionnaireDescription(_language: string): string | undefined {
+        let title: string | undefined = undefined;
+        if (
+            this.fhirQuestionnaire._description && 
+            this.fhirQuestionnaire._description.extension && 
+            this.availableLanguages.includes(_language)
+        ) {
+            title = readI18N(this.fhirQuestionnaire._description, _language);
+        } 
+        return title || this.fhirQuestionnaire.description;
+    }
+
+    /**
     * Processes a QuestionnaireResponse and parses the given answers to the local iQuestion array
     * @param _fhirResponse a QuestionnaireResponse that matches the Questionnaire. If the item array of the
     *                      _fhirResponse is empty, the existing answers will not be overwritten. If the item

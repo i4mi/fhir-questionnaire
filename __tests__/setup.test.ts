@@ -42,6 +42,11 @@ test('getQuestionnaireTitle()', () => {
     expect(emptyData.getQuestionnaireTitle(LANG[0])).toBeUndefined();
 });
 
+test('getQuestionnaireDescription', () => {
+    expect(testData.getQuestionnaireDescription(LANG[0])).toBe(VARIOUS.description);
+    expect(emptyData.getQuestionnaireDescription(LANG[0])).toBeUndefined();
+});
+
 test('getQuestionnaireURLwitVersion()', () => {
     const noVersion = new QuestionnaireData({
         resourceType: 'Questionnaire',
