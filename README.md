@@ -156,6 +156,7 @@ Returns the questions as an array of IQuestion objects.
 
 ### updateQuestionAnswers(_question, _answer): void
 Updates the selected answer(s) of a question: adds the answer if it's not already selected and removes it, if it was selected.
+*Important when using Vue.js:* When you're using Vue.js and are calling this method directly from the template, Vue.js binds it to the vue instance. For QuestionnaireData to work correctly, you have to explicitly bind it to your QuestionnaireData instance like this: `:onAnswer="qData.updateQuestionAnswers.bind(qData)"`, where qData is your QuestionnaireData instance.
 - parameter **_question**: the IQuestion to which the answer belongs
 - parameter **_answer**:   the selected / unselected QuestionnaireItemAnswerOption. Important is the `code` property (it needs to contain a `valueString`, `valueInteger`, `valueCoding`, … ), the answer property must be present, but can be an empty object (`{}`).
 

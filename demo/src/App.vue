@@ -25,7 +25,7 @@
           :key="question.id"
           :question="question"
           :language="lang"
-          :onAnswer="qData.updateQuestionAnswers"
+          :onAnswer="qData.updateQuestionAnswers.bind(qData)"
           :isSelected="qData.isAnswerOptionSelected" />
         <button
           :disabled="!qData"

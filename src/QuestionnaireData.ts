@@ -74,6 +74,52 @@ const COMPLEX_VALUE_X = [
     }
 ];
 
+function checkIfDependingQuestionIsEnabled(
+    _dependant: IQuestion, 
+    _depending: {
+        dependingQuestion: IQuestion;
+        criteria: {
+            answer: QuestionnaireResponseItemAnswer;
+            operator: QuestionnaireItemOperator;
+        }[];
+    },
+    _answer: IAnswerOption | undefined
+): boolean {
+    // we start with true, when undefined or any with false
+    let isEnabled = (_dependant.dependingQuestionsEnableBehaviour == QuestionnaireEnableWhenBehavior.ALL);     
+    _depending.criteria.forEach(criterium => {
+
+        let evaluatesToTrue = false;
+        const crit = criterium.answer.valueCoding?.code ||
+            criterium.answer.valueDate ||
+            criterium.answer.valueDateTime ||
+            criterium.answer.valueTime ||
+            criterium.answer.valueDecimal ||
+            criterium.answer.valueString ||
+            criterium.answer.valueInteger || (
+            criterium.answer.valueBoolean == undefined 
+                ? undefined 
+                : criterium.answer.valueBoolean);
+        const answ = _answer?.code.valueCoding?.code ||
+            _answer?.code.valueDate ||
+            _answer?.code.valueDateTime ||
+            _answer?.code.valueDecimal ||
+            _answer?.code.valueString ||
+            _answer?.code.valueInteger || (
+            _answer?.code.valueBoolean == undefined 
+                ? undefined 
+                : _answer?.code.valueBoolean);
+        if (crit != undefined) {
+            evaluatesToTrue = evaluateAnswersForDependingQuestion(answ, crit, criterium.operator);
+        }
+
+        isEnabled = (_dependant.dependingQuestionsEnableBehaviour == QuestionnaireEnableWhenBehavior.ALL)
+                                                            ? (evaluatesToTrue && isEnabled) // only true, when criteria before were true
+                                                            : (evaluatesToTrue || isEnabled) // true when evaluates to true or questions before were true
+    });
+    return isEnabled;
+}
+
 /**
 * Evaluates a given answer with a criterium and an operator, for enabling and disabling depending questions.
 * @param _answer        the given answer, as string (also for code etc) or as a number (when using GE, GT, LE & LT operator)
@@ -521,86 +567,44 @@ export class QuestionnaireData {
             }
         };
 
-        const recursivelyDisableSubItems = (subItem: IQuestion) => {
-            subItem.isEnabled = false;
-            subItem.subItems?.forEach(sI => recursivelyDisableSubItems(sI));
-        };
-        const recursivelyEnableSubitems = (subItem: IQuestion) => {
-            subItem.isEnabled = true;
-
-            const fhirItem = this.findFhirItem(subItem.id);
-
-            fhirItem?.enableWhen?.forEach(enableWhen => {
-                const determinator = this.findQuestionById(enableWhen.question);
-                if (determinator) {
-                    const ewDefinition = determinator.dependingQuestions.find(dq => dq.dependingQuestion.id === subItem.id);
-                    subItem.isEnabled = this.checkIfDependingQuestionIsEnabled(determinator, ewDefinition!, {answer: {}, code: determinator.selectedAnswers[0]});
-                    // TODO: handle this for when parent item is a multiple choice item
-                }
-            });
-            if (subItem.isEnabled) subItem.subItems?.forEach(sI => recursivelyEnableSubitems(sI));
-        };
+        // we shouldn't have to do this in 2022, but if we don't vite will get confused and break everything
+        const that = this;
 
         _question.dependingQuestions.forEach((dependingQuestion) => {
-            dependingQuestion.dependingQuestion.isEnabled = this.checkIfDependingQuestionIsEnabled(_question, dependingQuestion, _answer);;
+            dependingQuestion.dependingQuestion.isEnabled = checkIfDependingQuestionIsEnabled(_question, dependingQuestion, _answer);;
             // specification says that if an item is not enabled, every subitem is not enabled, 
             // no matter what their own enableWhen says
             if (dependingQuestion.dependingQuestion.isEnabled === false) {
-                recursivelyDisableSubItems(dependingQuestion.dependingQuestion);
+                that.recursivelyDisableSubItems(dependingQuestion.dependingQuestion);
             } else {
-                recursivelyEnableSubitems(dependingQuestion.dependingQuestion);
+                that.recursivelyEnableSubitems(dependingQuestion.dependingQuestion);
             }
         });
     }
 
-    private checkIfDependingQuestionIsEnabled(
-        _dependant: IQuestion, 
-        _depending: {
-            dependingQuestion: IQuestion;
-            criteria: {
-                answer: QuestionnaireResponseItemAnswer;
-                operator: QuestionnaireItemOperator;
-            }[];
-        },
-        _answer: IAnswerOption | undefined
-    ): boolean {
-        // when it's all we start with true, when undefined or any with false
-        let isEnabled = (_dependant.dependingQuestionsEnableBehaviour == QuestionnaireEnableWhenBehavior.ALL);     
-        _depending.criteria.forEach(criterium => {
+    private recursivelyDisableSubItems(subItem: IQuestion): void {
+        subItem.isEnabled = false;
+        subItem.subItems?.forEach(sI => this.recursivelyDisableSubItems(sI));
+    };
 
-            let evaluatesToTrue = false;
-            const crit = criterium.answer.valueCoding?.code ||
-                criterium.answer.valueDate ||
-                criterium.answer.valueDateTime ||
-                criterium.answer.valueTime ||
-                criterium.answer.valueDecimal ||
-                criterium.answer.valueString ||
-                criterium.answer.valueInteger || (
-                criterium.answer.valueBoolean == undefined 
-                    ? undefined 
-                    : criterium.answer.valueBoolean);
-            const answ = _answer?.code.valueCoding?.code ||
-                _answer?.code.valueDate ||
-                _answer?.code.valueDateTime ||
-                _answer?.code.valueDecimal ||
-                _answer?.code.valueString ||
-                _answer?.code.valueInteger || (
-                _answer?.code.valueBoolean == undefined 
-                    ? undefined 
-                    : _answer?.code.valueBoolean);
-            if (crit != undefined) {
-                evaluatesToTrue = evaluateAnswersForDependingQuestion(answ, crit, criterium.operator);
+    private recursivelyEnableSubitems(subItem: IQuestion): void {
+        subItem.isEnabled = true;
+
+        const fhirItem = this.findFhirItem(subItem.id);
+
+        fhirItem?.enableWhen?.forEach(enableWhen => {
+            const determinator = this.findQuestionById(enableWhen.question);
+            if (determinator) {
+                const ewDefinition = determinator.dependingQuestions.find(dq => dq.dependingQuestion.id === subItem.id);
+                subItem.isEnabled = checkIfDependingQuestionIsEnabled(determinator, ewDefinition!, {answer: {}, code: determinator.selectedAnswers[0]});
+                // TODO: handle this for when parent item is a multiple choice item
             }
-
-            isEnabled = (_dependant.dependingQuestionsEnableBehaviour == QuestionnaireEnableWhenBehavior.ALL)
-                                                                ? (evaluatesToTrue && isEnabled) // only true, when criteria before were true
-                                                                : (evaluatesToTrue || isEnabled) // true when evaluates to true or questions before were true
         });
-        return isEnabled;
-    }
+        if (subItem.isEnabled) subItem.subItems?.forEach(sI => this.recursivelyEnableSubitems(sI));
+    };
 
     /**
-    * Checks if a given IAnswerOption is already selected for a IQuestion.
+    * Checks if a given IAnswerOption is already sel    ected for a IQuestion.
     * It is checking for the code of the IAnswerOption, not the display string.
     * @param _question     the IQuestion to which the answer belongs
     * @param _answer       the IAnswerOption in question
@@ -628,7 +632,6 @@ export class QuestionnaireData {
                     selectedAnswer.valueCoding?.system === _answer.code.valueCoding.system
                 )
             );
-            return JSON.stringify(selectedAnswer) == JSON.stringify(_answer.code);
         }) > -1;
     }
 
@@ -727,7 +730,6 @@ export class QuestionnaireData {
             this.responseIdToSynchronize = _fhirResponse.id;
            
             answerMatchingIQuestionItemWithFhirResponseItem(_fhirResponse.item);
-            //console.log('restored', JSON.stringify(this.getQuestions()));
         }
     }
 
@@ -1252,7 +1254,6 @@ export class QuestionnaireData {
             operator: QuestionnaireItemOperator, 
             answer: any
         }[]{
-
         let dependingQuestions = new Array<{id: string, reference: IQuestion | undefined, operator: QuestionnaireItemOperator, answer: any}>();
 
         if (_FHIRItem.item && _FHIRItem.item.length > 0) {
@@ -1364,7 +1365,7 @@ export class QuestionnaireData {
                         const type = expression.split('.')[0].substring(1).toLowerCase();
                         const resource = resources[type];
                         if (resource) {
-                            const cleanExpression = expression.replaceAll('%' + type + '.', '');
+                            const cleanExpression = expression.replace(new RegExp('%' + type + '.', 'g'), '');
                             const value = fhirpath.evaluate(resource, cleanExpression)[0];
                             if (value != undefined) {
                                 let populatedAnswer: IAnswerOption = { answer: {}, code: {} };
