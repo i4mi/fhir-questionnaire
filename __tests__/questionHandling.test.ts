@@ -1,4 +1,4 @@
-import { Observation, Patient, Questionnaire, QuestionnaireResponse, Reference } from '@i4mi/fhir_r4';
+import { HumanNameNameUse, Observation, Patient, PatientAdministrativeGender, Questionnaire, QuestionnaireResponse, Reference } from '@i4mi/fhir_r4';
 import { IAnswerOption } from '../dist/IQuestion';
 import { QuestionnaireData } from '../dist/QuestionnaireData';
 
@@ -112,6 +112,45 @@ test('populateAnswers', () => {
     expect(() => testData.populateAnswers([PATIENT, OBSERVATION])).not.toThrow();
     expect(testData.isResponseComplete(true)).toBeTruthy();
     expect(testData.isResponseComplete(false)).toBeTruthy(); // now all question should be answered;
+
+    const otherPatient: Patient = {
+        resourceType: 'Patient',
+        name: [
+            {
+                family: 'Lewinski',
+                given: [
+                    'Monica'
+                ]
+            }
+        ],
+        birthDate: '1973-07-23',
+        gender: PatientAdministrativeGender.FEMALE
+    };
+    // do not overwrite existing answers
+    expect(() => testData.populateAnswers([otherPatient])).not.toThrow(); 
+    const nameQuestion = testData.findQuestionById('1');
+
+    expect(nameQuestion).toBeDefined();
+    expect(nameQuestion?.selectedAnswers.length).toBe(1);
+    expect(nameQuestion?.selectedAnswers.findIndex(a => a.valueString === 'Peter Chalmers')).toBeGreaterThan(-1);
+    expect(nameQuestion?.selectedAnswers.findIndex(a => a.valueString === 'Monica Lewinski')).toBe(-1);
+
+    const birthdateQuestion = testData.findQuestionById('2');
+    expect(birthdateQuestion).toBeDefined();
+    expect(birthdateQuestion?.selectedAnswers.length).toBe(1);
+    expect(birthdateQuestion?.selectedAnswers.findIndex(a => a.valueDate === PATIENT.birthDate)).toBeGreaterThan(-1);
+    expect(birthdateQuestion?.selectedAnswers.findIndex(a => a.valueDate === otherPatient.birthDate)).toBe(-1);
+   
+    // DO overwrite existing answers
+    expect(() => testData.populateAnswers([otherPatient], true)).not.toThrow(); 
+    expect(nameQuestion?.selectedAnswers.length).toBe(1);
+    // name is NOT overwritten, because otherPatient has no name with use=official
+    expect(nameQuestion?.selectedAnswers.findIndex(a => a.valueString === 'Peter Chalmers')).toBeGreaterThan(-1);
+    expect(nameQuestion?.selectedAnswers.findIndex(a => a.valueString === 'Monica Lewinski')).toBe(-1);
+    // birthdate however IS overwritten
+    expect(birthdateQuestion?.selectedAnswers.length).toBe(1);
+    expect(birthdateQuestion?.selectedAnswers.findIndex(a => a.valueDate === PATIENT.birthDate)).toBe(-1);
+    expect(birthdateQuestion?.selectedAnswers.findIndex(a => a.valueDate === otherPatient.birthDate)).toBeGreaterThan(-1);
 });
 
 test('answerQuestions', () => {
