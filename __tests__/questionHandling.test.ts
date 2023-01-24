@@ -6,6 +6,7 @@ const VARIOUS = require('./questionnaires/variousTypes.json') as Questionnaire;
 const POPULATE = require('./questionnaires/populate.json') as Questionnaire;
 const EMPTY_QUESTIONNAIRE = require('./questionnaires/empty.json') as Questionnaire;
 const DEPENDING = require('./questionnaires/depending.json') as Questionnaire;
+const CALCULATED = require('./questionnaires/calculatedExpression.json') as Questionnaire;
 const RESPONSE = require('./questionnaires/variousResponse.json') as QuestionnaireResponse;
 const PATIENT = require('./questionnaires/patient.json') as Patient;
 const OBSERVATION = require('./questionnaires/observation.json') as Observation;
@@ -366,8 +367,56 @@ test('multiple choice / unselectOthersExtension', () => {
     expect(testData.isAnswerOptionSelected(mcQuestion!, tomatoOnlyCode)).toBeTruthy();
 });
 
-test('validation', () => {
+test('calculated Expression', () => {
+    const testData = new QuestionnaireData(CALCULATED, LANG);
 
+    const hidden = testData.findQuestionById('score-choice');
+    expect(hidden).toBeUndefined(); // hidden items should not show up in questions
+
+    const q1 = testData.findQuestionById('q1');
+    expect(q1).toBeDefined();
+    const a1: IAnswerOption = {
+        answer: {},
+        code: {
+            valueCoding: {
+                code: "12"
+            }
+        }
+    };
+    const q2 = testData.findQuestionById('q2');
+    expect(q2).toBeDefined();
+    expect(() => testData.updateQuestionAnswers(q1!, a1)).not.toThrow();
+    expect(() => testData.updateQuestionAnswers(q2!, a1)).not.toThrow();
+
+
+    const q3 = testData.findQuestionById('q3');
+    expect(q3).toBeDefined();
+    expect(() => testData.updateQuestionAnswers(
+        q3!, {answer: {}, code: {valueInteger: 2}}
+    )).not.toThrow();
+    const q4 = testData.findQuestionById('q4');
+    expect(q4).toBeDefined();
+    expect(() => testData.updateQuestionAnswers(
+        q4!, {answer: {}, code: {valueInteger: 3}}
+    )).not.toThrow();
+    const q5 = testData.findQuestionById('q5');
+    expect(q5).toBeDefined();
+    expect(() => testData.updateQuestionAnswers(
+        q5!, {answer: {}, code: {valueInteger: 1}}
+    )).not.toThrow();
+
+    const response = testData.getQuestionnaireResponse(LANG[0]);
+    expect(response).toBeDefined();
+
+    const choiceScore = response.item?.find(i => i.linkId === 'score-choice');
+    expect(choiceScore).toBeDefined();
+    expect(choiceScore?.answer![0].valueInteger).toBe(2 * Number(a1.code.valueCoding?.code));
+
+    const integerScore = response.item?.find(i => i.linkId === 'score-integer');
+    expect(integerScore).toBeDefined();
+    expect(integerScore?.answer![0].valueInteger).toBe(2 * 3 * 1);
 });
 
-// also test calculated expressions
+test('validation', () => {
+    expect(1).toBe(1);
+});

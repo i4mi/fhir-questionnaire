@@ -785,7 +785,7 @@ export class QuestionnaireData {
         
 
         // stuff to do for items with calculated expression
-        const itemsWithCalculatedExpression = this.hiddenFhirItems.filter(i => i.item.options && i.item.options.calculatedExpression !== undefined);
+        const itemsWithCalculatedExpression = [...this.hiddenFhirItems].filter(i => i.item.options && i.item.options.calculatedExpression !== undefined);
         itemsWithCalculatedExpression.forEach(item => {
             if (item.item.options && item.item.options.calculatedExpression) {
                 try {

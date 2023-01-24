@@ -26,7 +26,7 @@
           :question="question"
           :language="lang"
           :onAnswer="qData.updateQuestionAnswers.bind(qData)"
-          :isSelected="qData.isAnswerOptionSelected" />
+          :isSelected="qData.isAnswerOptionSelected.bind(qData)" />
         <button
           :disabled="!qData"
           @click="qData?.resetResponse()">
