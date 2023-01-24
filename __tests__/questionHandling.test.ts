@@ -388,6 +388,7 @@ test('multiple choice / unselectOthersExtension', () => {
     expect(() => testData.updateQuestionAnswers(mcQuestion!, nothing)).not.toThrow();
     expect(mcQuestion!.selectedAnswers.length).toBe(1);
     expect(testData.isAnswerOptionSelected(mcQuestion!, mozzarella!)).toBeFalsy();
+    expect(testData.isAnswerOptionSelected(mcQuestion!, nothing!)).toBeTruthy();
 
     // it should also work the other way around
     expect(() => testData.updateQuestionAnswers(mcQuestion!, tomato)).not.toThrow();
