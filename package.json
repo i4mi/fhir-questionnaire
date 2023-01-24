@@ -1,6 +1,6 @@
 {
   "name": "@i4mi/fhir_questionnaire",
-  "version": "0.2.0-alpha.8",
+  "version": "0.2.0-beta.1",
   "description": "TS Package for handling FHIR Questionnaire and generating QuestionnaireRespones.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -13,9 +13,9 @@
     "url": ""
   },
   "bugs": {
-    "url": "https://github.com/i4mi/"
+    "url": "https://github.com/i4mi/fhir-questionnaire/issues"
   },
-  "homepage": "https://github.com/i4mi/",
+  "homepage": "https://github.com/i4mi/fhir-questionnaire",
   "keywords": [
     "fhir",
     "resources",
@@ -34,7 +34,7 @@
     "@types/jest": "^24.0.12"
   },
   "dependencies": {
-    "@i4mi/fhir_r4": "^2.0.0-beta.1",
+    "@i4mi/fhir_r4": "^2.0.0",
     "fhirpath": "^3.0.0"
   },
   "files": [

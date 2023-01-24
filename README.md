@@ -1,12 +1,12 @@
 # I4MI Questionnaire Data
 QuestionnaireData is a class that facilitates the rendering and handling of FHIR Questionnaires in TypeScript / Javascript applications.
 - ❗️ Please be aware that this is currently work in progress. 
-- ❗️ Not all features of FHIR Questionnaire are supported, and a lot of functionality is not yet documented. 
-- ❗️ There are probably minor and major bugs (if you find one - [raise an issue on github](https://github.com/i4mi/fhir-questionnaire/issues)).
+- ❗️ Not all features of FHIR Questionnaire are supported, and some functionality is not yet documented. 
+- ❗️ Although we do our best in carefully developping and testing the class, there are probably minor and major bugs. If you find one, let us know and [raise an issue on github](https://github.com/i4mi/fhir-questionnaire/issues)).
 - ❗️ We do not recommend using this for production projects.
-- ❗️ The class is based on the FHIR R4 (4.0.1) version of the Questionnaire resource.
+- ❗️ QuestionnaireData is based on the FHIR R4 (4.0.1) version of the Questionnaire resource.
 
-See also the documentation of the [FHIR Questionnaire](http://hl7.org/fhir/R4/questionnaire.html) and [FHIR QuestionnaireResponse](http://hl7.org/fhir/R4/questionnaireresponse.html) ressources.
+See also the documentation of the [FHIR Questionnaire](http://hl7.org/fhir/R4/questionnaire.html) and [FHIR QuestionnaireResponse](http://hl7.org/fhir/R4/questionnaireresponse.html) resources.
 
 ## Demo App
 There is a [small demo app](./demo) written in Vue.js, that demonstrates the use of the library with different FHIR Questionnaires.
@@ -27,7 +27,13 @@ import {QuestionnaireData} from '@i4mi/fhir_questionnaire';
 
 const qData = new QuestionnaireData(fhirQuestionnaire, ['en']);
 ```
-//TODO: describe additional options
+
+#### External ValueSets
+The constructor has also the possibility to hand over ValueSet resources, that are referenced in the Questionnaire (as answerValuesets for questions of type choice). As a matter of fact, it is necessary to provide ValueSets that are not contained in the Questionnaire, since QuestionnaireData does not fetch linked ValueSets by itself. This would be the third, optional parameter of the constructor.  
+**Please note:** This feature is not thoroughly tested yet and has a high probability of bugs or unexpected behaviour.
+
+#### Passing on items and hiddenItems
+The fourth and fifth optional parameter of the constructor are to pass on IQuestion items and hidden items. This is useful when using in a React enviroment with redux, but can probably be ignored in other setups.
 
 ### Rendering of the questions
 You can then use the QuestionnaireData instance to get the items and render them. You have to implement the rendering for every Question type the questionnaire you're using has, since a "choice" question needs to be rendered differently than a "free text" question. 
@@ -73,24 +79,27 @@ try {
 
 ## Interfaces
 ### IQuestion
-Every Questionnaire item is converted to a IQuestion, which makes handling it easier. It has the following properties. 
-//TODO: differ which elements are useful for rendering, and which are only internal
-- **id** (string): Corresponds to the linkId of the Questionnaire item
-- **type** (QuestionnaireItemType from @i4mi/fhir_r4): The type of the question
-- **label** ({[language: string]: string): The label / question of the string, with strings in every available language (with fallback strings if the Questionnaire does not have the language available)
-- **prefix** (string): The prefix of the question, often the number of the question in the questionnaire
-- **answerOptions** (IAnswerOption[], see below): The answer options, for example for choice questions.
-- **required** (boolean): Describes if the question needs to be answered.
-- **allowsMultipleAnswers** (boolean): Describes if multiple answers are allowed (not applicable for every type of question)
-- **isEnabled** (boolean): Describes if a question is enabled and should be displayed to the user. This is for example used for questions that are depending on other questions and are only enabled when the other question is answered in a certain way.
-- **readOnly**: (boolean): Describes if a question is read only and should not be changed by the user. You should take this into account when rendering your questions.
-- **selectedAnswers** (QuestionnaireResponseItemAnswer[], see below): Array of none to multiple answers the user has selected / given to the question.
-- **subItems**? (IQuestion[]): A question of type GROUP, but also other question, can have nested subquestions (which again, can have subquestions).
-- **isInvalid** (boolean): Indicates if the answer(s) to a question are invalid. This is not updated in real time, but on `getQuestionaireResponse()`
-- **initial** (QuestionnaireItemInitial[] from @i4mi/fhir_r4): Initial value of the item.
-- **options** (IQuestionOptions, see below): Options for this item.
-- **dependingQuestionsEnableBehaviour** ('ALL' or 'ANY'): Describes if all of the criteria below must be fulfilled to enable a depending question, or if one criteria is enough.
-- **dependingQuestions**: Links depending questions to this question. Depending questions are activated if the criteria are matched.
+Every Questionnaire item is converted to a IQuestion, which makes handling it easier. It has the following properties.  
+Properties are marked as followed:  
+🎨 = important for rendering
+⚙️ = mostly for internal use in QuestionnareData
+
+- 🎨 **type** (QuestionnaireItemType from @i4mi/fhir_r4): The type of the question. Important for rendering.
+- 🎨 **label** ({[language: string]: string): The label / question of the string, with strings in every available language (with fallback strings if the Questionnaire does not have the language available)
+- 🎨 **prefix** (string): The prefix of the question, often the number of the question in the questionnaire
+- 🎨 **answerOptions** (IAnswerOption[], see below): The answer options, for example for choice questions.
+- 🎨 **allowsMultipleAnswers** (boolean): Describes if multiple answers are allowed (not applicable for every type of question)
+- 🎨 **isEnabled** (boolean): Describes if a question is enabled and should be displayed to the user. This is for example used for questions that are depending on other questions and are only enabled when the other question is answered in a certain way.
+- 🎨 **readOnly**: (boolean): Describes if a question is read only and should not be changed by the user. You should take this into account when rendering your questions.
+- 🎨 **subItems**? (IQuestion[]): A question of type GROUP, but also other question, can have nested subquestions (which again, can have subquestions).
+- 🎨 **isInvalid** (boolean): Indicates if the answer(s) to a question are invalid. This is not updated in real time, but on `getQuestionaireResponse()`
+- 🎨/⚙️ **options** (IQuestionOptions, see below): Options for this item.
+- ⚙️ **selectedAnswers** (QuestionnaireResponseItemAnswer[], see below): Array of none to multiple answers the user has selected / given to the question.
+- ⚙️ **required** (boolean): Describes if the question needs to be answered.
+- ⚙️ **initial** (QuestionnaireItemInitial[] from @i4mi/fhir_r4): Initial value of the item.
+- ⚙️ **id** (string): Corresponds to the linkId of the Questionnaire item. 
+- ⚙️ **dependingQuestionsEnableBehaviour** ('ALL' or 'ANY'): Describes if all of the criteria below must be fulfilled to enable a depending question, or if one criteria is enough.
+- ⚙️ **dependingQuestions**: Links depending questions to this question. Depending questions are activated if the criteria are matched.
 
 ### IAnswerOption
 Answer options conform to this interface:
@@ -99,19 +108,19 @@ Answer options conform to this interface:
 - **disableOtherAnswers**: Determines which other answers are unselected if this answer is selected (in multiple choice questions).
 
 ### IQuestionOptions
-All of the options are optional.
-//TODO: description
-- **controlType** (ItemControlType):
-- **min** (number):
-- **max** (number):
-- **sliderStep** (number):
-- **unit** (Coding):
-- **format** (string):
-- **initialExpression** (string):
-- **calculatedExpression** (string):
+The options object can provice additional information for a question. Often, these are mostly used for internal usage. All of the options are optional.
+
+- **controlType** (ItemControlType): Describes the UI control type relevant for a question (see the [Questionnaire Item Control Valueset](https://www.hl7.org/fhir/valueset-questionnaire-item-control.html)). Currently, only slider and spinner are supported.
+- **min** (number): The minimal value accepted for the item (this is for rendering, not taken into consideration when validating the answers!). 
+- **max** (number): The maximum value accepted for the item (this is for rendering, not taken into consideration when validating the answers!). Can be defined in the Questionnaire using the [maxValue extension](http://hl7.org/fhir/StructureDefinition/maxValue).
+- **sliderStep** (number): Describes the step for a slider, if provided as [SliderStepValue extension](http://hl7.org/fhir/StructureDefinition/questionnaire-sliderStepValue). If the controlType of a question is `slider`, this should be considered when rendering the question.
+- **unit** (Coding): A possible unit as provided by the [QuestionnaireItem Unit extension](http://hl7.org/fhir/StructureDefinition/questionnaire-unit)
+- **format** (string): Describes the desired format of the answer, as provided by the [QuestionnaireItem format extension](http://hl7.org/fhir/StructureDefinition/entryFormat). This is to be meant for displaying in the GUI and has no effect on the answer validation in QuestionnaireData.
+- **initialExpression** (string): Mostly for internal use. Used to save the FHIRPath expression for calculating the items initial value for populating the Questionnaire. See also [populateAnswers()](#populateAnswers(_resources,-_overWriteExistingAnswers?):-void).
+- **calculatedExpression** (string): Mostly for internal use. Used to save the calculated expression (FHIRPath) for calculating an items value. For details, see the [Working with calculated expressions](#Working-with-calculated-expressions) chapter.
 
 ## Supported types
-Not all types of QuestionnaireItems are currently supported by QuestionnaireData. If you need a type that is currently not supported, you can implement it and make a pull request. If you don't see yourself able to do so, please raise an issue //TODO: links. 
+Not all types of QuestionnaireItems are currently supported by QuestionnaireData. If you need a type that is currently not supported, you can implement it and make a [pull request](https://github.com/i4mi/fhir-questionnaire/pulls). If you don't see yourself able to do so, please [raise an issue](https://github.com/i4mi/fhir-questionnaire/issues). 
 
 |Type     | Generate IQuestion  | Populate Answer | Calculated Expressions | Depending Questions |
 |---------|---------------------|-----------------|------------------------|---------------------|
@@ -206,13 +215,20 @@ Checks a QuestionnaireResponse for completeness.
 ### populateAnswers(_resources, _overWriteExistingAnswers?): void     
 Populates the questions with initialExpression FHIRPath extensions with data from given resources.
 The FHIRPath resources need to specify the needed resource type with %type as first node of the FHIRPath expressions (e.g. `'%patient.name.given.first()'`). You can use more complicated expressions with %type syntax (for example `%patient.name.where(use='official').given.first() + ' ' + %patient.name.where(use='official').family.first()`. An expression can only be populated from one resource, however a questionnaire can have multiple expression with different resources. When populating an item of type quantity, the result of the expression must be a string with value and unit separated by a space (e.g. `123 cm`).
-- parameter ** _resources**: an Array of resources used to populate the answers (e.g. Patient resource). Each resource type can only be in the array once.
+- parameter **_resources**: an Array of resources used to populate the answers (e.g. Patient resource). Each resource type can only be in the array once.
 - parameter **_overWriteExistingAnswers**: optional parameter, specifies if existing answers should be overwritten (default: false)
 
 ### findQuestionById(_id, _data): IQuestion | undefined {
 Recursively searches for a IQuestion by ID. This is useful if a Questionnaires questions are nested on multiple layers.
 - parameter **_id**: the id of the IQuestion to find
 - parameter **_data**: the (nested) array of IQuestion to search in
+
+## Working with calculated expressions
+With calculated expressions, you can set the answer to one or multiple items of your questionnaire automatically, depending on the responses given on the responses the user gave to the other elements.
+You have to specify a [FHIRPath](https://hl7.org/fhirpath/)-Expression, that can be applied to the QuestionnaireResponse to extract a single value. The questionnaireResponse item is referred to as `item` in the calculated expression. The first value of the FHIRPath evaluation is then written to the items answer. The expression has to be defined in the [calculatedExpression extension](http://hl7.org/fhir/uv/sdc/StructureDefinition/sdc-questionnaire-calculatedExpression). 
+You can see some examples in the [Calculated Expressions Questionnaire](./__tests__/questionnaires/calculatedExpression.json).
+
+Currently, calculated expressions are only available for items with the hidden-Extension.
 
 ## Changelog
 See [CHANGELOG.md](CHANGELOG.md)
