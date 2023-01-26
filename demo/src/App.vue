@@ -25,8 +25,8 @@
           :key="question.id"
           :question="question"
           :language="lang"
-          :onAnswer="qData.updateQuestionAnswers"
-          :isSelected="qData.isAnswerOptionSelected" />
+          :onAnswer="qData.updateQuestionAnswers.bind(qData)"
+          :isSelected="qData.isAnswerOptionSelected.bind(qData)" />
         <button
           :disabled="!qData"
           @click="qData?.resetResponse()">
@@ -134,7 +134,6 @@ export default defineComponent({
           this.showOwnQuestionnaireModal = true;
         } else {
           this.qData = new QuestionnaireData(questionnaire.questionnaire, this.availableLanguages);
-          console.log(this.qData.getQuestions());
         }
       }
     },
