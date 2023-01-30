@@ -1,6 +1,6 @@
-import {Questionnaire, QuestionnaireResponse} from '@i4mi/fhir_r4';
+import { Questionnaire } from '@i4mi/fhir_r4';
 import { ItemControlType } from '../dist/IQuestion';
-import {QuestionnaireData} from '../dist/QuestionnaireData';
+import { QuestionnaireData } from '../dist/QuestionnaireData';
 
 const ITEM_CONTROL_QUESTIONNAIRE = require('./questionnaires/itemControl.json') as Questionnaire;
 
