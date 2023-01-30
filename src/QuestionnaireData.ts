@@ -1,6 +1,6 @@
 import fhirpath from 'fhirpath';
 import { Questionnaire, QuestionnaireResponse, QuestionnaireEnableWhenBehavior, Reference, QuestionnaireResponseStatus, QuestionnaireResponseItem, QuestionnaireItemType,
-    Resource, ValueSet, QuestionnaireItem, QuestionnaireResponseItemAnswer, Extension, code, QuestionnaireItemOperator, readI18N, ValueSetComposeIncludeConceptDesignation} from '@i4mi/fhir_r4';
+    Resource, ValueSet, QuestionnaireItem, QuestionnaireResponseItemAnswer, Extension, code, QuestionnaireItemOperator, readI18N, ValueSetComposeIncludeConceptDesignation, Coding} from '@i4mi/fhir_r4';
 import { IQuestion, IAnswerOption, IQuestionOptions, ItemControlType } from './IQuestion';
 
 const UNSELECT_OTHERS_EXTENSION = 'http://midata.coop/extensions/valueset-unselect-others';
@@ -42,7 +42,7 @@ const COMPLEX_VALUE_X = [
         type: 'valueAttachment',
         isMatching: (criterium: QuestionnaireResponseItemAnswer, answerOption: IAnswerOption) => {
             if (criterium.valueAttachment) {
-                console.warn('Sorry, picking valueAttachment from AnswerOptions is currently not supported.');
+                console.warn('Sorry, picking valueAttachment from AnswerOptions is currently not supported.', answerOption);
             }
             return false;
         }
@@ -127,7 +127,7 @@ function checkIfDependingQuestionIsEnabled(
 * @param _operator      defines if the answer and criterium must be equal or not equal etc.
 * @returns              true if answer and criterium match with the given operator, false if not so.
 **/
-function evaluateAnswersForDependingQuestion(_answer: string | number | boolean | Array<any> | undefined, _criterium: string | number | boolean, _operator: QuestionnaireItemOperator): boolean {
+function evaluateAnswersForDependingQuestion(_answer: string | number | boolean | Array<unknown> | undefined, _criterium: string | number | boolean, _operator: QuestionnaireItemOperator): boolean {
     // make sure we have both comparants as number if one is
     if (typeof _answer === 'number' && typeof _criterium !== 'number') {
         _criterium = Number(_criterium);
@@ -287,8 +287,8 @@ function mapIQuestionToQuestionnaireResponseItem(_question: IQuestion[], _respon
 *   If the extension exists with another value, the method returns TRUE.
 *   If the extension does not exist, the method returns UNDEFINED.
 */
-function hasExtension(_extensionURL: string, _extensionSystem: string | undefined, _item: QuestionnaireItem): any {
-    let returnValue: any = undefined;
+function hasExtension(_extensionURL: string, _extensionSystem: string | undefined, _item: QuestionnaireItem): unknown {
+    let returnValue: unknown = undefined;
     if (_item.extension) {
         _item.extension.forEach((extension) => {
             if (!returnValue && extension.url === _extensionURL) {
@@ -335,16 +335,16 @@ function hasExtension(_extensionURL: string, _extensionSystem: string | undefine
  * @returns             an IQuestionOptions object
  */
 function setOptionsFromExtensions(_FHIRItem: QuestionnaireItem): IQuestionOptions {
-    const itemControlExtension = hasExtension(ITEM_CONTROL_EXTENSION, ITEM_CONTROL_EXTENSION_SYSTEM, _FHIRItem);
-    const calculatedExpressionExtension = hasExtension(CALCULATED_EXPRESSION_EXTENSION, 'text/fhirpath', _FHIRItem);
-    const initialExpressionExtension = hasExtension(INITIAL_EXPRESSION_EXTENSION, 'text/fhirpath', _FHIRItem);
+    const itemControlExtension = hasExtension(ITEM_CONTROL_EXTENSION, ITEM_CONTROL_EXTENSION_SYSTEM, _FHIRItem) as undefined | Coding;
+    const calculatedExpressionExtension = hasExtension(CALCULATED_EXPRESSION_EXTENSION, 'text/fhirpath', _FHIRItem) as undefined | {expression: string};
+    const initialExpressionExtension = hasExtension(INITIAL_EXPRESSION_EXTENSION, 'text/fhirpath', _FHIRItem) as undefined | {expression: string};
 
     const returnValue: IQuestionOptions = {
-        min: hasExtension(MIN_VALUE_EXTENSION, undefined, _FHIRItem),
-        max: hasExtension(MAX_VALUE_EXTENSION, undefined, _FHIRItem),
-        format: hasExtension(ENTRY_FORMAT_EXTENSION, undefined, _FHIRItem),
-        sliderStep: hasExtension(SLIDER_STEP_VALUE_EXTENSION, undefined, _FHIRItem),
-        unit: hasExtension(UNIT_EXTENSION, 'https://ucum.org', _FHIRItem),
+        min: hasExtension(MIN_VALUE_EXTENSION, undefined, _FHIRItem) as number | undefined,
+        max: hasExtension(MAX_VALUE_EXTENSION, undefined, _FHIRItem) as number | undefined,
+        format: hasExtension(ENTRY_FORMAT_EXTENSION, undefined, _FHIRItem) as string | undefined,
+        sliderStep: hasExtension(SLIDER_STEP_VALUE_EXTENSION, undefined, _FHIRItem) as number | undefined,
+        unit: hasExtension(UNIT_EXTENSION, 'https://ucum.org', _FHIRItem) as Coding | undefined,
         calculatedExpression: calculatedExpressionExtension ? calculatedExpressionExtension.expression : undefined,
         initialExpression: initialExpressionExtension ? initialExpressionExtension.expression : undefined
     };
@@ -475,7 +475,7 @@ export class QuestionnaireData {
         }
         this.hiddenFhirItems = new Array<{item: IQuestion, parentLinkId?: string}>();
 
-        let questionsDependencies: {id: string, reference?: IQuestion, operator: QuestionnaireItemOperator, answer: any}[] = []; // helper array for dependingQuestions
+        let questionsDependencies: {id: string, reference?: IQuestion, operator: QuestionnaireItemOperator, answer: unknown}[] = []; // helper array for dependingQuestions
 
         if (this.fhirQuestionnaire.item) {
             this.filterOutHiddenItems(this.fhirQuestionnaire.item).forEach((item) => {
@@ -568,6 +568,7 @@ export class QuestionnaireData {
         }
 
         // we shouldn't have to do this in 2022, but if we don't vite will get confused and break everything
+        // eslint-disable-next-line @typescript-eslint/no-this-alias
         const that = this;
 
         _question.dependingQuestions.forEach((dependingQuestion) => {
@@ -1252,9 +1253,9 @@ export class QuestionnaireData {
             id: string, 
             reference: IQuestion | undefined, 
             operator: QuestionnaireItemOperator, 
-            answer: any
+            answer: unknown
         }[]{
-        let dependingQuestions = new Array<{id: string, reference: IQuestion | undefined, operator: QuestionnaireItemOperator, answer: any}>();
+        let dependingQuestions = new Array<{id: string, reference: IQuestion | undefined, operator: QuestionnaireItemOperator, answer: unknown}>();
 
         if (_FHIRItem.item && _FHIRItem.item.length > 0) {
 
