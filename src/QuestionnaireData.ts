@@ -1,9 +1,9 @@
 import fhirpath from 'fhirpath';
 import { Questionnaire, QuestionnaireResponse, QuestionnaireEnableWhenBehavior, Reference, QuestionnaireResponseStatus, QuestionnaireResponseItem, QuestionnaireItemType,
-    Resource, ValueSet, QuestionnaireItem, QuestionnaireResponseItemAnswer, Extension, code, QuestionnaireItemOperator, readI18N, ValueSetComposeIncludeConceptDesignation} from "@i4mi/fhir_r4";
-import { IQuestion, IAnswerOption, IQuestionOptions, ItemControlType } from "./IQuestion";
+    Resource, ValueSet, QuestionnaireItem, QuestionnaireResponseItemAnswer, Extension, code, QuestionnaireItemOperator, readI18N, ValueSetComposeIncludeConceptDesignation} from '@i4mi/fhir_r4';
+import { IQuestion, IAnswerOption, IQuestionOptions, ItemControlType } from './IQuestion';
 
-const UNSELECT_OTHERS_EXTENSION = "http://midata.coop/extensions/valueset-unselect-others";
+const UNSELECT_OTHERS_EXTENSION = 'http://midata.coop/extensions/valueset-unselect-others';
 const ITEM_CONTROL_EXTENSION = 'http://hl7.org/fhir/StructureDefinition/questionnaire-itemControl';
 const ITEM_CONTROL_EXTENSION_SYSTEM = 'http://hl7.org/fhir/questionnaire-item-control';
 const MIN_VALUE_EXTENSION = 'http://hl7.org/fhir/StructureDefinition/minValue';
@@ -11,7 +11,7 @@ const MAX_VALUE_EXTENSION = 'http://hl7.org/fhir/StructureDefinition/maxValue';
 const ENTRY_FORMAT_EXTENSION = 'http://hl7.org/fhir/StructureDefinition/entryFormat';
 const SLIDER_STEP_VALUE_EXTENSION = 'http://hl7.org/fhir/StructureDefinition/questionnaire-sliderStepValue';
 const UNIT_EXTENSION = 'http://hl7.org/fhir/StructureDefinition/questionnaire-unit';
-const HIDDEN_EXTENSION = "http://hl7.org/fhir/StructureDefinition/questionnaire-hidden";
+const HIDDEN_EXTENSION = 'http://hl7.org/fhir/StructureDefinition/questionnaire-hidden';
 const CALCULATED_EXPRESSION_EXTENSION = 'http://hl7.org/fhir/uv/sdc/StructureDefinition/sdc-questionnaire-calculatedExpression';
 const QUESTIONNAIRERESPONSE_CODING_EXTENSION_URL = 'http://midata.coop/extensions/response-code';
 const INITIAL_EXPRESSION_EXTENSION = 'http://hl7.org/fhir/uv/sdc/StructureDefinition/sdc-questionnaire-initialExpression';
@@ -339,7 +339,7 @@ function setOptionsFromExtensions(_FHIRItem: QuestionnaireItem): IQuestionOption
     const calculatedExpressionExtension = hasExtension(CALCULATED_EXPRESSION_EXTENSION, 'text/fhirpath', _FHIRItem);
     const initialExpressionExtension = hasExtension(INITIAL_EXPRESSION_EXTENSION, 'text/fhirpath', _FHIRItem);
 
-    let returnValue: IQuestionOptions = {
+    const returnValue: IQuestionOptions = {
         min: hasExtension(MIN_VALUE_EXTENSION, undefined, _FHIRItem),
         max: hasExtension(MAX_VALUE_EXTENSION, undefined, _FHIRItem),
         format: hasExtension(ENTRY_FORMAT_EXTENSION, undefined, _FHIRItem),
@@ -451,7 +451,7 @@ export class QuestionnaireData {
         availableLanguages: string[];
         responseIdToSynchronize?: string;
     }): void {
-        let data = typeof _data === 'string'
+        const data = typeof _data === 'string'
             ? JSON.parse(_data)
             : _data;
         if (
@@ -480,9 +480,9 @@ export class QuestionnaireData {
         if (this.fhirQuestionnaire.item) {
             this.filterOutHiddenItems(this.fhirQuestionnaire.item).forEach((item) => {
                 // recursively process items
-                let currentQuestion = this.mapQuestionnaireItemToIQuestion(item);
+                const currentQuestion = this.mapQuestionnaireItemToIQuestion(item);
 
-                let dependingToQuestions = this.linkDependingQuestions(item, currentQuestion);
+                const dependingToQuestions = this.linkDependingQuestions(item, currentQuestion);
 
                 if (dependingToQuestions.length > 0){
                     questionsDependencies = questionsDependencies.concat(dependingToQuestions);
@@ -565,13 +565,13 @@ export class QuestionnaireData {
                     _question.selectedAnswers[0] = _answer.code;
                 }
             }
-        };
+        }
 
         // we shouldn't have to do this in 2022, but if we don't vite will get confused and break everything
         const that = this;
 
         _question.dependingQuestions.forEach((dependingQuestion) => {
-            dependingQuestion.dependingQuestion.isEnabled = checkIfDependingQuestionIsEnabled(_question, dependingQuestion, _answer);;
+            dependingQuestion.dependingQuestion.isEnabled = checkIfDependingQuestionIsEnabled(_question, dependingQuestion, _answer);
             // specification says that if an item is not enabled, every subitem is not enabled, 
             // no matter what their own enableWhen says
             if (dependingQuestion.dependingQuestion.isEnabled === false) {
@@ -585,7 +585,7 @@ export class QuestionnaireData {
     private recursivelyDisableSubItems(subItem: IQuestion): void {
         subItem.isEnabled = false;
         subItem.subItems?.forEach(sI => this.recursivelyDisableSubItems(sI));
-    };
+    }
 
     private recursivelyEnableSubitems(subItem: IQuestion): void {
         subItem.isEnabled = true;
@@ -601,7 +601,7 @@ export class QuestionnaireData {
             }
         });
         if (subItem.isEnabled) subItem.subItems?.forEach(sI => this.recursivelyEnableSubitems(sI));
-    };
+    }
 
     /**
     * Checks if a given IAnswerOption is already sel    ected for a IQuestion.
@@ -839,7 +839,7 @@ export class QuestionnaireData {
                     });
                     return itemWithId;
                 }
-                let parentItem = recursivelyFindId(item.parentLinkId, fhirResponse.item!);
+                const parentItem = recursivelyFindId(item.parentLinkId, fhirResponse.item!);
                 if (parentItem) {
                     if (parentItem.item) {
                         parentItem.item.push(mapIQuestionToQuestionnaireResponseItem([item.item], new Array<QuestionnaireResponseItem>(), _language)[0]);
@@ -954,7 +954,7 @@ export class QuestionnaireData {
             if (_FHIRItem.type === QuestionnaireItemType.CHOICE) {
                 // process answer options from ValueSet
                 if (_FHIRItem.answerValueSet && _FHIRItem.answerValueSet.indexOf('#') >= 0) { // these are the "contained valuesets"
-                    let answerOptionsToUnselect = new Array<{disabler: string, toBeDisabled: string | {mustAllOthersBeDisabled: true}}>();
+                    const answerOptionsToUnselect = new Array<{disabler: string, toBeDisabled: string | {mustAllOthersBeDisabled: true}}>();
                     const answerValueSet = this.valueSets[_FHIRItem.answerValueSet.split('#')[1]];
 
                     // check if the valueset has an extension for items unselecting others
@@ -1040,7 +1040,7 @@ export class QuestionnaireData {
                             // finally assign the to be disabled questions to the disabler
                             if (disabler) {
                                 disabler.disableOtherAnswers = answersToBeDisabled;
-                            };
+                            }
                         }
                     });
 
@@ -1052,10 +1052,10 @@ export class QuestionnaireData {
                             return extension.url === UNSELECT_OTHERS_EXTENSION;
                         });
                     }
-                    let answerOptionsToUnselect = new Array<{disabler: string, toBeDisabled: string | {mustAllOthersBeDisabled: true}}>();
+                    const answerOptionsToUnselect = new Array<{disabler: string, toBeDisabled: string | {mustAllOthersBeDisabled: true}}>();
 
                     question.answerOptions = _FHIRItem.answerOption.map((answerOption) => {
-                        let answerOptionText: {[language: string]: string} = {};
+                        const answerOptionText: {[language: string]: string} = {};
                         this.availableLanguages.forEach(language => {
                             answerOptionText[language] = '';
                         });
@@ -1151,7 +1151,7 @@ export class QuestionnaireData {
                             // finally assign the to be disabled questions to the disabler
                             if (disabler) {
                                 disabler.disableOtherAnswers = answersToBeDisabled;
-                            };
+                            }
                         }
                     });
 
@@ -1221,7 +1221,7 @@ export class QuestionnaireData {
     *          kept track of in the hiddenFhirItems property).
     */
     private filterOutHiddenItems(_FHIRItems: QuestionnaireItem[], _parent?: QuestionnaireItem): QuestionnaireItem[] {
-        let returnArray = new Array<QuestionnaireItem>();
+        const returnArray = new Array<QuestionnaireItem>();
         JSON.parse(JSON.stringify(_FHIRItems)).forEach((item: QuestionnaireItem) => {
             if (item.item) {
                 item.item = this.filterOutHiddenItems(item.item, item);
@@ -1346,7 +1346,7 @@ export class QuestionnaireData {
     * @param _overWriteExistingAnswers (optional) specifies if existing answers should be overwritten (default: false)
     */
     populateAnswers(_resources: Resource[], _overWriteExistingAnswers?: boolean): void {
-        let resources = {};
+        const resources = {};
         _resources.forEach(r => {
             if (r.resourceType) {
                 resources[r.resourceType.toLowerCase()] = r;
@@ -1502,7 +1502,7 @@ export class QuestionnaireData {
      *                              and the matching strings
      */
     private getTranslationsFromDesignation(languageDesignations: ValueSetComposeIncludeConceptDesignation[]): {[language: string]: string} {
-        let translations: {[language: string]: string} = {};
+        const translations: {[language: string]: string} = {};
         Array.prototype.forEach.call(languageDesignations, (designation: { language: string; value: string; }) => {
             translations[designation.language] = designation.value;
         })

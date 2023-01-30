@@ -1,4 +1,4 @@
-import { HumanNameNameUse, Observation, Patient, PatientAdministrativeGender, Questionnaire, QuestionnaireResponse, Reference } from '@i4mi/fhir_r4';
+import { Observation, Patient, PatientAdministrativeGender, Questionnaire, QuestionnaireResponse, Reference } from '@i4mi/fhir_r4';
 import { IAnswerOption } from '../dist/IQuestion';
 import { QuestionnaireData } from '../dist/QuestionnaireData';
 
@@ -419,7 +419,7 @@ test('calculated Expression', () => {
         answer: {},
         code: {
             valueCoding: {
-                code: "12"
+                code: '12'
             }
         }
     };

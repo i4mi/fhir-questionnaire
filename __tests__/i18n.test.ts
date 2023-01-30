@@ -77,7 +77,7 @@ test('answering', () => {
   ).not.toThrow();
 });
 test('getQuestionnaireResponse', () => {
-  let response: {[lang: string]: QuestionnaireResponse | undefined} = {
+  const response: {[lang: string]: QuestionnaireResponse | undefined} = {
   };
   const now = new Date();
   expect(() => response.de = testData.getQuestionnaireResponse('de', { date: now})).not.toThrow();
