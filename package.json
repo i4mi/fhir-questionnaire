@@ -7,7 +7,7 @@
   "scripts": {
     "build": "rm -rf ./dist && npm i && tsc",
     "test": "jest --config jestconfig.json --coverage --silent",
-    "lint": "eslint --ext .js,.ts ./"
+    "lint": "eslint --ext .js,.ts ./ --fix"
   },
   "repository": {
     "type": "git",

@@ -475,7 +475,7 @@ export class QuestionnaireData {
         }
         this.hiddenFhirItems = new Array<{item: IQuestion, parentLinkId?: string}>();
 
-        let questionsDependencies: {id: string, reference?: IQuestion, operator: QuestionnaireItemOperator, answer: unknown}[] = []; // helper array for dependingQuestions
+        let questionsDependencies: {id: string, reference?: IQuestion, operator: QuestionnaireItemOperator, answer: QuestionnaireResponseItemAnswer | undefined}[] = []; // helper array for dependingQuestions
 
         if (this.fhirQuestionnaire.item) {
             this.filterOutHiddenItems(this.fhirQuestionnaire.item).forEach((item) => {
@@ -495,13 +495,13 @@ export class QuestionnaireData {
                 const determinator = this.findQuestionById(question.id, this.items);
                 if (question.reference && determinator) {
                     const existingDependingQuestion = determinator.dependingQuestions.find(q => q.dependingQuestion == question.reference);
-                    if (existingDependingQuestion) {
+                    if (existingDependingQuestion && question.answer !== undefined) {
                         existingDependingQuestion.criteria.push({
                             answer: question.answer,
                             operator: question.operator
                         });
                     } else {
-                        determinator.dependingQuestions.push({
+                        question.answer && determinator.dependingQuestions.push({
                             dependingQuestion: question.reference,
                             criteria: [{
                                 answer: question.answer,
@@ -1253,9 +1253,9 @@ export class QuestionnaireData {
             id: string, 
             reference: IQuestion | undefined, 
             operator: QuestionnaireItemOperator, 
-            answer: unknown
+            answer: QuestionnaireResponseItemAnswer | undefined
         }[]{
-        let dependingQuestions = new Array<{id: string, reference: IQuestion | undefined, operator: QuestionnaireItemOperator, answer: unknown}>();
+        let dependingQuestions = new Array<{id: string, reference: IQuestion | undefined, operator: QuestionnaireItemOperator, answer: QuestionnaireResponseItemAnswer | undefined}>();
 
         if (_FHIRItem.item && _FHIRItem.item.length > 0) {
 
