@@ -335,7 +335,6 @@ function hasExtension(_extensionURL: string, _extensionSystem: string | undefine
  * @returns             an IQuestionOptions object
  */
 function setOptionsFromExtensions(_FHIRItem: QuestionnaireItem): IQuestionOptions {
-    const itemControlExtension = hasExtension(ITEM_CONTROL_EXTENSION, ITEM_CONTROL_EXTENSION_SYSTEM, _FHIRItem);
     const calculatedExpressionExtension = hasExtension(CALCULATED_EXPRESSION_EXTENSION, 'text/fhirpath', _FHIRItem);
     const initialExpressionExtension = hasExtension(INITIAL_EXPRESSION_EXTENSION, 'text/fhirpath', _FHIRItem);
 
@@ -346,9 +345,21 @@ function setOptionsFromExtensions(_FHIRItem: QuestionnaireItem): IQuestionOption
         sliderStep: hasExtension(SLIDER_STEP_VALUE_EXTENSION, undefined, _FHIRItem),
         unit: hasExtension(UNIT_EXTENSION, 'https://ucum.org', _FHIRItem),
         calculatedExpression: calculatedExpressionExtension ? calculatedExpressionExtension.expression : undefined,
-        initialExpression: initialExpressionExtension ? initialExpressionExtension.expression : undefined
+        initialExpression: initialExpressionExtension ? initialExpressionExtension.expression : undefined,
+        controlTypes: []
     };
 
+    // push itemcontrol extensions to controlTypes
+    _FHIRItem.extension?.forEach((extension) => {
+        if (extension.url === ITEM_CONTROL_EXTENSION) {
+            const controlType = extension.valueCodeableConcept?.coding![0].code as ItemControlType;
+            controlType && returnValue.controlTypes.push(controlType);
+        }
+    });
+
+
+    // TODO: legacy code, can be removed in version 1.0.0
+    const itemControlExtension = hasExtension(ITEM_CONTROL_EXTENSION, ITEM_CONTROL_EXTENSION_SYSTEM, _FHIRItem);
     if (itemControlExtension) {
         Object.values(ItemControlType).forEach((typeCode) => {
             if (!returnValue.controlType && itemControlExtension.code === typeCode) {
@@ -356,6 +367,8 @@ function setOptionsFromExtensions(_FHIRItem: QuestionnaireItem): IQuestionOption
             }
         });
     }
+    // TODO: end of legacy code
+
     return returnValue;
 }
 

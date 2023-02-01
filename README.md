@@ -110,7 +110,7 @@ Answer options conform to this interface:
 ### IQuestionOptions
 The options object can provice additional information for a question. Often, these are mostly used for internal usage. All of the options are optional.
 
-- **controlType** (ItemControlType): Describes the UI control type relevant for a question (see the [Questionnaire Item Control Valueset](https://www.hl7.org/fhir/valueset-questionnaire-item-control.html)). Currently, only slider and spinner are supported.
+- **controlTypes** (ItemControlType[]): Describes the UI control types relevant for a question (see the [Questionnaire Item Control Valueset](https://www.hl7.org/fhir/valueset-questionnaire-item-control.html)).
 - **min** (number): The minimal value accepted for the item (this is for rendering, not taken into consideration when validating the answers!). 
 - **max** (number): The maximum value accepted for the item (this is for rendering, not taken into consideration when validating the answers!). Can be defined in the Questionnaire using the [maxValue extension](http://hl7.org/fhir/StructureDefinition/maxValue).
 - **sliderStep** (number): Describes the step for a slider, if provided as [SliderStepValue extension](http://hl7.org/fhir/StructureDefinition/questionnaire-sliderStepValue). If the controlType of a question is `slider`, this should be considered when rendering the question.
@@ -118,6 +118,7 @@ The options object can provice additional information for a question. Often, the
 - **format** (string): Describes the desired format of the answer, as provided by the [QuestionnaireItem format extension](http://hl7.org/fhir/StructureDefinition/entryFormat). This is to be meant for displaying in the GUI and has no effect on the answer validation in QuestionnaireData.
 - **initialExpression** (string): Mostly for internal use. Used to save the FHIRPath expression for calculating the items initial value for populating the Questionnaire. See also [populateAnswers()](#populateAnswers(_resources,-_overWriteExistingAnswers?):-void).
 - **calculatedExpression** (string): Mostly for internal use. Used to save the calculated expression (FHIRPath) for calculating an items value. For details, see the [Working with calculated expressions](#Working-with-calculated-expressions) chapter.
+- controlType (ItemControlType): **DEPRECATED**. Describes the UI control type relevant for a question (see the [Questionnaire Item Control Valueset](https://www.hl7.org/fhir/valueset-questionnaire-item-control.html)). Will be removed in version 1.0.0.
 
 ## Supported types
 Not all types of QuestionnaireItems are currently supported by QuestionnaireData. If you need a type that is currently not supported, you can implement it and make a [pull request](https://github.com/i4mi/fhir-questionnaire/pulls). If you don't see yourself able to do so, please [raise an issue](https://github.com/i4mi/fhir-questionnaire/issues). 
@@ -125,7 +126,7 @@ Not all types of QuestionnaireItems are currently supported by QuestionnaireData
 |Type     | Generate IQuestion  | Populate Answer | Calculated Expressions | Depending Questions |
 |---------|---------------------|-----------------|------------------------|---------------------|
 |GROUP    | 🟩 supported        | ⬜️ not applicable| ⬜️ not applicable      | ⬜️ not applicable   |
-|DISPLAY  | 🟩 supported        | ⬜️ not applicable| 🟥 not implemented   | ⬜️ not applicable   |
+|DISPLAY  | 🟩 supported        | ⬜️ not applicable| 🟥 not implemented     | ⬜️ not applicable   |
 |BOOLEAN  | 🟩 supported        | 🟩 supported     | 🟥 not implemented     | 🟩 supported (2)    |
 |DECIMAL  | 🟩 supported        | 🟩 supported     | 🟩 supported           | 🟩 supported (2)    |
 |INTEGER  | 🟩 supported        | 🟩 supported     | 🟩 supported           | 🟩 supported (2)    |
@@ -134,10 +135,10 @@ Not all types of QuestionnaireItems are currently supported by QuestionnaireData
 |TIME     | 🟩 supported        | 🟩 supported     | 🟥 not implemented     | 🟩 supported (2)    |
 |STRING   | 🟩 supported        | 🟩 supported     | 🟥 not implemented     | 🟩 supported (2)    |
 |TEXT     | 🟩 supported        | 🟩 supported     | 🟥 not implemented     | 🟩 supported (2)    |
-|URL      | 🟩 supported  | 🟥 not implemented | 🟥 not implemented         | 🟥 not implemented  |
+|URL      | 🟩 supported        | 🟥 not implemented | 🟥 not implemented   | 🟥 not implemented  |
 |CHOICE   | 🟩 supported        | 🟩 supported     | 🟥 not implemented     | 🟨 partially implemented (3)|
 |OPEN_CHOICE| 🟩 supported      | 🟥 not implemented | 🟥 not implemented   | 🟥 not implemented  |
-|ATTACHMENT| 🟩 supported | 🟥 not implemented | 🟥 not implemented         | 🟥 not implemented  |
+|ATTACHMENT| 🟩 supported       | 🟥 not implemented | 🟥 not implemented   | 🟥 not implemented  |
 |REFERENCE| 🟩 supported        | 🟩 supported     | 🟥 not implemented     | 🟥 not implemented  |
 |QUANTITY | 🟩 supported        | 🟩 supported     | 🟩 supported (1)       | 🟥 not implemented  |
 
