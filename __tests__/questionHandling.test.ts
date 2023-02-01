@@ -1,4 +1,4 @@
-import { HumanNameNameUse, Observation, Patient, PatientAdministrativeGender, Questionnaire, QuestionnaireResponse, Reference } from '@i4mi/fhir_r4';
+import { HumanNameNameUse, NarrativeStatus, Observation, Patient, PatientAdministrativeGender, Questionnaire, QuestionnaireResponse, Reference } from '@i4mi/fhir_r4';
 import { IAnswerOption } from '../dist/IQuestion';
 import { QuestionnaireData } from '../dist/QuestionnaireData';
 
@@ -457,6 +457,24 @@ test('calculated Expression', () => {
     expect(integerScore?.answer![0].valueInteger).toBe(2 * 3 * 1);
 });
 
-test('validation', () => {
-    expect(1).toBe(1);
+test('narrative', () => {
+    const testData = new QuestionnaireData(VARIOUS, LANG);
+    expect(() => testData.restoreAnswersFromQuestionnaireResponse(RESPONSE)).not.toThrow();
+    const mcQuestion = testData.findQuestionById('2-multiple-choice');
+    expect(mcQuestion).toBeDefined;
+    testData.updateQuestionAnswers(mcQuestion!, mcQuestion?.answerOptions[1]);
+    testData.updateQuestionAnswers(mcQuestion!, mcQuestion?.answerOptions[2]);
+    testData.updateQuestionAnswers(mcQuestion!, mcQuestion?.answerOptions[4]);
+    const response = testData.getQuestionnaireResponse(LANG[0])
+    const narrative = response.text;
+    console.log(narrative)
+    expect(narrative).toBeDefined();
+    expect(narrative?.status).toEqual(NarrativeStatus.GENERATED);
+    const div = narrative?.div || '';
+    expect(div.length).toBeGreaterThan(0);
+    expect(div.includes('http://i4mi.bfh.ch/various-types-questionnaire|1')).toBeTruthy();
+    expect(div.includes('INTRAVENOUS')).toBeTruthy();
+    expect(div.includes('Hep B given y / n')).toBeTruthy();
+    expect(div.includes('Mozzarella cheese')).toBeTruthy();
+    expect(div.includes('Tomato')).toBeTruthy();
 });

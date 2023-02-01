@@ -31,7 +31,6 @@ test('answering', () => {
   const q3 = testData.findQuestionById('Q3');
   expect(q3).toBeDefined();
 
-  console.log(JSON.stringify(q1?.answerOptions));
   // answer with full answer
   expect(() =>
     testData.updateQuestionAnswers(q1!, {
