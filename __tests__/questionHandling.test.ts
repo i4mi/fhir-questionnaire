@@ -467,7 +467,6 @@ test('narrative', () => {
     testData.updateQuestionAnswers(mcQuestion!, mcQuestion?.answerOptions[4]);
     const response = testData.getQuestionnaireResponse(LANG[0])
     const narrative = response.text;
-    console.log(narrative)
     expect(narrative).toBeDefined();
     expect(narrative?.status).toEqual(NarrativeStatus.GENERATED);
     const div = narrative?.div || '';
