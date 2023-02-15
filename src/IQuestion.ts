@@ -27,7 +27,7 @@ export enum ItemControlType {
     UPPER_BOUND = 'upper',
     FLY_OVER = 'flyover',
     HELP_BUTTON = 'help'
-};
+}
 
 export interface IQuestion {
     id: string; // represents linkId in QuestionnaireItem
@@ -53,13 +53,13 @@ export interface IQuestion {
     isInvalid: boolean;
     initial?: QuestionnaireItemInitial[];
     options?: IQuestionOptions;
-};
+}
 
 export interface IAnswerOption {
     answer: {[language: string]: string};
     code: QuestionnaireResponseItemAnswer;
     disableOtherAnswers?: code[];
-};
+}
 
 export interface IQuestionOptions {
     controlType?: ItemControlType; // deprecated, only for legacy
@@ -71,4 +71,4 @@ export interface IQuestionOptions {
     format?: string;
     initialExpression?: string;
     calculatedExpression?: string;
-};
+}
