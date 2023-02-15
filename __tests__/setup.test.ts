@@ -79,20 +79,3 @@ test('findQuestionById()', () => {
     // explicitly provide empty data
     expect(testData.findQuestionById('1-group', [])).toBeUndefined();
 });
-
-
-// resetResponse()
-
-// updateQuestionAnswers(_question: IQuestion, _answer: IAnswerOption | undefined): void {
-
-// isAnswerOptionSelected(_question: IQuestion, _answer: IAnswerOption): boolean {
-
-// restoreAnswersFromQuestionnaireResponse(_fhirResponse: QuestionnaireResponse): void {
-
-//  getQuestionnaireResponse()
-
-// isResponseComplete(_onlyRequired?: boolean): boolean {
-
-//  populateAnswers(_resources: Resource[], _overWriteExistingAnswers?: boolean): void {
-
-// also test depending questions
