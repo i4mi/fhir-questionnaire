@@ -1,7 +1,7 @@
 import fhirpath from 'fhirpath';
 import { Questionnaire, QuestionnaireResponse, QuestionnaireEnableWhenBehavior, Reference, QuestionnaireResponseStatus, QuestionnaireResponseItem, QuestionnaireItemType,
-    Resource, ValueSet, QuestionnaireItem, QuestionnaireResponseItemAnswer, Extension, code, QuestionnaireItemOperator, readI18N, ValueSetComposeIncludeConceptDesignation, Coding, NarrativeStatus, Expression, integer, Duration} from "@i4mi/fhir_r4";
-import { IQuestion, IAnswerOption, IQuestionOptions, ItemControlType } from "./IQuestion";
+    Resource, ValueSet, QuestionnaireItem, QuestionnaireResponseItemAnswer, Extension, code, QuestionnaireItemOperator, readI18N, ValueSetComposeIncludeConceptDesignation, Coding, NarrativeStatus, Expression, integer, Duration} from '@i4mi/fhir_r4';
+import { IQuestion, IAnswerOption, IQuestionOptions, ItemControlType } from './IQuestion';
 
 const UNSELECT_OTHERS_EXTENSION = 'http://midata.coop/extensions/valueset-unselect-others';
 const ITEM_CONTROL_EXTENSION = 'http://hl7.org/fhir/StructureDefinition/questionnaire-itemControl';
