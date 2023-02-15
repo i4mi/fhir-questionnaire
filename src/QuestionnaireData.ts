@@ -1,6 +1,6 @@
 import fhirpath from 'fhirpath';
 import { Questionnaire, QuestionnaireResponse, QuestionnaireEnableWhenBehavior, Reference, QuestionnaireResponseStatus, QuestionnaireResponseItem, QuestionnaireItemType,
-    Resource, ValueSet, QuestionnaireItem, QuestionnaireResponseItemAnswer, Extension, code, QuestionnaireItemOperator, readI18N, ValueSetComposeIncludeConceptDesignation} from "@i4mi/fhir_r4";
+    Resource, ValueSet, QuestionnaireItem, QuestionnaireResponseItemAnswer, Extension, code, QuestionnaireItemOperator, readI18N, ValueSetComposeIncludeConceptDesignation, NarrativeStatus} from "@i4mi/fhir_r4";
 import { IQuestion, IAnswerOption, IQuestionOptions, ItemControlType } from "./IQuestion";
 
 const UNSELECT_OTHERS_EXTENSION = "http://midata.coop/extensions/valueset-unselect-others";
@@ -231,7 +231,7 @@ function mapIQuestionToQuestionnaireResponseItem(_question: IQuestion[], _respon
                 question.isInvalid = true;
                 throw new Error(`Invalid answer set: IQuestion with id ${question.id} allows only one answer, but has more.`);
             } else {
-                const responseItem = {
+                const responseItem: QuestionnaireResponseItem = {
                     linkId: question.id,
                     text: question.label[_language],
                     answer: new Array<QuestionnaireResponseItemAnswer>()
@@ -248,7 +248,7 @@ function mapIQuestionToQuestionnaireResponseItem(_question: IQuestion[], _respon
                                                     ? answerDisplayAllLanguages[_language]
                                                     : answerDisplayAllLanguages[Object.keys(answerDisplayAllLanguages)[0]]
                                                 : '';
-                        responseItem.answer.push({
+                        responseItem.answer!.push({
                             valueCoding: {
                                 system: answer.valueCoding.system,
                                 code: answer.valueCoding.code,
@@ -257,7 +257,7 @@ function mapIQuestionToQuestionnaireResponseItem(_question: IQuestion[], _respon
                             }
                         });
                     } else {
-                        responseItem.answer.push(answer);
+                        responseItem.answer!.push(answer);
                     }
                 });
 
@@ -265,6 +265,7 @@ function mapIQuestionToQuestionnaireResponseItem(_question: IQuestion[], _respon
                     (responseItem as QuestionnaireResponseItem).item = [];
                     mapIQuestionToQuestionnaireResponseItem(question.subItems, (responseItem as QuestionnaireResponseItem).item || [], _language);
                 }
+                if (question.type === QuestionnaireItemType.DISPLAY) responseItem.answer = undefined;
                 // add to array
                 _responseItems.push(responseItem);
             }
@@ -780,13 +781,18 @@ export class QuestionnaireData {
         const options = _options || {};
         // usual questionnaire response
         const fhirResponse: QuestionnaireResponse = {
-            status: this.isResponseComplete() ? QuestionnaireResponseStatus.COMPLETED : QuestionnaireResponseStatus.IN_PROGRESS,
             resourceType: 'QuestionnaireResponse',
+            status: this.isResponseComplete() ? QuestionnaireResponseStatus.COMPLETED : QuestionnaireResponseStatus.IN_PROGRESS,
+            meta: {},
+            text: {
+                status: NarrativeStatus.GENERATED,
+                div: ''
+            },
             questionnaire: this.getQuestionnaireURLwithVersion(),
             authored: options.date ? options.date.toISOString() : new Date().toISOString(),
             source: options.patient,
             id: options.includeID ? this.responseIdToSynchronize : undefined,
-            meta: {},
+
             item: mapIQuestionToQuestionnaireResponseItem(this.items, new Array<QuestionnaireResponseItem>(),_language)
         }; 
         if (this.fhirQuestionnaire.code) {
@@ -867,7 +873,82 @@ export class QuestionnaireData {
         if (options.reset) {
             this.resetResponse();
         }
+
+        fhirResponse.text!.div = '<div xmlns=\"http://www.w3.org/1999/xhtml\">';
+        fhirResponse.text!.div    += '<style>' + 
+            '.question {font-weight: bold;} ' + 
+            'ul {margin: 0} ' + 
+            '.multiple-answers {display: inline; padding: 0} ' +
+            '.multiple-answers > li {display: inline; margin-left: 0.3em} ' +
+            '.multiple-answers > li:before {content: \'-\'; margin-right: 0.3em}' +
+            '</style>';
+        fhirResponse.text!.div    += '<h4 class="title">' + this.getQuestionnaireTitle(_language) + '</h4>';
+        fhirResponse.text!.div    += '<p class="status">Status: ' + fhirResponse.status + '</p>';
+        fhirResponse.text!.div    += '<p class="created">Created: ' + new Date(fhirResponse.authored!).toLocaleDateString() + '</p>';
+        fhirResponse.text!.div    += '<p class="questionnaire-link">Questionnaire: ' + fhirResponse.questionnaire + '</p>';
+        if (options.patient) {
+            fhirResponse.text!.div+= '<p class="patient">Patient: ' + options.patient.display ? options.patient.display : options.patient.reference + '</p>';
+        }
+        fhirResponse.text!.div    += fhirResponse.item ? this.getNarrativeString(fhirResponse.item, true) : ''
+        fhirResponse.text!.div    += '</div>';
+
         return {...fhirResponse};
+    }
+
+    /**
+     * Recursively generates the narrative html for QuestionnaireResponseItems.
+     * @param _items      the items to be represented
+     * @param _topLevel?  indicates if we are on the top level. do not set to true when calling recursively.
+     * @returns           a string containging html code that represents the QuestionnaireResponseItems
+     */
+    private getNarrativeString(_items: QuestionnaireResponseItem[], _topLevel?: boolean): string {
+        if (!_items || _items.length === 0) return '';
+        let narrativeString = _topLevel 
+            ? '<ul class="narrative questionnaire-response">' 
+            : '<ul class="sub-question">';
+        _items.map(i => {narrativeString += this.getItemString(i)});
+
+        return narrativeString + '</ul>';
+    }
+
+    /**
+     * Recursively generates the narrative html for a single QuestionnaireResponseItem.
+     * @param _item     the item
+     * @returns         a string containging html code that represents the QuestionnaireResponseItem
+     */
+    private getItemString(_item: QuestionnaireResponseItem): string {
+        const parseAnswer  = (a: QuestionnaireResponseItemAnswer) => {
+            if (a.valueBoolean !== undefined) return a.valueBoolean;
+            if (a.valueCoding !== undefined) return (a.valueCoding?.display || a.valueCoding?.code);
+            if (a.valueDate !== undefined) return new Date(a.valueDate).toLocaleDateString();
+            if (a.valueDateTime !== undefined) return new Date(a.valueDateTime).toLocaleString();
+            if (a.valueTime !== undefined) return new Date(a.valueTime).toLocaleTimeString();
+            if (a.valueDecimal  !== undefined) return a.valueDecimal?.toString();
+            if (a.valueInteger  !== undefined) return a.valueInteger?.toString();
+            if (a.valueQuantity  !== undefined) return (a.valueQuantity?.value + ' ' + (a.valueQuantity?.unit ? a.valueQuantity?.unit : a.valueQuantity?.code));
+            if (a.valueReference  !== undefined) return (a.valueReference?.display ? a.valueReference?.display : a.valueReference?.reference);
+            if (a.valueString !== undefined) return a.valueString;
+            if (a.valueUri !== undefined) return a.valueUri;
+            if (a.valueAttachment !== undefined) return 'Attachment ' + a.valueAttachment?.title;
+        };
+
+        if (!_item.answer) return '<li><span class="question display">' + (_item.text || 'no text') + '</span></li>';
+        let itemString = '<li><span class="question">' + (_item.text || 'no text') + ':</span>';
+        if (_item.answer.length === 0) itemString += ' <span class="response">-'
+        if (_item.answer!.length === 1) {
+            itemString += ' <span class="response">'+ parseAnswer(_item.answer[0])+ '</span>';
+        } else {
+            itemString += '<ul class="multiple-answers">';
+            _item.answer.map((a) => {
+                itemString += '<li>' + parseAnswer(a) + '</li>'
+            });
+            itemString += '</ul>'
+        }
+        if (_item.item && _item.item?.length > 0) {
+            itemString += this.getNarrativeString(_item.item, false)
+        }
+    itemString += '</li>';
+    return itemString;
     }
 
     /**
