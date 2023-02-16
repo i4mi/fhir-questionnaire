@@ -224,6 +224,7 @@ test('answerQuestions', () => {
     expect(testData.isResponseComplete(true, true)).toBeFalsy();
     expect(q6!.isInvalid).toBeFalsy();
     expect(q7!.isInvalid).toBeTruthy(); // not answered
+    expect(testData.isQuestionComplete(q7!, false)).toBeFalsy();
 
     const a7: IAnswerOption = {
         answer: { en: '11.10.2022' },
@@ -233,6 +234,7 @@ test('answerQuestions', () => {
     };
     expect(() => testData.updateQuestionAnswers(q7!, a7)).not.toThrow();
     expect(q7!.isInvalid).toBeFalsy(); // now it is answered
+    expect(testData.isQuestionComplete(q7!, false)).toBeTruthy();
 
     // the last question is not required, so the questionnaire is complete
     expect(testData.isResponseComplete(true)).toBeTruthy();
