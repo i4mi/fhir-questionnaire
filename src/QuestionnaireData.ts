@@ -269,7 +269,6 @@ function mapIQuestionToQuestionnaireResponseItem(_question: IQuestion[], _respon
                 // add to array
                 _responseItems.push(responseItem);
             }
-
         }
     });
     return _responseItems;
@@ -896,8 +895,26 @@ export class QuestionnaireData {
         fhirResponse.text!.div    += fhirResponse.item ? this.getNarrativeString(fhirResponse.item, true) : '';
         fhirResponse.text!.div    += '</div>';
 
+        fhirResponse.item = this.recursivelyCleanEmptyArrays(fhirResponse.item);
+        
         return {...fhirResponse};
     }
+
+    /**
+     * Recursively removes empty arrays on item (because we don't want empty arrays in QuestionnaireResponses)
+     * @param _items    the input array of items to iterate through
+     * @returns         the deep cleaned input array, or undefined if the input array was empty
+     */
+    private recursivelyCleanEmptyArrays(_items: QuestionnaireResponseItem[] | undefined): QuestionnaireResponseItem[] | undefined {
+        if (_items !== undefined && _items.length > 0) {
+            _items.forEach(item => {
+                item.item = this.recursivelyCleanEmptyArrays(item.item);
+            });
+            return _items;
+        } else {
+            return undefined;
+        }
+    } 
 
     /**
      * Recursively generates the narrative html for QuestionnaireResponseItems.
