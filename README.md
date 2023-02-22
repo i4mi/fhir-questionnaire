@@ -196,10 +196,11 @@ Processes a QuestionnaireResponse and sets its answers to the QuestionnaireData 
 ### getQuestionnaireResponse(_language,_options?): QuestionnaireResponse
  Gets the QuestionnaireResponse resource with all the currently set answers.
 - parameter **_language**: the shorthand for the language the QuestionnaireResponse (eg. 'de' or 'en'), should be in the set of available languages
-- parameter **_options  Options object that can contain zero, one or many of the following properties:
+- parameter **_options**:  Options object that can contain zero, one or many of the following properties:
   - date:      the date when the Questionnaire was filled out (current date by default)
   - includeID: boolean that determines if to include FHIR resource ID of a potential previously restored QuestionnaireResponse (default: false)
   - patient:   a Reference to the FHIR Patient who filled out the Questionnaire
+  - midataExtensions: wether to include extensions that are relevant for MIDATA or not. (default: false)
   - reset:     should the questionnaire be reseted after creating the response (default: false)
 - throws          an error if the QuestionnaireResponse is not valid for the corresponding Questionnaire, e.g. when a required answer is missing (the first invalid IQuestion is marked with isInvalid)
 - returns:         a QuestionnaireResponse FHIR resource containing all the answers the user gave
