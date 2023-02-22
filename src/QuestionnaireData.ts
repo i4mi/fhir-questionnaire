@@ -265,7 +265,6 @@ function mapIQuestionToQuestionnaireResponseItem(_question: IQuestion[], _respon
                 // add to array
                 _responseItems.push(responseItem);
             }
-
         }
     });
     return _responseItems;
@@ -754,6 +753,7 @@ export class QuestionnaireData {
     *                               previously restored QuestionnaireResponse (default: false) (if the previous response has
     *                               no id, the id of the generated response will be undefined)
     *                  - patient:   a Reference to the FHIR Patient who filled out the Questionnaire
+    *                  - midataExtensions: wether to include MIDATA extensions or not (default: false)
     *                  - reset:     should the questionnaire be reseted after creating the response (default: false)
     * @returns         a QuestionnaireResponse FHIR resource containing all the answers the user gave
     * @throws          - an error if the QuestionnaireResponse is not valid for the corresponding
@@ -766,6 +766,7 @@ export class QuestionnaireData {
             date?: Date;
             includeID?: boolean;
             patient?: Reference;
+            midataExtensions?: boolean;
             reset?: boolean;
         }
     ): QuestionnaireResponse {
@@ -792,7 +793,7 @@ export class QuestionnaireData {
 
             item: mapIQuestionToQuestionnaireResponseItem(this.items, new Array<QuestionnaireResponseItem>(),_language)
         }; 
-        if (this.fhirQuestionnaire.code) {
+        if (options.midataExtensions && this.fhirQuestionnaire.code) {
             fhirResponse.extension = [{
                 url: QUESTIONNAIRERESPONSE_CODING_EXTENSION_URL,
                 valueCoding: this.fhirQuestionnaire.code[0]
@@ -800,9 +801,9 @@ export class QuestionnaireData {
         }
         
 
-        // stuff to do for items with calculated expression
-        const itemsWithCalculatedExpression = [...this.hiddenFhirItems].filter(i => i.item.options && i.item.options.calculatedExpression !== undefined);
-        itemsWithCalculatedExpression.forEach(item => {
+        // stuff to do for hidden items with calculated expression
+        const hiddenItemsWithCalculatedExpression = [...this.hiddenFhirItems].filter(i => i.item.options && i.item.options.calculatedExpression !== undefined);
+        hiddenItemsWithCalculatedExpression.forEach(item => {
             if (item.item.options && item.item.options.calculatedExpression) {
                 try {
                     let calculatedAnswer = {};
@@ -871,6 +872,7 @@ export class QuestionnaireData {
             this.resetResponse();
         }
 
+        // generate narrative
         fhirResponse.text!.div = '<div xmlns=\"http://www.w3.org/1999/xhtml\">';
         fhirResponse.text!.div    += '<style>' + 
             '.question {font-weight: bold;} ' + 
@@ -886,11 +888,29 @@ export class QuestionnaireData {
         if (options.patient) {
             fhirResponse.text!.div+= '<p class="patient">Patient: ' + options.patient.display ? options.patient.display : options.patient.reference + '</p>';
         }
-        fhirResponse.text!.div    += fhirResponse.item ? this.getNarrativeString(fhirResponse.item, true) : ''
+        fhirResponse.text!.div    += fhirResponse.item ? this.getNarrativeString(fhirResponse.item, true) : '';
         fhirResponse.text!.div    += '</div>';
 
+        fhirResponse.item = this.recursivelyCleanEmptyArrays(fhirResponse.item);
+        
         return {...fhirResponse};
     }
+
+    /**
+     * Recursively removes empty arrays on item (because we don't want empty arrays in QuestionnaireResponses)
+     * @param _items    the input array of items to iterate through
+     * @returns         the deep cleaned input array, or undefined if the input array was empty
+     */
+    private recursivelyCleanEmptyArrays(_items: QuestionnaireResponseItem[] | undefined): QuestionnaireResponseItem[] | undefined {
+        if (_items !== undefined && _items.length > 0) {
+            _items.forEach(item => {
+                item.item = this.recursivelyCleanEmptyArrays(item.item);
+            });
+            return _items;
+        } else {
+            return undefined;
+        }
+    } 
 
     /**
      * Recursively generates the narrative html for QuestionnaireResponseItems.
