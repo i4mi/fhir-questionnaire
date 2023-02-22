@@ -181,27 +181,23 @@ function evaluateAnswersForDependingQuestion(_answer: string | number | boolean 
  *                        false if at least one (sub)question is not complete
  */
 function recursivelyCheckCompleteness(_question: IQuestion[], _onlyRequired: boolean, _markInvalid: boolean): boolean {
-    let isComplete = true;
+    let areAllComplete = true;
     _question.forEach((question) => {
-        if (isComplete && !question.readOnly && question.isEnabled) {
+       if (!question.readOnly && question.isEnabled) {
             if (question.subItems) {
-                isComplete = isComplete
+                areAllComplete = areAllComplete
                 ? recursivelyCheckCompleteness(question.subItems, _onlyRequired, _markInvalid)
                 : false;
             }
             if (question.isEnabled && (question.required || !_onlyRequired) && question.type !== QuestionnaireItemType.DISPLAY && question.type !== QuestionnaireItemType.GROUP) {
-                isComplete = isComplete
-                    ? question.selectedAnswers !== undefined && question.selectedAnswers.length > 0
-                    : false;
+                if (question.selectedAnswers === undefined || question.selectedAnswers.length === 0) {
+                    if (_markInvalid) question.isInvalid = true;
+                    areAllComplete = false;
+                }
             }
         }
-        // after the first item is not complete, we don't have to look any further
-        if (!isComplete) {
-            if (_markInvalid) question.isInvalid = true;
-            return false;
-        }
     });
-    return isComplete;
+    return areAllComplete;
 }
 
 /**
@@ -979,6 +975,20 @@ export class QuestionnaireData {
         _onlyRequired = _onlyRequired === true ? true : false;
         _markInvalid = _markInvalid == undefined ? true : _markInvalid;
         return recursivelyCheckCompleteness(this.items, _onlyRequired, _markInvalid);
+    }
+
+    /**
+     * Determines if a question has an answer, when an answer is required. Also checks potential subquestions, 
+     * if these are activated.
+     * @param _question      the question that should be checked
+     * @param _markInvalid   optional parameter, indicates if the question (and subquestion) should be marked as invalid
+     *                       if the question is not complete. defaults to true.
+     * @returns              TRUE, if the question either does not require an answer, or does require and has at least one answer.
+     *                       if the questions subquestions are activated and not complete, the parent question is also regarded incomplete
+     *                       and thus FALSE is returned.
+     */
+    isQuestionComplete(_question: IQuestion, _markInvalid?: boolean): boolean {
+        return recursivelyCheckCompleteness([_question], true, _markInvalid === undefined ? true : _markInvalid);
     }
 
     /**
