@@ -209,10 +209,17 @@ Processes a QuestionnaireResponse and sets its answers to the QuestionnaireData 
 Returns the questionnaire URL with version number in FHIR canonical format.
 - returns: a canonical questionnaire URL
 
-### isResponseComplete(_onlyRequired?): boolean
+### isResponseComplete(_onlyRequired?, _markInvalid?): boolean
 Checks a QuestionnaireResponse for completeness.
 - parameter **_onlyRequired**:  optional parameter, to specify if only questions with the required attribute need to be answered or all questions (default: false)
+- parameter **_markInvalid**: optional parameter, to specify if not completed questions should be updated to be invalid (see isInvalid property) (default: true)
 - returns: true if all questions are answered, false if at least one question is not answered
+
+### isQuestionComplete(_question, _markInvalid?): boolean 
+Determines if a question has an answer, when an answer is required. Also checks potential subquestions, if these are activated.
+- parameter **_question**: the question that should be checked
+- parameter **_markInvalid**: optional parameter, indicates if the question (and subquestion) should be marked as invalid if the question is not complete. defaults to true.
+- returns  TRUE, if the question either does not require an answer, or does require and has at least one answer. If the questions subquestions are activated and not complete, the parent question is also regarded incomplete and thus FALSE is returned.
 
 ### populateAnswers(_resources, _overWriteExistingAnswers?): void     
 Populates the questions with initialExpression FHIRPath extensions with data from given resources.
