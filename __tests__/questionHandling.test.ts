@@ -135,7 +135,7 @@ test('populateAnswers', () => {
     expect(nameQuestion?.selectedAnswers.findIndex(a => a.valueString === 'Peter Chalmers')).toBeGreaterThan(-1);
     expect(nameQuestion?.selectedAnswers.findIndex(a => a.valueString === 'Monica Lewinski')).toBe(-1);
 
-    const birthdateQuestion = testData.findQuestionById('2');
+    let birthdateQuestion = testData.findQuestionById('2');
     expect(birthdateQuestion).toBeDefined();
     expect(birthdateQuestion?.selectedAnswers.length).toBe(1);
     expect(birthdateQuestion?.selectedAnswers.findIndex(a => a.valueDate === PATIENT.birthDate)).toBeGreaterThan(-1);
@@ -151,6 +151,13 @@ test('populateAnswers', () => {
     expect(birthdateQuestion?.selectedAnswers.length).toBe(1);
     expect(birthdateQuestion?.selectedAnswers.findIndex(a => a.valueDate === PATIENT.birthDate)).toBe(-1);
     expect(birthdateQuestion?.selectedAnswers.findIndex(a => a.valueDate === otherPatient.birthDate)).toBeGreaterThan(-1);
+
+    expect(() => testData.resetResponse()).not.toThrow();
+    birthdateQuestion = testData.findQuestionById('2');
+    expect(birthdateQuestion!.selectedAnswers[0]).toBeUndefined();
+    expect(() => testData.populateAnswers([PATIENT], true)).not.toThrow(); 
+    expect(birthdateQuestion!.selectedAnswers.length).toBe(1);
+    expect(birthdateQuestion!.selectedAnswers[0].valueDate).toEqual(PATIENT.birthDate!);
 });
 
 test('answerQuestions', () => {
