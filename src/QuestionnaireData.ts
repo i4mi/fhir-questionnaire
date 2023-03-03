@@ -1296,7 +1296,9 @@ export class QuestionnaireData {
                 _FHIRItem.type === QuestionnaireItemType.ATTACHMENT ||
                 _FHIRItem.type === QuestionnaireItemType.URL
             ) {
-                // these do not need preset answer options, so nothing to do here
+                if(question.initial !== undefined && question.initial.length > 0) {
+                    question.initial.forEach(i => question.selectedAnswers?.push(i));
+                }
             } else if (_FHIRItem.type === QuestionnaireItemType.DISPLAY) {
                 question.readOnly = true;
             } else if (_FHIRItem.type === QuestionnaireItemType.QUANTITY) {
@@ -1332,6 +1334,7 @@ export class QuestionnaireData {
                 console.warn('QuestionnaireData: Currently items of type ' + _FHIRItem.type +' are not supported!', _FHIRItem);
             }
         }
+
         return question as IQuestion;
     }
 
