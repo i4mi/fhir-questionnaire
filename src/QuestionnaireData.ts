@@ -185,9 +185,15 @@ function recursivelyCheckCompleteness(_question: IQuestion[], _onlyRequired: boo
     _question.forEach((question) => {
        if (!question.readOnly && question.isEnabled) {
             if (question.subItems) {
-                areAllComplete = areAllComplete
-                ? recursivelyCheckCompleteness(question.subItems, _onlyRequired, _markInvalid)
-                : false;
+                if (_markInvalid) {
+                    const areSubItemsComplete = recursivelyCheckCompleteness(question.subItems, _onlyRequired, _markInvalid);
+                    areAllComplete = areSubItemsComplete && areAllComplete;
+                } else {
+                    areAllComplete = (areAllComplete
+                        ? recursivelyCheckCompleteness(question.subItems, _onlyRequired, _markInvalid)
+                        : false
+                    );
+                }
             }
             if (question.isEnabled && (question.required || !_onlyRequired) && question.type !== QuestionnaireItemType.DISPLAY && question.type !== QuestionnaireItemType.GROUP) {
                 if (question.selectedAnswers === undefined || question.selectedAnswers.length === 0) {
