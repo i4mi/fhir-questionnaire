@@ -3,7 +3,7 @@
     v-if="question.isEnabled"
     :class="'question ' + 'question-' + question.type + (question.isInvalid ? ' invalid' : '')">
     <h2>
-      {{ (question.prefix ? question.prefix + ': ' : '') + question.label[language] }}
+      {{ (question.prefix ? question.prefix + ': ' : '') + question.label[language] + (question.required ? '*' : '') }}
     </h2>
     <!-- CHOICE Question -->
     <ul v-if="question.type === 'choice'">
