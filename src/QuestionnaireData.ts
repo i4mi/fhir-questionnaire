@@ -185,9 +185,15 @@ function recursivelyCheckCompleteness(_question: IQuestion[], _onlyRequired: boo
     _question.forEach((question) => {
        if (!question.readOnly && question.isEnabled) {
             if (question.subItems) {
-                areAllComplete = areAllComplete
-                ? recursivelyCheckCompleteness(question.subItems, _onlyRequired, _markInvalid)
-                : false;
+                if (_markInvalid) {
+                    const areSubItemsComplete = recursivelyCheckCompleteness(question.subItems, _onlyRequired, _markInvalid);
+                    areAllComplete = areSubItemsComplete && areAllComplete;
+                } else {
+                    areAllComplete = (areAllComplete
+                        ? recursivelyCheckCompleteness(question.subItems, _onlyRequired, _markInvalid)
+                        : false
+                    );
+                }
             }
             if (question.isEnabled && (question.required || !_onlyRequired) && question.type !== QuestionnaireItemType.DISPLAY && question.type !== QuestionnaireItemType.GROUP) {
                 if (question.selectedAnswers === undefined || question.selectedAnswers.length === 0) {
@@ -780,7 +786,7 @@ export class QuestionnaireData {
         // usual questionnaire response
         const fhirResponse: QuestionnaireResponse = {
             resourceType: 'QuestionnaireResponse',
-            status: this.isResponseComplete() ? QuestionnaireResponseStatus.COMPLETED : QuestionnaireResponseStatus.IN_PROGRESS,
+            status: this.isResponseComplete(true) ? QuestionnaireResponseStatus.COMPLETED : QuestionnaireResponseStatus.IN_PROGRESS,
             meta: {},
             text: {
                 status: NarrativeStatus.GENERATED,
@@ -992,6 +998,7 @@ export class QuestionnaireData {
     *          false if at least one answer is not answered
     */
     isResponseComplete(_onlyRequired?: boolean, _markInvalid?: boolean): boolean {
+        console.log('isResponseComplete', _onlyRequired, _markInvalid)
         _onlyRequired = _onlyRequired === true ? true : false;
         _markInvalid = _markInvalid == undefined ? true : _markInvalid;
         return recursivelyCheckCompleteness(this.items, _onlyRequired, _markInvalid);

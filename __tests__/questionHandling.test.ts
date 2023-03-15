@@ -24,6 +24,28 @@ test('isResponseComplete()', () => {
     expect(empty.isResponseComplete(false)).toBeTruthy();
 });
 
+test('mark questions invalid', () => {
+    const testData = new QuestionnaireData(VARIOUS, LANG);
+    const group1 = testData.findQuestionById('1-group');
+    const q1 = testData.findQuestionById('1.1.1-string');
+    const q2 = testData.findQuestionById('1.1.2-choice');
+    const q3 = testData.findQuestionById('1.2.1-decimal'); // second subgroup
+    const q4 = testData.findQuestionById('2-multiple-choice'); // not required question
+    expect(group1).toBeDefined();
+    expect(q1).toBeDefined();
+    expect(q2).toBeDefined();
+    expect(q3).toBeDefined();
+    expect(q4).toBeDefined();
+    expect(() => {testData.updateQuestionAnswers(q1!, {code: {valueString: 'Tom Cruise'}, answer: {[LANG[0]]: 'Tom Cruise'}})}).not.toThrow();
+    expect(q1?.isInvalid).toBeFalsy();
+    expect(testData.isQuestionComplete(group1!)).toBeFalsy();
+    expect(q2?.isInvalid).toBeTruthy();
+    expect(q3?.isInvalid).toBeTruthy();
+    expect(testData.isQuestionComplete(q3!)).toBeFalsy();
+    expect(q3?.isInvalid).toBeTruthy();
+    expect(q4?.isInvalid).toBeFalsy();
+});
+
 test('restoreAnswersFromQuestionnaireResponse', () => {
     const testData = new QuestionnaireData(VARIOUS, LANG);
     const empty = new QuestionnaireData({url: 'none', ... EMPTY_QUESTIONNAIRE}, LANG);
