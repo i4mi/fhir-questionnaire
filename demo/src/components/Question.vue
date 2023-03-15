@@ -97,6 +97,39 @@ export default defineComponent({
       required: true
     }
   },
+  mounted() {
+    switch (this.question.type) {
+      case QuestionnaireItemType.DATE:
+        if (this.question.selectedAnswers.length > 0) {
+          this.value = this.question.selectedAnswers[0].valueDate || '';
+        }
+        break;
+      case QuestionnaireItemType.STRING:
+      case QuestionnaireItemType.TEXT:
+        if (this.question.selectedAnswers.length > 0) {
+          this.value = this.question.selectedAnswers[0].valueString || '';
+        }
+        break;
+      case QuestionnaireItemType.INTEGER:
+        if (this.question.selectedAnswers.length > 0) {
+          this.value = this.question.selectedAnswers[0].valueInteger || '';
+        }
+        break;
+      case QuestionnaireItemType.DECIMAL:
+        if (this.question.selectedAnswers.length > 0) {
+          this.value = this.question.selectedAnswers[0].valueDecimal || '';
+        }
+        break;
+      case QuestionnaireItemType.BOOLEAN:
+        if (this.question.selectedAnswers.length > 0) {
+          this.booleanValue = this.question.selectedAnswers[0].valueBoolean;
+        }
+        break;
+      case QuestionnaireItemType.CHOICE:
+      // nothing to do because for choice the display value is directly calculated
+    }
+
+  },
   methods: {
     updateValue(value: string | number | boolean, type: QuestionnaireItemType) {
       const answer: IAnswerOption = {
