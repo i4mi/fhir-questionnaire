@@ -148,7 +148,7 @@
                     "type": "boolean",
                     "initial": [
                         {
-                            "valueString": "no"
+                            "valueBoolean": false
                         }
                     ]
                 },
