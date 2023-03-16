@@ -1,6 +1,6 @@
 import fhirpath from 'fhirpath';
 import { Questionnaire, QuestionnaireResponse, QuestionnaireEnableWhenBehavior, Reference, QuestionnaireResponseStatus, QuestionnaireResponseItem, QuestionnaireItemType,
-    Resource, ValueSet, QuestionnaireItem, QuestionnaireResponseItemAnswer, Extension, code, QuestionnaireItemOperator, readI18N, ValueSetComposeIncludeConceptDesignation, Coding, NarrativeStatus, Expression, integer, Duration} from '@i4mi/fhir_r4';
+    Resource, ValueSet, QuestionnaireItem, QuestionnaireResponseItemAnswer, Extension, code, QuestionnaireItemOperator, readI18N, ValueSetComposeIncludeConceptDesignation, Coding, NarrativeStatus, Expression, integer, Duration, QuestionnaireItemInitial} from '@i4mi/fhir_r4';
 import { IQuestion, IAnswerOption, IQuestionOptions, ItemControlType } from './IQuestion';
 
 const UNSELECT_OTHERS_EXTENSION = 'http://midata.coop/extensions/valueset-unselect-others';
@@ -998,7 +998,6 @@ export class QuestionnaireData {
     *          false if at least one answer is not answered
     */
     isResponseComplete(_onlyRequired?: boolean, _markInvalid?: boolean): boolean {
-        console.log('isResponseComplete', _onlyRequired, _markInvalid)
         _onlyRequired = _onlyRequired === true ? true : false;
         _markInvalid = _markInvalid == undefined ? true : _markInvalid;
         return recursivelyCheckCompleteness(this.items, _onlyRequired, _markInvalid);
@@ -1288,7 +1287,7 @@ export class QuestionnaireData {
                     });
 
                 } else { // no answerValueSet available
-                    console.warn('CHOICE questiony need answerOptions or an answerValueSet. No embedded answerValueSet found for ' + _FHIRItem.answerValueSet);
+                    console.warn('CHOICE question need answerOptions or an answerValueSet. No embedded answerValueSet found for ' + _FHIRItem.answerValueSet);
                 }
             } else if (
                 _FHIRItem.type === QuestionnaireItemType.INTEGER || 
@@ -1303,7 +1302,7 @@ export class QuestionnaireData {
                 _FHIRItem.type === QuestionnaireItemType.ATTACHMENT ||
                 _FHIRItem.type === QuestionnaireItemType.URL
             ) {
-                // these do not need preset answer options, so nothing to do here
+                 // these do not need preset answer options, so nothing to do here
             } else if (_FHIRItem.type === QuestionnaireItemType.DISPLAY) {
                 question.readOnly = true;
             } else if (_FHIRItem.type === QuestionnaireItemType.QUANTITY) {
@@ -1339,6 +1338,27 @@ export class QuestionnaireData {
                 console.warn('QuestionnaireData: Currently items of type ' + _FHIRItem.type +' are not supported!', _FHIRItem);
             }
         }
+
+        if (question.initial !== undefined) {
+            if (question.allowsMultipleAnswers) {
+                question.selectedAnswers = question.initial.filter(initialValue => question.type && this.checkIfIsSameType(initialValue, question as IQuestion));
+            } else {
+                const firstFittingAnswer = question.initial.find((initialValue) => question.type && this.checkIfIsSameType(initialValue, question as IQuestion));
+                if (firstFittingAnswer != undefined) question.selectedAnswers = [firstFittingAnswer];
+            }
+        }
+        if (question.type === QuestionnaireItemType.CHOICE || question.type === QuestionnaireItemType.OPEN_CHOICE) {
+            const initialInFhir = _FHIRItem.answerOption?.filter(ao => ao.initialSelected).map(item => {
+                item.initialSelected = undefined
+                return item
+            });
+            if (initialInFhir && initialInFhir.length > 0) {
+                question.selectedAnswers = question.allowsMultipleAnswers 
+                    ? initialInFhir    
+                    : [initialInFhir[0]];
+            }
+        }
+        
         return question as IQuestion;
     }
 
@@ -1604,6 +1624,44 @@ export class QuestionnaireData {
             });
             return foundIt;
         });
+    }
+
+    /**
+     * Checks if an initial value is valid for a given question
+     * @param initial   the initial value from the FHIR questionnaire
+     * @param item      the IQuestion with the value
+     * @returns         TRUE, if the initial value has a value[x] of the correct type of the 
+     *                  item, FALSE if not, or if it is a choice question with answerOptions
+     */
+    private checkIfIsSameType(initial: QuestionnaireItemInitial, item: IQuestion): boolean {
+        switch (item.type) {
+            case QuestionnaireItemType.BOOLEAN: return initial.valueBoolean != undefined;
+            case QuestionnaireItemType.DECIMAL: return initial.valueDecimal != undefined;
+            case QuestionnaireItemType.INTEGER: return initial.valueInteger != undefined;
+            case QuestionnaireItemType.DATE: return initial.valueDate != undefined;
+            case QuestionnaireItemType.DATETIME: return initial.valueDateTime != undefined;
+            case QuestionnaireItemType.TIME: return initial.valueTime != undefined;
+            case QuestionnaireItemType.STRING: return initial.valueString != undefined;
+            case QuestionnaireItemType.TEXT: return initial.valueTime != undefined;
+            case QuestionnaireItemType.URL: return initial.valueUri != undefined;
+            case QuestionnaireItemType.ATTACHMENT: return initial.valueAttachment != undefined;
+            case QuestionnaireItemType.QUANTITY: return initial.valueQuantity != undefined;
+            case QuestionnaireItemType.CHOICE: 
+            case QuestionnaireItemType.OPEN_CHOICE: 
+                if (item.answerOptions && item.answerOptions.length > 0) {
+                    console.warn('When answerOptions are available, you should use answerOption.initialSelected instead of initialValue. (Question ' + item.id + ')');
+                    return false;
+                } else {
+                    return (
+                        initial.valueInteger != undefined ||
+                        initial.valueDate != undefined ||
+                        initial.valueString != undefined ||
+                        initial.valueCoding != undefined ||
+                        initial.valueReference != undefined
+                    );
+                }
+            default: return false;
+        }
     }
 
     /**

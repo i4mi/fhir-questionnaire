@@ -2,8 +2,8 @@ import { Questionnaire, QuestionnairePublicationStatus } from '@i4mi/fhir_r4';
 import { QuestionnaireData } from '../dist/QuestionnaireData';
 
 const VARIOUS = require('./questionnaires/variousTypes.json') as Questionnaire;
-
 const EMPTY_QUESTIONNAIRE = require('./questionnaires/empty.json') as Questionnaire;
+const INITIAL = require('./questionnaires/initialValues.json') as Questionnaire;
 
 const LANG = ['en'];
 const testData = new QuestionnaireData(VARIOUS, LANG);
@@ -78,4 +78,43 @@ test('findQuestionById()', () => {
     expect(testData.findQuestionById('1-group', testData.getQuestions())).toBeDefined();
     // explicitly provide empty data
     expect(testData.findQuestionById('1-group', [])).toBeUndefined();
+});
+
+test('initial values', () => {
+    const initialTest = new QuestionnaireData(INITIAL, LANG); 
+    let q1 = initialTest.findQuestionById('1');
+    expect(q1).toBeDefined();
+    expect(q1?.selectedAnswers[0].valueBoolean).toEqual(true);
+    const q21 = initialTest.findQuestionById('2.1');
+    expect(q21).toBeDefined();
+    // wrong format, so not initially selected
+    expect(q21?.selectedAnswers[0]).toBeUndefined();
+    let q22 = initialTest.findQuestionById('2.2');
+    expect(q22).toBeDefined();
+    expect(q22?.selectedAnswers[0].valueDate).toEqual('1941-01-05');
+    const q23 = initialTest.findQuestionById('2.3');
+    expect(q23).toBeDefined();
+    expect(q23?.selectedAnswers[0].valueString).toEqual('Kiribati');
+    const q24 = initialTest.findQuestionById('2.4');
+    expect(q24).toBeDefined();
+    expect(q24?.selectedAnswers[0].valueString).toEqual('single');
+    const q31 = initialTest.findQuestionById('3.1');
+    expect(q31).toBeDefined();
+    // wrong format, so not initially selected
+    expect(q31?.selectedAnswers[0]).toBeUndefined();
+    const q32 = initialTest.findQuestionById('3.2');
+    expect(q32).toBeDefined();
+    expect(q32?.selectedAnswers[0].valueBoolean).toEqual(true);
+
+    // set new answers
+    expect(() => {initialTest.updateQuestionAnswers(q1!, {code: {valueBoolean: false}, answer: {en: 'no'}})}).not.toThrow();
+    expect(() => {initialTest.updateQuestionAnswers(q22!, {code: {valueDate: '2010-01-01'}, answer: {en: '2010-01-01'}})}).not.toThrow()
+
+    expect(q1?.selectedAnswers[0].valueBoolean).not.toEqual(true);
+    expect(q22?.selectedAnswers[0].valueDate).not.toEqual('1941-01-05');
+
+    // after reset, we expect the questions to have the initial values again
+    expect(() => {initialTest.resetResponse()}).not.toThrow();
+    expect(initialTest.findQuestionById('1')!.selectedAnswers[0].valueBoolean).toEqual(true);
+    expect(initialTest.findQuestionById('2.2')!.selectedAnswers[0].valueDate).toEqual('1941-01-05');
 });
