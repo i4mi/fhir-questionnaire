@@ -962,6 +962,7 @@ export class QuestionnaireData {
      * @returns         a string containging html code that represents the QuestionnaireResponseItem
      */
     private getItemString(_item: QuestionnaireResponseItem): string {
+        console.log('getItemString()', _item)
         const parseAnswer  = (a: QuestionnaireResponseItemAnswer) => {
             if (a.valueBoolean !== undefined) return a.valueBoolean;
             if (a.valueCoding !== undefined) return (a.valueCoding?.display || a.valueCoding?.code);
@@ -977,8 +978,14 @@ export class QuestionnaireData {
             if (a.valueAttachment !== undefined) return 'Attachment ' + a.valueAttachment?.title;
         };
 
-        if (!_item.answer) return '<li><span class="question display">' + (_item.text || 'no text') + '</span></li>';
-        let itemString = '<li><span class="question">' + (_item.text || 'no text') + ':</span>';
+        if (!_item.answer) {
+            if (_item.item && _item.item?.length > 0) {
+                return (_item.text ? '<li><span class="question">' + _item.text + ':</span>' : '') + this.getNarrativeString(_item.item, false);
+            } else {
+                return '<li><span class="question display">' + (_item.text || 'no text') + '</span></li>';
+            }
+        }
+        let itemString = _item.text ? '<li><span class="question">' + _item.text + ':</span>' : '';
         if (_item.answer.length === 0) {
             itemString += ' <span class="response">-</span>'
         } else if (_item.answer!.length === 1) {
