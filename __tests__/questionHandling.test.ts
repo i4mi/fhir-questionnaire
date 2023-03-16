@@ -74,6 +74,7 @@ test('restoreAnswersFromQuestionnaireResponse', () => {
     expect(() => testData.restoreAnswersFromQuestionnaireResponse(emptyResponse)).not.toThrow();
     expect(testData.isResponseComplete(true)).toBeFalsy();
 });
+
 test('getQuestionnaireResponse', () => {
     const testData = new QuestionnaireData(VARIOUS, LANG);
     const newResponse = {...RESPONSE, authored: new Date().toISOString(),};

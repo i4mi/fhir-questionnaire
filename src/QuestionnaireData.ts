@@ -219,10 +219,11 @@ function mapIQuestionToQuestionnaireResponseItem(_questions: IQuestion[], _respo
         question.isInvalid = false;
         if (question.type === QuestionnaireItemType.GROUP) {
             if (question.subItems && question.subItems.length > 0) {
+                const labelText = question.label[_language];
                 _responseItems.push(
                     {
                         linkId: question.id,
-                        text: question.label[_language],
+                        text: labelText ? labelText : undefined,
                         item: mapIQuestionToQuestionnaireResponseItem(question.subItems, [], _language)
                     }
                 );
@@ -397,7 +398,6 @@ export class QuestionnaireData {
     responseIdToSynchronize?: string;
 
     constructor(_questionnaire: Questionnaire, _availableLanguages: string[], _valueSets?: {[url: string]: ValueSet}, _items?: IQuestion[], _hiddenFhirItems?: {item: IQuestion, parentLinkId?: string}[]){
-        console.log('questionnaire constructor for branch 24, build 1')
         this.fhirQuestionnaire = _questionnaire;
         this.items = new Array<IQuestion>();
         this.hiddenFhirItems = new Array<{item: IQuestion,parentLinkId?: string}>();
@@ -739,7 +739,7 @@ export class QuestionnaireData {
                 } else {
                     console.warn('Item with linkId ' + answerItem.linkId + ' was found in QuestionnaireResponse, but does not exist in Questionnaire.');
                 }
-            })
+            });
         }
 
         // only restore, if it is not already up to date
@@ -857,14 +857,11 @@ export class QuestionnaireData {
             if (item.parentLinkId) {
                 const parentItem = this.recursivelyFindId(item.parentLinkId, fhirResponse.item!);
                 if (parentItem) {
-                    console.log('found parent item for ' + item.item.id, parentItem);
                     if (parentItem.item) {
                         parentItem.item.push(mapIQuestionToQuestionnaireResponseItem([item.item], new Array<QuestionnaireResponseItem>(), _language)[0]);
                     } else {
                         parentItem.item = [mapIQuestionToQuestionnaireResponseItem([item.item], new Array<QuestionnaireResponseItem>(), _language)[0]];
                     }
-                } else {
-                    console.log('no parent item found for ' + item.item.id)
                 }
             } else {
                 fhirResponse.item!.push(mapIQuestionToQuestionnaireResponseItem([item.item], new Array<QuestionnaireResponseItem>(), _language)[0]);
