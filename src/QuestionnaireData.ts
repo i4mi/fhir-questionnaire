@@ -695,11 +695,8 @@ export class QuestionnaireData {
     }
 
     /**
-    * Processes a QuestionnaireResponse and parses the given answers to the local iQuestion array
-    * @param _fhirResponse a QuestionnaireResponse that matches the Questionnaire. If the item array of the
-    *                      _fhirResponse is empty, the existing answers will not be overwritten. If the item
-    *                      array of the _fhirResponse contains at least one item, the existing answers are all
-    *                      overwritten.
+    * Processes a QuestionnaireResponse and parses the given answers to the local iQuestion array. Existing answers are overwritten.
+    * @param _fhirResponse a QuestionnaireResponse that matches the Questionnaire.
     * @throws an error if the questionnaire response is not matching the questionnaire
     **/
     restoreAnswersFromQuestionnaireResponse(_fhirResponse: QuestionnaireResponse): void {
@@ -709,6 +706,15 @@ export class QuestionnaireData {
         if (this.fhirQuestionnaire.url && questionnaireUrl !== this.fhirQuestionnaire.url.split('|')[0]) {
             throw new Error('Invalid argument: QuestionnaireResponse does not match Questionnaire!');
         }
+        const recursivelyClearItems = (_items: IQuestion[]): void => {
+            _items.forEach(item => {
+                item.selectedAnswers = [];
+                if (item.subItems) {
+                    recursivelyClearItems(item.subItems);
+                }
+            });
+        }
+        recursivelyClearItems(this.items);
         const answerMatchingIQuestionItemWithFhirResponseItem = (_fhirItems: QuestionnaireResponseItem[]): void => {
             _fhirItems.forEach((answerItem) => {
                 const item = this.findQuestionById(answerItem.linkId, this.items);

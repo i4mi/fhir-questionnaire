@@ -8,6 +8,7 @@ const EMPTY_QUESTIONNAIRE = require('./questionnaires/empty.json') as Questionna
 const DEPENDING = require('./questionnaires/depending.json') as Questionnaire;
 const CALCULATED = require('./questionnaires/calculatedExpression.json') as Questionnaire;
 const RESPONSE = require('./questionnaires/variousResponse.json') as QuestionnaireResponse;
+const EMPTY_RESPONSE = require('./questionnaires/variousResponseEmpty.json') as QuestionnaireResponse;
 const PATIENT = require('./questionnaires/patient.json') as Patient;
 const OBSERVATION = require('./questionnaires/observation.json') as Observation;
 
@@ -61,16 +62,7 @@ test('restoreAnswersFromQuestionnaireResponse', () => {
     expect(testData.isResponseComplete(true)).toBeTruthy();
 
     // re-restore
-    const emptyResponse: QuestionnaireResponse = { ... RESPONSE, item: [], authored: new Date().toISOString()};
-    // do not overwrite when response has no items
-    expect(() => testData.restoreAnswersFromQuestionnaireResponse(emptyResponse)).not.toThrow();
-    expect(testData.isResponseComplete(true)).toBeTruthy();
-    // add one item so answers are overridden
-    emptyResponse.item = [
-        {...RESPONSE.item![0]},
-        {...RESPONSE.item![1], answer: undefined}
-    ];
-    emptyResponse.authored = new Date().toISOString();
+    const emptyResponse: QuestionnaireResponse = { ... EMPTY_RESPONSE};
     expect(() => testData.restoreAnswersFromQuestionnaireResponse(emptyResponse)).not.toThrow();
     expect(testData.isResponseComplete(true)).toBeFalsy();
 });

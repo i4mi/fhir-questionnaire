@@ -1,0 +1,7 @@
+{
+    "resourceType": "QuestionnaireResponse",
+    "status": "in-progress",
+    "questionnaire": "http://i4mi.bfh.ch/various-types-questionnaire|1.0",
+    "authored": "2023-03-16T17:04:17.698Z",
+    "item": []
+  }
