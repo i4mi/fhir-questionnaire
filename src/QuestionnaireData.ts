@@ -391,6 +391,7 @@ export class QuestionnaireData {
     responseIdToSynchronize?: string;
 
     constructor(_questionnaire: Questionnaire, _availableLanguages: string[], _valueSets?: {[url: string]: ValueSet}, _items?: IQuestion[], _hiddenFhirItems?: {item: IQuestion, parentLinkId?: string}[]){
+        console.log('questionnaire constructor for branch 24, build 1')
         this.fhirQuestionnaire = _questionnaire;
         this.items = new Array<IQuestion>();
         this.hiddenFhirItems = new Array<{item: IQuestion,parentLinkId?: string}>();
@@ -783,6 +784,7 @@ export class QuestionnaireData {
                 ') is not supported by this Questionnaire. (Supported languages: ' + this.availableLanguages + ').');
         }
         const options = _options || {};
+
         // usual questionnaire response
         const fhirResponse: QuestionnaireResponse = {
             resourceType: 'QuestionnaireResponse',
@@ -805,7 +807,6 @@ export class QuestionnaireData {
                 valueCoding: this.fhirQuestionnaire.code[0]
             }];
         }
-        
 
         // stuff to do for hidden items with calculated expression
         const hiddenItemsWithCalculatedExpression = [...this.hiddenFhirItems].filter(i => i.item.options && i.item.options.calculatedExpression !== undefined);
@@ -849,34 +850,21 @@ export class QuestionnaireData {
                 }
             }
             if (item.parentLinkId) {
-                const recursivelyFindId = (id: string, items: QuestionnaireResponseItem[]): QuestionnaireResponseItem | undefined => {
-                    let itemWithId: QuestionnaireResponseItem | undefined;
-                    items.forEach(i => {
-                        if (!itemWithId) {
-                            if (i.linkId === id) {
-                                itemWithId = i;
-                            } else if (i.item) {
-                                itemWithId = recursivelyFindId(id, i.item);
-                            }
-                        }
-                    });
-                    return itemWithId;
-                }
-                const parentItem = recursivelyFindId(item.parentLinkId, fhirResponse.item!);
+                const parentItem = this.recursivelyFindId(item.parentLinkId, fhirResponse.item!);
                 if (parentItem) {
+                    console.log('found parent item for ' + item.item.id, parentItem);
                     if (parentItem.item) {
                         parentItem.item.push(mapIQuestionToQuestionnaireResponseItem([item.item], new Array<QuestionnaireResponseItem>(), _language)[0]);
                     } else {
                         parentItem.item = [mapIQuestionToQuestionnaireResponseItem([item.item], new Array<QuestionnaireResponseItem>(), _language)[0]];
                     }
+                } else {
+                    console.log('no parent item found for ' + item.item.id)
                 }
             } else {
                 fhirResponse.item!.push(mapIQuestionToQuestionnaireResponseItem([item.item], new Array<QuestionnaireResponseItem>(), _language)[0]);
             }
         });
-        if (options.reset) {
-            this.resetResponse();
-        }
 
         // generate narrative
         fhirResponse.text!.div = '<div xmlns=\"http://www.w3.org/1999/xhtml\">';
@@ -899,7 +887,30 @@ export class QuestionnaireData {
 
         fhirResponse.item = this.recursivelyCleanEmptyArrays(fhirResponse.item);
         
+        if (options.reset) {
+            this.resetResponse();
+        }
         return {...fhirResponse};
+    }
+
+    /**
+     * Recursively searches for a QuestionnaireResponseItem in a deep array.
+     * @param id        the id of the item to find
+     * @param items     the array of items
+     * @returns         the QuestionnaireResponseItem if found, or undefined if no item matches
+     */
+    private recursivelyFindId(id: string, items: QuestionnaireResponseItem[]): QuestionnaireResponseItem | undefined {
+        let itemWithId: QuestionnaireResponseItem | undefined;
+        items.forEach(i => {
+            if (!itemWithId) {
+                if (i.linkId === id) {
+                    itemWithId = i;
+                } else if (i.item) {
+                    itemWithId = this.recursivelyFindId(id, i.item);
+                }
+            }
+        });
+        return itemWithId;
     }
 
     /**
