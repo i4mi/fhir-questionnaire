@@ -209,17 +209,23 @@ function recursivelyCheckCompleteness(_question: IQuestion[], _onlyRequired: boo
 /**
 * Recursively iterates through nested IQuestions and extracts the given answers and adds
 * it to a given array as FHIR QuestionnaireResponseItem
-* @param question      an array of (possibly nested) IQuestions
+* @param questions      an array of (possibly nested) IQuestions
 * @param responseItems the array to fill with the FHIR QuestionnaireResponseItems
 * @returns             the given array
 * @throws              an error if answers are not valid
 **/
-function mapIQuestionToQuestionnaireResponseItem(_question: IQuestion[], _responseItems: QuestionnaireResponseItem[], _language: string): QuestionnaireResponseItem[] {
-    _question.forEach((question) => {
+function mapIQuestionToQuestionnaireResponseItem(_questions: IQuestion[], _responseItems: QuestionnaireResponseItem[], _language: string): QuestionnaireResponseItem[] {
+    _questions.forEach((question) => {
         question.isInvalid = false;
         if (question.type === QuestionnaireItemType.GROUP) {
             if (question.subItems && question.subItems.length > 0) {
-                _responseItems = mapIQuestionToQuestionnaireResponseItem(question.subItems, _responseItems, _language);
+                _responseItems.push(
+                    {
+                        linkId: question.id,
+                        text: question.label[_language],
+                        item: mapIQuestionToQuestionnaireResponseItem(question.subItems, [], _language)
+                    }
+                );
             } else {
                 question.isInvalid = true;
                 throw new Error(`Invalid question set: IQuestion with id ${question.id} is group type, but has no subItems.`);
@@ -789,7 +795,6 @@ export class QuestionnaireData {
         const fhirResponse: QuestionnaireResponse = {
             resourceType: 'QuestionnaireResponse',
             status: this.isResponseComplete(true) ? QuestionnaireResponseStatus.COMPLETED : QuestionnaireResponseStatus.IN_PROGRESS,
-            meta: {},
             text: {
                 status: NarrativeStatus.GENERATED,
                 div: ''
