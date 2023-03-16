@@ -82,14 +82,14 @@ test('findQuestionById()', () => {
 
 test('initial values', () => {
     const initialTest = new QuestionnaireData(INITIAL, LANG); 
-    const q1 = initialTest.findQuestionById('1');
+    let q1 = initialTest.findQuestionById('1');
     expect(q1).toBeDefined();
     expect(q1?.selectedAnswers[0].valueBoolean).toEqual(true);
     const q21 = initialTest.findQuestionById('2.1');
     expect(q21).toBeDefined();
     // wrong format, so not initially selected
     expect(q21?.selectedAnswers[0]).toBeUndefined();
-    const q22 = initialTest.findQuestionById('2.2');
+    let q22 = initialTest.findQuestionById('2.2');
     expect(q22).toBeDefined();
     expect(q22?.selectedAnswers[0].valueDate).toEqual('1941-01-05');
     const q23 = initialTest.findQuestionById('2.3');
@@ -115,8 +115,6 @@ test('initial values', () => {
 
     // after reset, we expect the questions to have the initial values again
     expect(() => {initialTest.resetResponse()}).not.toThrow();
-    console.log(q1)
-    expect(q1?.selectedAnswers[0].valueBoolean).toEqual(true);
-    expect(q22?.selectedAnswers[0].valueDate).toEqual('1941-01-05');
-
+    expect(initialTest.findQuestionById('1')!.selectedAnswers[0].valueBoolean).toEqual(true);
+    expect(initialTest.findQuestionById('2.2')!.selectedAnswers[0].valueDate).toEqual('1941-01-05');
 });
