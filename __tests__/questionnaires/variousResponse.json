@@ -1,111 +1,136 @@
 {
-    "status": "completed",
-    "id": "1234",
     "resourceType": "QuestionnaireResponse",
-    "extension": [
-        {
-            "url": "http://midata.coop/extensions/response-code",
-            "valueCoding": {}
-        }
-    ],
+    "status": "completed",
+    "text": {
+      "status": "generated",
+      "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\"><style>.question {font-weight: bold;} ul {margin: 0} .multiple-answers {display: inline; padding: 0} .multiple-answers > li {display: inline; margin-left: 0.3em} .multiple-answers > li:before {content: '-'; margin-right: 0.3em}</style><h4 class=\"title\">NSW Government My Personal Health Record</h4><p class=\"status\">Status: completed</p><p class=\"created\">Created: 16.3.2023</p><p class=\"questionnaire-link\">Questionnaire: http://hl7.org/fhir/Questionnaire/bb</p><ul class=\"narrative questionnaire-response\"><li><span class=\"question display\">Birth details - To be completed by health professional</span></li></ul></div>"
+    },
     "questionnaire": "http://i4mi.bfh.ch/various-types-questionnaire",
-    "authored": "2023-01-05T13:35:02.779Z",
+    "authored": "2023-03-16T13:50:35.414Z",
     "item": [
-        {
-            "linkId": "1.1.1-string",
-            "text": "Name of child",
-            "answer": [
-                {
+      {
+        "linkId": "birthDetails",
+        "text": "Birth details - To be completed by health professional",
+        "item": [
+          {
+            "linkId": "group",
+            "text": "",
+            "item": [
+              {
+                "linkId": "nameOfChild",
+                "text": "Name of child",
+                "answer": [
+                  {
                     "valueString": "Jesus"
-                }
-            ]
-        },
-        {
-            "linkId": "1.1.2-choice",
-            "text": "Sex",
-            "answer": [
-                {
+                  }
+                ]
+              },
+              {
+                "linkId": "sex",
+                "text": "Sex",
+                "answer": [
+                  {
                     "valueCoding": {
-                        "code": "M",
-                        "display": "M"
+                      "code": "M",
+                      "display": "M"
                     }
-                }
+                  }
+                ]
+              }
             ]
-        },
-        {
-            "linkId": "1.2.1-decimal",
-            "text": "Birth weight (kg)",
-            "answer": [
-                {
-                    "valueDecimal": 2.1
-                }
-            ]
-        },
-        {
-            "linkId": "1.2.2-integer",
-            "text": "Birth length (cm)",
-            "answer": [
-                {
+          },
+          {
+            "linkId": "neonatalInformation",
+            "text": "Neonatal Information",
+            "item": [
+              {
+                "linkId": "birthWeight",
+                "text": "Birth weight (kg)",
+                "answer": [
+                  {
+                    "valueInteger": 2.1
+                  }
+                ]
+              },
+              {
+                "linkId": "birthLength",
+                "text": "Birth length (cm)",
+                "answer": [
+                  {
                     "valueInteger": 54
-                }
-            ]
-        },
-        {
-            "linkId": "1.2.3-choice",
-            "text": "Vitamin K given",
-            "answer": [
-                {
+                  }
+                ]
+              },
+              {
+                "linkId": "vitaminKgiven",
+                "text": "Vitamin K given",
+                "answer": [
+                  {
                     "valueCoding": {
-                        "code": "INTRAVENOUS",
-                        "display": "INTRAVENOUS"
+                      "code": "INTRAVENOUS",
+                      "display": "INTRAVENOUS"
                     }
-                }
-            ],
-            "item": [
-                {
-                    "linkId": "1.2.3.1-date",
-                    "text": "1st dose",
-                    "answer": [
-                        {
+                  }
+                ],
+                "item": [
+                  {
+                    "linkId": "vitaminKgivenDoses",
+                    "text": "",
+                    "item": [
+                      {
+                        "linkId": "vitaminiKDose1",
+                        "text": "1st dose",
+                        "answer": [
+                          {
                             "valueDate": "0001-12-25T00:00:00.000Z"
-                        }
-                    ]
-                },
-                {
-                    "linkId": "1.2.3.2-date",
-                    "text": "2nd dose",
-                    "answer": [
-                        {
+                          }
+                        ]
+                      },
+                      {
+                        "linkId": "vitaminiKDose2",
+                        "text": "2nd dose",
+                        "answer": [
+                          {
                             "valueDate": "0002-02-02T00:00:00.000Z"
-                        }
+                          }
+                        ]
+                      }
                     ]
-                }
-            ]
-        },
-        {
-            "linkId": "1.2.4-boolean",
-            "text": "Hep B given y / n",
-            "answer": [
-                {
+                  }
+                ]
+              },
+              {
+                "linkId": "hepBgiven",
+                "text": "Hep B given y / n",
+                "answer": [
+                  {
                     "valueBoolean": true
-                }
-            ],
-            "item": [
-                {
-                    "linkId": "1.2.4.1-dependingDate",
+                  }
+                ],
+                "item": [
+                  {
+                    "linkId": "hepBgivenDate",
                     "text": "Date given",
-                    "answer": []
-                }
-            ]
-        },
-        {
-            "linkId": "1.2.5-text",
-            "text": "Abnormalities noted at birth",
-            "answer": [
-                {
+                    "answer": [
+                      {
+                        "valueDate": "2023-03-01T00:00:00.000Z"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "linkId": "abnormalitiesAtBirth",
+                "text": "Abnormalities noted at birth",
+                "answer": [
+                  {
                     "valueString": "The child has a holy glow over the head. Three kings showed up at birth. Mother claims to be a virgin."
-                }
+                  }
+                ]
+              }
             ]
-        }
+          }
+        ]
+      }
     ]
-}
+  }
