@@ -998,7 +998,6 @@ export class QuestionnaireData {
     *          false if at least one answer is not answered
     */
     isResponseComplete(_onlyRequired?: boolean, _markInvalid?: boolean): boolean {
-        console.log('isResponseComplete', _onlyRequired, _markInvalid)
         _onlyRequired = _onlyRequired === true ? true : false;
         _markInvalid = _markInvalid == undefined ? true : _markInvalid;
         return recursivelyCheckCompleteness(this.items, _onlyRequired, _markInvalid);
