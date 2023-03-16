@@ -801,10 +801,7 @@ export class QuestionnaireData {
         const fhirResponse: QuestionnaireResponse = {
             resourceType: 'QuestionnaireResponse',
             status: this.isResponseComplete(true) ? QuestionnaireResponseStatus.COMPLETED : QuestionnaireResponseStatus.IN_PROGRESS,
-            text: {
-                status: NarrativeStatus.GENERATED,
-                div: ''
-            },
+            text: { status: NarrativeStatus.GENERATED, div: '' },
             questionnaire: this.getQuestionnaireURLwithVersion(),
             authored: options.date ? options.date.toISOString() : new Date().toISOString(),
             source: options.patient,
@@ -875,29 +872,35 @@ export class QuestionnaireData {
         });
 
         // generate narrative
-        fhirResponse.text!.div = '<div xmlns=\"http://www.w3.org/1999/xhtml\">';
-        fhirResponse.text!.div    += '<style>' + 
-            '.question {font-weight: bold;} ' + 
-            'ul {margin: 0} ' + 
-            '.multiple-answers {display: inline; padding: 0} ' +
-            '.multiple-answers > li {display: inline; margin-left: 0.3em} ' +
-            '.multiple-answers > li:before {content: \'-\'; margin-right: 0.3em}' +
-            '</style>';
-        fhirResponse.text!.div    += '<h4 class="title">' + this.getQuestionnaireTitle(_language) + '</h4>';
-        fhirResponse.text!.div    += '<p class="status">Status: ' + fhirResponse.status + '</p>';
-        fhirResponse.text!.div    += '<p class="created">Created: ' + new Date(fhirResponse.authored!).toLocaleDateString() + '</p>';
-        fhirResponse.text!.div    += '<p class="questionnaire-link">Questionnaire: ' + fhirResponse.questionnaire + '</p>';
+        let narrativeDiv = '<div xmlns="http://www.w3.org/1999/xhtml">';
+        narrativeDiv    += '<style>' + 
+                              '.question {font-weight: bold;} ' + 
+                              'ul {margin: 0} ' + 
+                              '.multiple-answers {display: inline; padding: 0} ' +
+                              '.multiple-answers > li {display: inline; margin-left: 0.3em} ' +
+                              '.multiple-answers > li:before {content: \'-\'; margin-right: 0.3em}' +
+                           '</style>';
+        narrativeDiv    += '<h4 class="title">' + this.getQuestionnaireTitle(_language) + '</h4>';
+        narrativeDiv    += '<p class="status">Status: ' + fhirResponse.status + '</p>';
+        narrativeDiv    += '<p class="created">Created: ' + new Date(fhirResponse.authored!).toLocaleDateString() + '</p>';
+        narrativeDiv    += '<p class="questionnaire-link">Questionnaire: ' + fhirResponse.questionnaire + '</p>';
         if (options.patient) {
-            fhirResponse.text!.div+= '<p class="patient">Patient: ' + options.patient.display ? options.patient.display : options.patient.reference + '</p>';
+            narrativeDiv+= '<p class="patient">Patient: ' + options.patient.display ? options.patient.display : options.patient.reference + '</p>';
         }
-        fhirResponse.text!.div    += fhirResponse.item ? this.getNarrativeString(fhirResponse.item, true) : '';
-        fhirResponse.text!.div    += '</div>';
+        narrativeDiv    += fhirResponse.item ? this.getNarrativeString(fhirResponse.item, true) : '';
+        narrativeDiv    += '</div>';
+
+        fhirResponse.text = {
+                status: NarrativeStatus.GENERATED,
+                div: narrativeDiv
+        }
 
         fhirResponse.item = this.recursivelyCleanEmptyArrays(fhirResponse.item);
         
         if (options.reset) {
             this.resetResponse();
         }
+    
         return {...fhirResponse};
     }
 
@@ -976,8 +979,9 @@ export class QuestionnaireData {
 
         if (!_item.answer) return '<li><span class="question display">' + (_item.text || 'no text') + '</span></li>';
         let itemString = '<li><span class="question">' + (_item.text || 'no text') + ':</span>';
-        if (_item.answer.length === 0) itemString += ' <span class="response">-'
-        if (_item.answer!.length === 1) {
+        if (_item.answer.length === 0) {
+            itemString += ' <span class="response">-</span>'
+        } else if (_item.answer!.length === 1) {
             itemString += ' <span class="response">'+ parseAnswer(_item.answer[0])+ '</span>';
         } else {
             itemString += '<ul class="multiple-answers">';
