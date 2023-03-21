@@ -1,9 +1,9 @@
 import fhirpath from 'fhirpath';
 import { Questionnaire, QuestionnaireResponse, QuestionnaireEnableWhenBehavior, Reference, QuestionnaireResponseStatus, QuestionnaireResponseItem, QuestionnaireItemType,
-    Resource, ValueSet, QuestionnaireItem, QuestionnaireResponseItemAnswer, Extension, code, QuestionnaireItemOperator, readI18N, ValueSetComposeIncludeConceptDesignation} from "@i4mi/fhir_r4";
-import { IQuestion, IAnswerOption, IQuestionOptions, ItemControlType } from "./IQuestion";
+    Resource, ValueSet, QuestionnaireItem, QuestionnaireResponseItemAnswer, Extension, code, QuestionnaireItemOperator, readI18N, ValueSetComposeIncludeConceptDesignation, Coding, NarrativeStatus, Expression, integer, Duration, QuestionnaireItemInitial} from '@i4mi/fhir_r4';
+import { IQuestion, IAnswerOption, IQuestionOptions, ItemControlType } from './IQuestion';
 
-const UNSELECT_OTHERS_EXTENSION = "http://midata.coop/extensions/valueset-unselect-others";
+const UNSELECT_OTHERS_EXTENSION = 'http://midata.coop/extensions/valueset-unselect-others';
 const ITEM_CONTROL_EXTENSION = 'http://hl7.org/fhir/StructureDefinition/questionnaire-itemControl';
 const ITEM_CONTROL_EXTENSION_SYSTEM = 'http://hl7.org/fhir/questionnaire-item-control';
 const MIN_VALUE_EXTENSION = 'http://hl7.org/fhir/StructureDefinition/minValue';
@@ -11,7 +11,7 @@ const MAX_VALUE_EXTENSION = 'http://hl7.org/fhir/StructureDefinition/maxValue';
 const ENTRY_FORMAT_EXTENSION = 'http://hl7.org/fhir/StructureDefinition/entryFormat';
 const SLIDER_STEP_VALUE_EXTENSION = 'http://hl7.org/fhir/StructureDefinition/questionnaire-sliderStepValue';
 const UNIT_EXTENSION = 'http://hl7.org/fhir/StructureDefinition/questionnaire-unit';
-const HIDDEN_EXTENSION = "http://hl7.org/fhir/StructureDefinition/questionnaire-hidden";
+const HIDDEN_EXTENSION = 'http://hl7.org/fhir/StructureDefinition/questionnaire-hidden';
 const CALCULATED_EXPRESSION_EXTENSION = 'http://hl7.org/fhir/uv/sdc/StructureDefinition/sdc-questionnaire-calculatedExpression';
 const QUESTIONNAIRERESPONSE_CODING_EXTENSION_URL = 'http://midata.coop/extensions/response-code';
 const INITIAL_EXPRESSION_EXTENSION = 'http://hl7.org/fhir/uv/sdc/StructureDefinition/sdc-questionnaire-initialExpression';
@@ -42,7 +42,7 @@ const COMPLEX_VALUE_X = [
         type: 'valueAttachment',
         isMatching: (criterium: QuestionnaireResponseItemAnswer, answerOption: IAnswerOption) => {
             if (criterium.valueAttachment) {
-                console.log('Sorry, picking valueAttachment from AnswerOptions is currently not supported.');
+                console.warn('Sorry, picking valueAttachment from AnswerOptions is currently not supported.', answerOption);
             }
             return false;
         }
@@ -74,6 +74,52 @@ const COMPLEX_VALUE_X = [
     }
 ];
 
+function checkIfDependingQuestionIsEnabled(
+    _dependant: IQuestion, 
+    _depending: {
+        dependingQuestion: IQuestion;
+        criteria: {
+            answer: QuestionnaireResponseItemAnswer;
+            operator: QuestionnaireItemOperator;
+        }[];
+    },
+    _answer: IAnswerOption | undefined
+): boolean {
+    // we start with true, when undefined or any with false
+    let isEnabled = (_dependant.dependingQuestionsEnableBehaviour == QuestionnaireEnableWhenBehavior.ALL);     
+    _depending.criteria.forEach(criterium => {
+
+        let evaluatesToTrue = false;
+        const crit = criterium.answer.valueCoding?.code ||
+            criterium.answer.valueDate ||
+            criterium.answer.valueDateTime ||
+            criterium.answer.valueTime ||
+            criterium.answer.valueDecimal ||
+            criterium.answer.valueString ||
+            criterium.answer.valueInteger || (
+            criterium.answer.valueBoolean == undefined 
+                ? undefined 
+                : criterium.answer.valueBoolean);
+        const answ = _answer?.code.valueCoding?.code ||
+            _answer?.code.valueDate ||
+            _answer?.code.valueDateTime ||
+            _answer?.code.valueDecimal ||
+            _answer?.code.valueString ||
+            _answer?.code.valueInteger || (
+            _answer?.code.valueBoolean == undefined 
+                ? undefined 
+                : _answer?.code.valueBoolean);
+        if (crit != undefined) {
+            evaluatesToTrue = evaluateAnswersForDependingQuestion(answ, crit, criterium.operator);
+        }
+
+        isEnabled = (_dependant.dependingQuestionsEnableBehaviour == QuestionnaireEnableWhenBehavior.ALL)
+                                                            ? (evaluatesToTrue && isEnabled) // only true, when criteria before were true
+                                                            : (evaluatesToTrue || isEnabled) // true when evaluates to true or questions before were true
+    });
+    return isEnabled;
+}
+
 /**
 * Evaluates a given answer with a criterium and an operator, for enabling and disabling depending questions.
 * @param _answer        the given answer, as string (also for code etc) or as a number (when using GE, GT, LE & LT operator)
@@ -81,7 +127,7 @@ const COMPLEX_VALUE_X = [
 * @param _operator      defines if the answer and criterium must be equal or not equal etc.
 * @returns              true if answer and criterium match with the given operator, false if not so.
 **/
-function evaluateAnswersForDependingQuestion(_answer: string | number | boolean | Array<any>, _criterium: string | number | boolean, _operator: QuestionnaireItemOperator): boolean {
+function evaluateAnswersForDependingQuestion(_answer: string | number | boolean | Array<unknown> | undefined, _criterium: string | number | boolean, _operator: QuestionnaireItemOperator): boolean {
     // make sure we have both comparants as number if one is
     if (typeof _answer === 'number' && typeof _criterium !== 'number') {
         _criterium = Number(_criterium);
@@ -94,24 +140,32 @@ function evaluateAnswersForDependingQuestion(_answer: string | number | boolean 
             if (_criterium) {
                 return Array.isArray(_answer)
                     ? _answer.length > 0
-                    : _answer !== undefined;
+                    : _answer != undefined;
             } else {
                 return Array.isArray(_answer)
                 ? _answer.length === 0
-                : _answer === undefined;
+                : _answer == undefined;
             }
         case QuestionnaireItemOperator.E:
             return _answer === _criterium;
         case QuestionnaireItemOperator.NE:
             return _answer != _criterium && _answer !== undefined;
         case QuestionnaireItemOperator.GE:
-            return _answer >= _criterium;
+            return _answer == undefined
+                ? false
+                : _answer >= _criterium;
         case QuestionnaireItemOperator.LE:
-            return _answer <= _criterium;
+            return _answer == undefined
+                ? false
+                : _answer <= _criterium;
         case QuestionnaireItemOperator.GT:
-            return _answer > _criterium;
+            return _answer == undefined
+                ? false
+                : _answer > _criterium;
         case QuestionnaireItemOperator.LT:
-            return _answer < _criterium;
+            return _answer == undefined
+                ? false
+                : _answer < _criterium;
         default: return false;
     }
 }
@@ -121,45 +175,58 @@ function evaluateAnswersForDependingQuestion(_answer: string | number | boolean 
  * @param _question       the question that should be checked for completeness with all its subquestions
  * @param _onlyRequired   parameter that indicates if only questions that are actually are marked 
  *                        as required should be required
+* @param   _markInvalid   optional parameter, to specify if not completed questions
+*                         should be updated to be invalid (see isInvalid property)
  * @returns               true if the question and all its subquestions are complete
  *                        false if at least one (sub)question is not complete
  */
-function recursivelyCheckCompleteness(_question: IQuestion[], _onlyRequired: boolean): boolean {
-    var isComplete = true;
+function recursivelyCheckCompleteness(_question: IQuestion[], _onlyRequired: boolean, _markInvalid: boolean): boolean {
+    let areAllComplete = true;
     _question.forEach((question) => {
-        if (question.type === 'group' && question.subItems) {
-            isComplete = isComplete
-            ? recursivelyCheckCompleteness(question.subItems, _onlyRequired)
-            : false;
-        } else if (question.readOnly || !question.isEnabled) {
-            // do nothing
-        } else {
-            if (question.required || !_onlyRequired) {
-                isComplete = isComplete
-                ? question.selectedAnswers && question.selectedAnswers.length > 0
-                : false;
+       if (!question.readOnly && question.isEnabled) {
+            if (question.subItems) {
+                if (_markInvalid) {
+                    const areSubItemsComplete = recursivelyCheckCompleteness(question.subItems, _onlyRequired, _markInvalid);
+                    areAllComplete = areSubItemsComplete && areAllComplete;
+                } else {
+                    areAllComplete = (areAllComplete
+                        ? recursivelyCheckCompleteness(question.subItems, _onlyRequired, _markInvalid)
+                        : false
+                    );
+                }
+            }
+            if (question.isEnabled && (question.required || !_onlyRequired) && question.type !== QuestionnaireItemType.DISPLAY && question.type !== QuestionnaireItemType.GROUP) {
+                if (question.selectedAnswers === undefined || question.selectedAnswers.length === 0) {
+                    if (_markInvalid) question.isInvalid = true;
+                    areAllComplete = false;
+                }
             }
         }
-        // after the first item is not complete, we don't have to look any further
-        if (!isComplete) return false;
     });
-    return isComplete;
+    return areAllComplete;
 }
 
 /**
 * Recursively iterates through nested IQuestions and extracts the given answers and adds
 * it to a given array as FHIR QuestionnaireResponseItem
-* @param question      an array of (possibly nested) IQuestions
+* @param questions      an array of (possibly nested) IQuestions
 * @param responseItems the array to fill with the FHIR QuestionnaireResponseItems
 * @returns             the given array
 * @throws              an error if answers are not valid
 **/
-function mapIQuestionToQuestionnaireResponseItem(_question: IQuestion[], _responseItems: QuestionnaireResponseItem[], _language: string): QuestionnaireResponseItem[] {
-    _question.forEach((question) => {
+function mapIQuestionToQuestionnaireResponseItem(_questions: IQuestion[], _responseItems: QuestionnaireResponseItem[], _language: string): QuestionnaireResponseItem[] {
+    _questions.forEach((question) => {
         question.isInvalid = false;
         if (question.type === QuestionnaireItemType.GROUP) {
             if (question.subItems && question.subItems.length > 0) {
-                _responseItems = mapIQuestionToQuestionnaireResponseItem(question.subItems, _responseItems, _language);
+                const labelText = question.label[_language];
+                _responseItems.push(
+                    {
+                        linkId: question.id,
+                        text: labelText ? labelText : undefined,
+                        item: mapIQuestionToQuestionnaireResponseItem(question.subItems, [], _language)
+                    }
+                );
             } else {
                 question.isInvalid = true;
                 throw new Error(`Invalid question set: IQuestion with id ${question.id} is group type, but has no subItems.`);
@@ -173,7 +240,7 @@ function mapIQuestionToQuestionnaireResponseItem(_question: IQuestion[], _respon
                 question.isInvalid = true;
                 throw new Error(`Invalid answer set: IQuestion with id ${question.id} allows only one answer, but has more.`);
             } else {
-                const responseItem = {
+                const responseItem: QuestionnaireResponseItem = {
                     linkId: question.id,
                     text: question.label[_language],
                     answer: new Array<QuestionnaireResponseItemAnswer>()
@@ -190,7 +257,7 @@ function mapIQuestionToQuestionnaireResponseItem(_question: IQuestion[], _respon
                                                     ? answerDisplayAllLanguages[_language]
                                                     : answerDisplayAllLanguages[Object.keys(answerDisplayAllLanguages)[0]]
                                                 : '';
-                        responseItem.answer.push({
+                        responseItem.answer!.push({
                             valueCoding: {
                                 system: answer.valueCoding.system,
                                 code: answer.valueCoding.code,
@@ -199,7 +266,7 @@ function mapIQuestionToQuestionnaireResponseItem(_question: IQuestion[], _respon
                             }
                         });
                     } else {
-                        responseItem.answer.push(answer);
+                        responseItem.answer!.push(answer);
                     }
                 });
 
@@ -207,10 +274,10 @@ function mapIQuestionToQuestionnaireResponseItem(_question: IQuestion[], _respon
                     (responseItem as QuestionnaireResponseItem).item = [];
                     mapIQuestionToQuestionnaireResponseItem(question.subItems, (responseItem as QuestionnaireResponseItem).item || [], _language);
                 }
+                if (question.type === QuestionnaireItemType.DISPLAY) responseItem.answer = undefined;
                 // add to array
                 _responseItems.push(responseItem);
             }
-
         }
     });
     return _responseItems;
@@ -229,8 +296,8 @@ function mapIQuestionToQuestionnaireResponseItem(_question: IQuestion[], _respon
 *   If the extension exists with another value, the method returns TRUE.
 *   If the extension does not exist, the method returns UNDEFINED.
 */
-function hasExtension(_extensionURL: string, _extensionSystem: string | undefined, _item: QuestionnaireItem): any {
-    let returnValue: any = undefined;
+function hasExtension(_extensionURL: string, _extensionSystem: string | undefined, _item: QuestionnaireItem): Coding | Duration | integer | string | boolean | Expression | undefined {
+    let returnValue: Coding | Duration | integer | string | boolean | Expression | undefined = undefined;
     if (_item.extension) {
         _item.extension.forEach((extension) => {
             if (!returnValue && extension.url === _extensionURL) {
@@ -250,7 +317,7 @@ function hasExtension(_extensionURL: string, _extensionSystem: string | undefine
                 if (extension.valueString) {
                     returnValue = extension.valueString;
                 }
-                if (extension.valueBoolean) {
+                if (extension.valueBoolean != undefined) {
                     returnValue = extension.valueBoolean;
                 }
                 if (extension.valueDate) {
@@ -259,9 +326,11 @@ function hasExtension(_extensionURL: string, _extensionSystem: string | undefine
                 if (extension.valueExpression && extension.valueExpression.language && extension.valueExpression.language=== _extensionSystem) {
                     returnValue = extension.valueExpression;
                 }
-                return (returnValue
-                    ? returnValue
-                    : true);
+                return (
+                    returnValue != undefined
+                        ? returnValue
+                        : true
+                );
             }
         });
     }
@@ -275,20 +344,31 @@ function hasExtension(_extensionURL: string, _extensionSystem: string | undefine
  * @returns             an IQuestionOptions object
  */
 function setOptionsFromExtensions(_FHIRItem: QuestionnaireItem): IQuestionOptions {
-    const itemControlExtension = hasExtension(ITEM_CONTROL_EXTENSION, ITEM_CONTROL_EXTENSION_SYSTEM, _FHIRItem);
-    const calculatedExpressionExtension = hasExtension(CALCULATED_EXPRESSION_EXTENSION, 'text/fhirpath', _FHIRItem);
-    const initialExpressionExtension = hasExtension(INITIAL_EXPRESSION_EXTENSION, 'text/fhirpath', _FHIRItem);
+    const calculatedExpressionExtension = hasExtension(CALCULATED_EXPRESSION_EXTENSION, 'text/fhirpath', _FHIRItem) as Expression;
+    const initialExpressionExtension = hasExtension(INITIAL_EXPRESSION_EXTENSION, 'text/fhirpath', _FHIRItem) as Expression;
 
-    let returnValue: IQuestionOptions = {
-        min: hasExtension(MIN_VALUE_EXTENSION, undefined, _FHIRItem),
-        max: hasExtension(MAX_VALUE_EXTENSION, undefined, _FHIRItem),
-        format: hasExtension(ENTRY_FORMAT_EXTENSION, undefined, _FHIRItem),
-        sliderStep: hasExtension(SLIDER_STEP_VALUE_EXTENSION, undefined, _FHIRItem),
-        unit: hasExtension(UNIT_EXTENSION, 'https://ucum.org', _FHIRItem),
+    const returnValue: IQuestionOptions = {
+        min: hasExtension(MIN_VALUE_EXTENSION, undefined, _FHIRItem) as number | undefined,
+        max: hasExtension(MAX_VALUE_EXTENSION, undefined, _FHIRItem) as number | undefined,
+        format: hasExtension(ENTRY_FORMAT_EXTENSION, undefined, _FHIRItem) as string | undefined,
+        sliderStep: hasExtension(SLIDER_STEP_VALUE_EXTENSION, undefined, _FHIRItem) as number | undefined,
+        unit: hasExtension(UNIT_EXTENSION, 'https://ucum.org', _FHIRItem) as Coding | undefined,
         calculatedExpression: calculatedExpressionExtension ? calculatedExpressionExtension.expression : undefined,
-        initialExpression: initialExpressionExtension ? initialExpressionExtension.expression : undefined
+        initialExpression: initialExpressionExtension ? initialExpressionExtension.expression : undefined,
+        controlTypes: []
     };
 
+    // push itemcontrol extensions to controlTypes
+    _FHIRItem.extension?.forEach((extension) => {
+        if (extension.url === ITEM_CONTROL_EXTENSION) {
+            const controlType = extension.valueCodeableConcept?.coding![0].code as ItemControlType;
+            controlType && returnValue.controlTypes.push(controlType);
+        }
+    });
+
+
+    // TODO: legacy code, can be removed in version 1.0.0
+    const itemControlExtension = hasExtension(ITEM_CONTROL_EXTENSION, ITEM_CONTROL_EXTENSION_SYSTEM, _FHIRItem) as Coding;
     if (itemControlExtension) {
         Object.values(ItemControlType).forEach((typeCode) => {
             if (!returnValue.controlType && itemControlExtension.code === typeCode) {
@@ -296,6 +376,8 @@ function setOptionsFromExtensions(_FHIRItem: QuestionnaireItem): IQuestionOption
             }
         });
     }
+    // TODO: end of legacy code
+
     return returnValue;
 }
 
@@ -391,13 +473,13 @@ export class QuestionnaireData {
         availableLanguages: string[];
         responseIdToSynchronize?: string;
     }): void {
-        let data = typeof _data === 'string'
+        const data = typeof _data === 'string'
             ? JSON.parse(_data)
             : _data;
         if (
             !Object.prototype.hasOwnProperty.call(data, 'items')
         ) {
-            console.log('Can not unserialize, passed string seems not to be a serialized QuestionnaireData.', data);
+            console.warn('Can not unserialize, passed string seems not to be a serialized QuestionnaireData.', data);
             throw new Error('Can not unserialize, passed string seems not to be a serialized QuestionnaireData.');
         }
         Object.assign(this, data);
@@ -415,14 +497,14 @@ export class QuestionnaireData {
         }
         this.hiddenFhirItems = new Array<{item: IQuestion, parentLinkId?: string}>();
 
-        let questionsDependencies: {id: string, reference?: IQuestion, operator: QuestionnaireItemOperator, answer: any}[] = []; // helper array for dependingQuestions
+        let questionsDependencies: {id: string, reference?: IQuestion, operator: QuestionnaireItemOperator, answer: QuestionnaireResponseItemAnswer | undefined}[] = []; // helper array for dependingQuestions
 
         if (this.fhirQuestionnaire.item) {
             this.filterOutHiddenItems(this.fhirQuestionnaire.item).forEach((item) => {
                 // recursively process items
-                let currentQuestion = this.mapQuestionnaireItemToIQuestion(item);
+                const currentQuestion = this.mapQuestionnaireItemToIQuestion(item);
 
-                let dependingToQuestions = this.linkDependingQuestions(item, currentQuestion);
+                const dependingToQuestions = this.linkDependingQuestions(item, currentQuestion);
 
                 if (dependingToQuestions.length > 0){
                     questionsDependencies = questionsDependencies.concat(dependingToQuestions);
@@ -435,13 +517,13 @@ export class QuestionnaireData {
                 const determinator = this.findQuestionById(question.id, this.items);
                 if (question.reference && determinator) {
                     const existingDependingQuestion = determinator.dependingQuestions.find(q => q.dependingQuestion == question.reference);
-                    if (existingDependingQuestion) {
+                    if (existingDependingQuestion && question.answer !== undefined) {
                         existingDependingQuestion.criteria.push({
                             answer: question.answer,
                             operator: question.operator
                         });
                     } else {
-                        determinator.dependingQuestions.push({
+                        question.answer && determinator.dependingQuestions.push({
                             dependingQuestion: question.reference,
                             criteria: [{
                                 answer: question.answer,
@@ -468,6 +550,7 @@ export class QuestionnaireData {
      * @param _answer       the selected / unselected QuestionnaireItemAnswerOption
      **/
     updateQuestionAnswers(_question: IQuestion, _answer: IAnswerOption | undefined): void {
+        _question.isInvalid = false; // assume it is not invalid anymore, until further check
         if (_answer === undefined
            || (_question.type === QuestionnaireItemType.INTEGER && _answer.code.valueInteger == undefined)
            || (_question.type === QuestionnaireItemType.STRING && _answer.code.valueString == '')
@@ -475,86 +558,103 @@ export class QuestionnaireData {
            || (_question.type === QuestionnaireItemType.DATE && _answer.code.valueDate == '')) {
                // remove previous given answers
             _question.selectedAnswers.splice(0,_question.selectedAnswers.length);
-            return;
-        }
-
-        const indexOfAnswer = _question.selectedAnswers.indexOf(_answer.code);
-        if (_question.allowsMultipleAnswers) {
-            // check if item is already selected
-            if (indexOfAnswer >= 0) { // answer is already selected
-                _question.selectedAnswers.splice(indexOfAnswer,1) // remove answer
+        } else {
+            const indexOfAnswer = _question.selectedAnswers.indexOf(_answer.code);
+            if (_question.allowsMultipleAnswers) {
+                // check if item is already selected
+                if (indexOfAnswer >= 0) { // answer is already selected
+                    _question.selectedAnswers.splice(indexOfAnswer,1) // remove answer
+                } else {
+                    // if not already selected, we select it now
+                    _question.selectedAnswers.push(_answer.code);
+    
+                    // and disable other answers when necessary
+                    if(_answer.disableOtherAnswers) {
+                        _answer.disableOtherAnswers.forEach((otherAnswer) => {
+                            const indexOfOtherAnswer = _question.selectedAnswers.findIndex(( selectedAnswer ) => {
+                                return selectedAnswer.valueCoding
+                                            ? selectedAnswer.valueCoding.code === otherAnswer
+                                            : undefined;
+                            });
+                            if (indexOfOtherAnswer >= 0) { // otherAnswer is selected
+                                _question.selectedAnswers.splice(indexOfOtherAnswer,1) // remove otherAnswer)
+                            } // no else needed, because we don't have to unselect already unselected answers
+                        })
+                    }
+                }
             } else {
-                // if not already selected, we select it now
-                _question.selectedAnswers.push(_answer.code);
-
-                // and disable other answers when necessary
-                if(_answer.disableOtherAnswers) {
-                    _answer.disableOtherAnswers.forEach((otherAnswer) => {
-                        const indexOfOtherAnswer = _question.selectedAnswers.findIndex(( selectedAnswer ) => {
-                            return selectedAnswer.valueCoding
-                                        ? selectedAnswer.valueCoding.code === otherAnswer
-                                        : undefined;
-                        });
-                        if (indexOfOtherAnswer >= 0) { // otherAnswer is selected
-                            _question.selectedAnswers.splice(indexOfOtherAnswer,1) // remove otherAnswer)
-                        } // no else needed, because we don't have to unselect already unselected answers
-                    })
+                if (indexOfAnswer < 0) {
+                    _question.selectedAnswers[0] = _answer.code;
                 }
             }
-        } else {
-            if (indexOfAnswer < 0) {
-                _question.selectedAnswers[0] = _answer.code;
-            }
         }
+
+        // we shouldn't have to do this in 2022, but if we don't vite will get confused and break everything
+        // eslint-disable-next-line @typescript-eslint/no-this-alias
+        const that = this;
 
         _question.dependingQuestions.forEach((dependingQuestion) => {
-            dependingQuestion.dependingQuestion.isEnabled = (_question.dependingQuestionsEnableBehaviour == QuestionnaireEnableWhenBehavior.ALL); // when it's all we start with true, when undefined or any with false
-            dependingQuestion.criteria.forEach(criterium => {
-                /**
-                let evaluatesToTrue = false; 
-                if (criterium.answer.valueCoding && criterium.answer.valueCoding.code
-                    && _answer.code.valueCoding && _answer.code.valueCoding.code) {
-                    evaluatesToTrue = evaluateAnswersForDependingQuestion(_answer.code.valueCoding.code, criterium.answer.valueCoding.code, criterium.operator);
-                } // check if we have valueString and question is not already enabled
-                else if (criterium.answer.valueString && _answer.code.valueString && !dependingQuestion.dependingQuestion.isEnabled) {
-                    evaluatesToTrue = evaluateAnswersForDependingQuestion(_answer.code.valueString, criterium.answer.valueString, criterium.operator);
-                }
-                */
-                let evaluatesToTrue = false;
-                const crit = criterium.answer.valueBoolean ||
-                    criterium.answer.valueCoding?.code ||
-                    criterium.answer.valueDate ||
-                    criterium.answer.valueDateTime ||
-                    criterium.answer.valueTime ||
-                    criterium.answer.valueDecimal ||
-                    criterium.answer.valueString ||
-                    criterium.answer.valueInteger;
-                const answ = _answer.code.valueBoolean ||
-                    _answer.code.valueCoding?.code ||
-                    _answer.code.valueDate ||
-                    _answer.code.valueDateTime ||
-                    _answer.code.valueDecimal ||
-                    _answer.code.valueString ||
-                    _answer.code.valueInteger;
-                if (crit && answ) {
-                    evaluatesToTrue = evaluateAnswersForDependingQuestion (crit, answ, criterium.operator)
-                }
-
-                dependingQuestion.dependingQuestion.isEnabled = (_question.dependingQuestionsEnableBehaviour == QuestionnaireEnableWhenBehavior.ALL)
-                                                                    ? (evaluatesToTrue && dependingQuestion.dependingQuestion.isEnabled) // only true, when criteria before were true
-                                                                    : (evaluatesToTrue || dependingQuestion.dependingQuestion.isEnabled) // true when evaluates to true or questions before were true
-            });
+            dependingQuestion.dependingQuestion.isEnabled = checkIfDependingQuestionIsEnabled(_question, dependingQuestion, _answer);
+            // specification says that if an item is not enabled, every subitem is not enabled, 
+            // no matter what their own enableWhen says
+            if (dependingQuestion.dependingQuestion.isEnabled === false) {
+                that.recursivelyDisableSubItems(dependingQuestion.dependingQuestion);
+            } else {
+                that.recursivelyEnableSubitems(dependingQuestion.dependingQuestion);
+            }
         });
     }
 
+    private recursivelyDisableSubItems(subItem: IQuestion): void {
+        subItem.isEnabled = false;
+        subItem.subItems?.forEach(sI => this.recursivelyDisableSubItems(sI));
+    }
+
+    private recursivelyEnableSubitems(subItem: IQuestion): void {
+        subItem.isEnabled = true;
+
+        const fhirItem = this.findFhirItem(subItem.id);
+
+        fhirItem?.enableWhen?.forEach(enableWhen => {
+            const determinator = this.findQuestionById(enableWhen.question);
+            if (determinator) {
+                const ewDefinition = determinator.dependingQuestions.find(dq => dq.dependingQuestion.id === subItem.id);
+                subItem.isEnabled = checkIfDependingQuestionIsEnabled(determinator, ewDefinition!, {answer: {}, code: determinator.selectedAnswers[0]});
+                // TODO: handle this for when parent item is a multiple choice item
+            }
+        });
+        if (subItem.isEnabled) subItem.subItems?.forEach(sI => this.recursivelyEnableSubitems(sI));
+    }
+
     /**
-    * Checks if a given IAnswerOption is already selected for a IQuestion.
+    * Checks if a given IAnswerOption is already sel    ected for a IQuestion.
+    * It is checking for the code of the IAnswerOption, not the display string.
     * @param _question     the IQuestion to which the answer belongs
     * @param _answer       the IAnswerOption in question
     **/
     isAnswerOptionSelected(_question: IQuestion, _answer: IAnswerOption): boolean {
         return _question.selectedAnswers.findIndex((selectedAnswer) => {
-            return JSON.stringify(selectedAnswer) == JSON.stringify(_answer.code);
+            return (
+                _answer.code.valueBoolean != undefined && selectedAnswer.valueBoolean === _answer.code.valueBoolean ||
+                _answer.code.valueDate != undefined && selectedAnswer.valueDate === _answer.code.valueDate ||
+                _answer.code.valueDateTime != undefined && selectedAnswer.valueDateTime === _answer.code.valueDateTime ||
+                _answer.code.valueDecimal != undefined && selectedAnswer.valueDecimal === _answer.code.valueDecimal ||
+                _answer.code.valueInteger != undefined && selectedAnswer.valueInteger === _answer.code.valueInteger ||
+                _answer.code.valueQuantity != undefined && (
+                    selectedAnswer.valueQuantity?.value === _answer.code.valueQuantity.value && 
+                    selectedAnswer.valueQuantity?.system === _answer.code.valueQuantity.system ||
+                    selectedAnswer.valueQuantity?.unit === _answer.code.valueQuantity.unit
+                ) ||
+                _answer.code.valueReference != undefined && selectedAnswer.valueReference === _answer.code.valueReference ||
+                _answer.code.valueString != undefined && selectedAnswer.valueString === _answer.code.valueString ||
+                _answer.code.valueTime != undefined && selectedAnswer.valueTime === _answer.code.valueTime ||
+                _answer.code.valueUri != undefined && selectedAnswer.valueUri === _answer.code.valueUri ||
+                _answer.code.valueAttachment != undefined && selectedAnswer.valueAttachment === _answer.code.valueAttachment ||
+                _answer.code.valueCoding != undefined && (
+                    selectedAnswer.valueCoding?.code === _answer.code.valueCoding.code &&
+                    selectedAnswer.valueCoding?.system === _answer.code.valueCoding.system
+                )
+            );
         }) > -1;
     }
 
@@ -565,25 +665,62 @@ export class QuestionnaireData {
     * @param _language the language code of the wanted language. 
     **/
     getQuestionnaireTitle(_language: string): string | undefined {
-        if (this.fhirQuestionnaire._title && this.fhirQuestionnaire._title.extension) {
-            return readI18N(this.fhirQuestionnaire._title, _language);
-        } else {
-            return this.fhirQuestionnaire.title;
-        }
+        let title: string | undefined = undefined;
+        if (
+            this.fhirQuestionnaire._title && 
+            this.fhirQuestionnaire._title.extension && 
+            this.availableLanguages.includes(_language)
+        ) {
+            title = readI18N(this.fhirQuestionnaire._title, _language);
+        } 
+        return title || this.fhirQuestionnaire.title;
     }
 
     /**
-    * Processes a QuestionnaireResponse and parses the given answers to the local iQuestion array
-    * @param _fhirResponse a QuestionnaireResponse that matches the Questionnaire
+    * Returns the questionnaire description in a given language. 
+    * Falls back to default language of the questionnaire, 
+    * if the wanted language is not available.
+    * @param _language the language code of the wanted language. 
+    **/
+    getQuestionnaireDescription(_language: string): string | undefined {
+        let title: string | undefined = undefined;
+        if (
+            this.fhirQuestionnaire._description && 
+            this.fhirQuestionnaire._description.extension && 
+            this.availableLanguages.includes(_language)
+        ) {
+            title = readI18N(this.fhirQuestionnaire._description, _language);
+        } 
+        return title || this.fhirQuestionnaire.description;
+    }
+
+    /**
+    * Processes a QuestionnaireResponse and parses the given answers to the local iQuestion array. Existing answers are overwritten.
+    * @param _fhirResponse a QuestionnaireResponse that matches the Questionnaire.
     * @throws an error if the questionnaire response is not matching the questionnaire
     **/
     restoreAnswersFromQuestionnaireResponse(_fhirResponse: QuestionnaireResponse): void {
+        const questionnaireUrl = _fhirResponse.questionnaire
+        ? _fhirResponse.questionnaire.split('|')[0]
+        : '';
+        if (this.fhirQuestionnaire.url && questionnaireUrl !== this.fhirQuestionnaire.url.split('|')[0]) {
+            throw new Error('Invalid argument: QuestionnaireResponse does not match Questionnaire!');
+        }
+        const recursivelyClearItems = (_items: IQuestion[]): void => {
+            _items.forEach(item => {
+                item.selectedAnswers = [];
+                if (item.subItems) {
+                    recursivelyClearItems(item.subItems);
+                }
+            });
+        }
+        recursivelyClearItems(this.items);
         const answerMatchingIQuestionItemWithFhirResponseItem = (_fhirItems: QuestionnaireResponseItem[]): void => {
             _fhirItems.forEach((answerItem) => {
                 const item = this.findQuestionById(answerItem.linkId, this.items);
                 if (item) {
                     item.selectedAnswers = [];
-                    if (item.answerOptions && item.answerOptions.length > 0 && answerItem.answer) {
+                    if (item.answerOptions !== undefined && answerItem.answer) {
                         answerItem.answer.forEach((answer) => {
                             const answerAsAnswerOption = this.findAccordingAnswerOption(answer, item.answerOptions);
 
@@ -608,25 +745,20 @@ export class QuestionnaireData {
                 } else {
                     console.warn('Item with linkId ' + answerItem.linkId + ' was found in QuestionnaireResponse, but does not exist in Questionnaire.');
                 }
-            })
+            });
         }
 
         // only restore, if it is not already up to date
-        if (this.lastRestored == undefined || (_fhirResponse.authored && this.lastRestored < new Date(_fhirResponse.authored))) {
+        if (
+            _fhirResponse.item && _fhirResponse.item.length > 0 &&
+            (this.lastRestored == undefined || (_fhirResponse.authored && this.lastRestored < new Date(_fhirResponse.authored)))
+        ) {
             this.lastRestored = _fhirResponse.authored
                                     ? new Date(_fhirResponse.authored)
                                     : new Date();
             this.responseIdToSynchronize = _fhirResponse.id;
-            const questionnaireUrl = _fhirResponse.questionnaire
-                                        ? _fhirResponse.questionnaire.split('|')[0]
-                                        : '';
-            if (this.fhirQuestionnaire.url && questionnaireUrl !== this.fhirQuestionnaire.url.split('|')[0]) {
-                throw new Error('Invalid argument: QuestionnaireResponse does not match Questionnaire!');
-            }
-            if (_fhirResponse.item) {
-                answerMatchingIQuestionItemWithFhirResponseItem(_fhirResponse.item);
-            }
-
+           
+            answerMatchingIQuestionItemWithFhirResponseItem(_fhirResponse.item);
         }
     }
 
@@ -637,12 +769,15 @@ export class QuestionnaireData {
     * @param _options  Options object that can contain zero, one or many of the following properties:
     *                  - date:      the date when the Questionnaire was filled out (current date by default)
     *                  - includeID: boolean that determines if to include FHIR resource ID of a potential 
-    *                               previously restored QuestionnaireResponse (default: false)
+    *                               previously restored QuestionnaireResponse (default: false) (if the previous response has
+    *                               no id, the id of the generated response will be undefined)
     *                  - patient:   a Reference to the FHIR Patient who filled out the Questionnaire
+    *                  - midataExtensions: wether to include MIDATA extensions or not (default: false)
     *                  - reset:     should the questionnaire be reseted after creating the response (default: false)
     * @returns         a QuestionnaireResponse FHIR resource containing all the answers the user gave
-    * @throws          an error if the QuestionnaireResponse is not valid for the corresponding
+    * @throws          - an error if the QuestionnaireResponse is not valid for the corresponding
     *                  Questionnaire, e.g. when a required answer is missing
+    *                  - an error if the _language given is not in the set of available languages
     **/
     getQuestionnaireResponse(
         _language: string, 
@@ -650,31 +785,40 @@ export class QuestionnaireData {
             date?: Date;
             includeID?: boolean;
             patient?: Reference;
+            midataExtensions?: boolean;
             reset?: boolean;
         }
     ): QuestionnaireResponse {
+        if (!this.availableLanguages.includes(_language)) {
+            throw new Error(
+                'getQuestionnaireResponse(): Provided _language (' + 
+                _language + 
+                ') is not supported by this Questionnaire. (Supported languages: ' + this.availableLanguages + ').');
+        }
         const options = _options || {};
+
         // usual questionnaire response
-        const fhirResponse = {
-            status: this.isResponseComplete() ? QuestionnaireResponseStatus.COMPLETED : QuestionnaireResponseStatus.IN_PROGRESS,
+        const fhirResponse: QuestionnaireResponse = {
             resourceType: 'QuestionnaireResponse',
-            extension: [{
-                url: QUESTIONNAIRERESPONSE_CODING_EXTENSION_URL,
-                valueCoding: this.fhirQuestionnaire.code
-                                ? this.fhirQuestionnaire.code[0]
-                                : {}
-            }],
+            status: this.isResponseComplete(true) ? QuestionnaireResponseStatus.COMPLETED : QuestionnaireResponseStatus.IN_PROGRESS,
+            text: { status: NarrativeStatus.GENERATED, div: '' },
             questionnaire: this.getQuestionnaireURLwithVersion(),
             authored: options.date ? options.date.toISOString() : new Date().toISOString(),
             source: options.patient,
             id: options.includeID ? this.responseIdToSynchronize : undefined,
-            meta: {},
-            item: mapIQuestionToQuestionnaireResponseItem(this.items, new Array<QuestionnaireResponseItem>(),_language)
-        };
 
-        // stuff to do for items with calculated expression
-        const itemsWithCalculatedExpression = this.hiddenFhirItems.filter(i => i.item.options && i.item.options.calculatedExpression !== undefined);
-        itemsWithCalculatedExpression.forEach(item => {
+            item: mapIQuestionToQuestionnaireResponseItem(this.items, new Array<QuestionnaireResponseItem>(),_language)
+        }; 
+        if (options.midataExtensions && this.fhirQuestionnaire.code) {
+            fhirResponse.extension = [{
+                url: QUESTIONNAIRERESPONSE_CODING_EXTENSION_URL,
+                valueCoding: this.fhirQuestionnaire.code[0]
+            }];
+        }
+
+        // stuff to do for hidden items with calculated expression
+        const hiddenItemsWithCalculatedExpression = [...this.hiddenFhirItems].filter(i => i.item.options && i.item.options.calculatedExpression !== undefined);
+        hiddenItemsWithCalculatedExpression.forEach(item => {
             if (item.item.options && item.item.options.calculatedExpression) {
                 try {
                     let calculatedAnswer = {};
@@ -714,20 +858,7 @@ export class QuestionnaireData {
                 }
             }
             if (item.parentLinkId) {
-                const recursivelyFindId = (id: string, items: QuestionnaireResponseItem[]): QuestionnaireResponseItem | undefined => {
-                    let itemWithId: QuestionnaireResponseItem | undefined;
-                    items.forEach(i => {
-                        if (!itemWithId) {
-                            if (i.linkId === id) {
-                                itemWithId = i;
-                            } else if (i.item) {
-                                itemWithId = recursivelyFindId(id, i.item);
-                            }
-                        }
-                    });
-                    return itemWithId;
-                }
-                let parentItem = recursivelyFindId(item.parentLinkId, fhirResponse.item);
+                const parentItem = this.recursivelyFindId(item.parentLinkId, fhirResponse.item!);
                 if (parentItem) {
                     if (parentItem.item) {
                         parentItem.item.push(mapIQuestionToQuestionnaireResponseItem([item.item], new Array<QuestionnaireResponseItem>(), _language)[0]);
@@ -736,20 +867,149 @@ export class QuestionnaireData {
                     }
                 }
             } else {
-                fhirResponse.item.push(mapIQuestionToQuestionnaireResponseItem([item.item], new Array<QuestionnaireResponseItem>(), _language)[0]);
+                fhirResponse.item!.push(mapIQuestionToQuestionnaireResponseItem([item.item], new Array<QuestionnaireResponseItem>(), _language)[0]);
             }
         });
+
+        // generate narrative
+        let narrativeDiv = '<div xmlns="http://www.w3.org/1999/xhtml">';
+        narrativeDiv    += '<style>' + 
+                              '.question {font-weight: bold;} ' + 
+                              'ul {margin: 0} ' + 
+                              '.multiple-answers {display: inline; padding: 0} ' +
+                              '.multiple-answers > li {display: inline; margin-left: 0.3em} ' +
+                              '.multiple-answers > li:before {content: \'-\'; margin-right: 0.3em}' +
+                           '</style>';
+        narrativeDiv    += '<h4 class="title">' + this.getQuestionnaireTitle(_language) + '</h4>';
+        narrativeDiv    += '<p class="status">Status: ' + fhirResponse.status + '</p>';
+        narrativeDiv    += '<p class="created">Created: ' + new Date(fhirResponse.authored!).toLocaleDateString() + '</p>';
+        narrativeDiv    += '<p class="questionnaire-link">Questionnaire: ' + fhirResponse.questionnaire + '</p>';
+        if (options.patient) {
+            narrativeDiv+= '<p class="patient">Patient: ' + options.patient.display ? options.patient.display : options.patient.reference + '</p>';
+        }
+        narrativeDiv    += fhirResponse.item ? this.getNarrativeString(fhirResponse.item, true) : '';
+        narrativeDiv    += '</div>';
+
+        fhirResponse.text = {
+                status: NarrativeStatus.GENERATED,
+                div: narrativeDiv
+        }
+
+        fhirResponse.item = this.recursivelyCleanEmptyArrays(fhirResponse.item);
+        
         if (options.reset) {
             this.resetResponse();
         }
+    
         return {...fhirResponse};
     }
 
     /**
+     * Recursively searches for a QuestionnaireResponseItem in a deep array.
+     * @param id        the id of the item to find
+     * @param items     the array of items
+     * @returns         the QuestionnaireResponseItem if found, or undefined if no item matches
+     */
+    private recursivelyFindId(id: string, items: QuestionnaireResponseItem[]): QuestionnaireResponseItem | undefined {
+        let itemWithId: QuestionnaireResponseItem | undefined;
+        items.forEach(i => {
+            if (!itemWithId) {
+                if (i.linkId === id) {
+                    itemWithId = i;
+                } else if (i.item) {
+                    itemWithId = this.recursivelyFindId(id, i.item);
+                }
+            }
+        });
+        return itemWithId;
+    }
+
+    /**
+     * Recursively removes empty arrays on item (because we don't want empty arrays in QuestionnaireResponses)
+     * @param _items    the input array of items to iterate through
+     * @returns         the deep cleaned input array, or undefined if the input array was empty
+     */
+    private recursivelyCleanEmptyArrays(_items: QuestionnaireResponseItem[] | undefined): QuestionnaireResponseItem[] | undefined {
+        if (_items !== undefined && _items.length > 0) {
+            _items.forEach(item => {
+                item.item = this.recursivelyCleanEmptyArrays(item.item);
+            });
+            return _items;
+        } else {
+            return undefined;
+        }
+    } 
+
+    /**
+     * Recursively generates the narrative html for QuestionnaireResponseItems.
+     * @param _items      the items to be represented
+     * @param _topLevel?  indicates if we are on the top level. do not set to true when calling recursively.
+     * @returns           a string containging html code that represents the QuestionnaireResponseItems
+     */
+    private getNarrativeString(_items: QuestionnaireResponseItem[], _topLevel?: boolean): string {
+        if (!_items || _items.length === 0) return '';
+        let narrativeString = _topLevel 
+            ? '<ul class="narrative questionnaire-response">' 
+            : '<ul class="sub-question">';
+        _items.map(i => {narrativeString += this.getItemString(i)});
+
+        return narrativeString + '</ul>';
+    }
+
+    /**
+     * Recursively generates the narrative html for a single QuestionnaireResponseItem.
+     * @param _item     the item
+     * @returns         a string containging html code that represents the QuestionnaireResponseItem
+     */
+    private getItemString(_item: QuestionnaireResponseItem): string {
+        console.log('getItemString()', _item)
+        const parseAnswer  = (a: QuestionnaireResponseItemAnswer) => {
+            if (a.valueBoolean !== undefined) return a.valueBoolean;
+            if (a.valueCoding !== undefined) return (a.valueCoding?.display || a.valueCoding?.code);
+            if (a.valueDate !== undefined) return new Date(a.valueDate).toLocaleDateString();
+            if (a.valueDateTime !== undefined) return new Date(a.valueDateTime).toLocaleString();
+            if (a.valueTime !== undefined) return new Date(a.valueTime).toLocaleTimeString();
+            if (a.valueDecimal  !== undefined) return a.valueDecimal?.toString();
+            if (a.valueInteger  !== undefined) return a.valueInteger?.toString();
+            if (a.valueQuantity  !== undefined) return (a.valueQuantity?.value + ' ' + (a.valueQuantity?.unit ? a.valueQuantity?.unit : a.valueQuantity?.code));
+            if (a.valueReference  !== undefined) return (a.valueReference?.display ? a.valueReference?.display : a.valueReference?.reference);
+            if (a.valueString !== undefined) return a.valueString;
+            if (a.valueUri !== undefined) return a.valueUri;
+            if (a.valueAttachment !== undefined) return 'Attachment ' + a.valueAttachment?.title;
+        };
+
+        if (!_item.answer) {
+            if (_item.item && _item.item?.length > 0) {
+                return (_item.text ? '<li><span class="question">' + _item.text + ':</span>' : '') + this.getNarrativeString(_item.item, false);
+            } else {
+                return '<li><span class="question display">' + (_item.text || 'no text') + '</span></li>';
+            }
+        }
+        let itemString = _item.text ? '<li><span class="question">' + _item.text + ':</span>' : '';
+        if (_item.answer.length === 0) {
+            itemString += ' <span class="response">-</span>'
+        } else if (_item.answer!.length === 1) {
+            itemString += ' <span class="response">'+ parseAnswer(_item.answer[0])+ '</span>';
+        } else {
+            itemString += '<ul class="multiple-answers">';
+            _item.answer.map((a) => {
+                itemString += '<li>' + parseAnswer(a) + '</li>'
+            });
+            itemString += '</ul>'
+        }
+        if (_item.item && _item.item?.length > 0) {
+            itemString += this.getNarrativeString(_item.item, false)
+        }
+    itemString += '</li>';
+    return itemString;
+    }
+
+    /**
     * Returns the questionnaire URL with version number in FHIR canonical format.
-    * @return a canonical questionnaire URL
+    * @return a canonical questionnaire URL, or an empty string if no URL is available
     **/
     getQuestionnaireURLwithVersion(): string {
+        if (!this.fhirQuestionnaire.url) return '';
         return this.fhirQuestionnaire.url + ( this.fhirQuestionnaire.version
             ? ('|'+  this.fhirQuestionnaire.version)
             : ''
@@ -758,15 +1018,33 @@ export class QuestionnaireData {
 
     /**
     * Checks a QuestionnaireResponse for completeness.
-    * @param   onlyRequired optional parameter, to specify if only questions with
+    * @param   _onlyRequired optional parameter, to specify if only questions with
     *          the required attribute need to be answered or all questions;
-    *           default value is: false
+    *          default value is: false
+    * @param   _markInvalid optional parameter, to specify if not completed questions
+    *          should be updated to be invalid (see isInvalid property)
+    *          default value is: true
     * @returns true if all questions are answered
     *          false if at least one answer is not answered
     */
-    isResponseComplete(_onlyRequired?: boolean): boolean {
+    isResponseComplete(_onlyRequired?: boolean, _markInvalid?: boolean): boolean {
         _onlyRequired = _onlyRequired === true ? true : false;
-        return recursivelyCheckCompleteness(this.items, _onlyRequired);
+        _markInvalid = _markInvalid == undefined ? true : _markInvalid;
+        return recursivelyCheckCompleteness(this.items, _onlyRequired, _markInvalid);
+    }
+
+    /**
+     * Determines if a question has an answer, when an answer is required. Also checks potential subquestions, 
+     * if these are activated.
+     * @param _question      the question that should be checked
+     * @param _markInvalid   optional parameter, indicates if the question (and subquestion) should be marked as invalid
+     *                       if the question is not complete. defaults to true.
+     * @returns              TRUE, if the question either does not require an answer, or does require and has at least one answer.
+     *                       if the questions subquestions are activated and not complete, the parent question is also regarded incomplete
+     *                       and thus FALSE is returned.
+     */
+    isQuestionComplete(_question: IQuestion, _markInvalid?: boolean): boolean {
+        return recursivelyCheckCompleteness([_question], true, _markInvalid === undefined ? true : _markInvalid);
     }
 
     /**
@@ -837,7 +1115,7 @@ export class QuestionnaireData {
             if (_FHIRItem.type === QuestionnaireItemType.CHOICE) {
                 // process answer options from ValueSet
                 if (_FHIRItem.answerValueSet && _FHIRItem.answerValueSet.indexOf('#') >= 0) { // these are the "contained valuesets"
-                    let answerOptionsToUnselect = new Array<{disabler: string, toBeDisabled: string | {mustAllOthersBeDisabled: true}}>();
+                    const answerOptionsToUnselect = new Array<{disabler: string, toBeDisabled: string | {mustAllOthersBeDisabled: true}}>();
                     const answerValueSet = this.valueSets[_FHIRItem.answerValueSet.split('#')[1]];
 
                     // check if the valueset has an extension for items unselecting others
@@ -923,13 +1201,22 @@ export class QuestionnaireData {
                             // finally assign the to be disabled questions to the disabler
                             if (disabler) {
                                 disabler.disableOtherAnswers = answersToBeDisabled;
-                            };
+                            }
                         }
                     });
 
                 } else if (_FHIRItem.answerOption) {
+                    // check if the valueset has an extension for items unselecting others
+                    let unselectOtherExtensions: Extension[];
+                    if (_FHIRItem.extension) {
+                        unselectOtherExtensions = _FHIRItem.extension.filter((extension) => {
+                            return extension.url === UNSELECT_OTHERS_EXTENSION;
+                        });
+                    }
+                    const answerOptionsToUnselect = new Array<{disabler: string, toBeDisabled: string | {mustAllOthersBeDisabled: true}}>();
+
                     question.answerOptions = _FHIRItem.answerOption.map((answerOption) => {
-                        let answerOptionText: {[language: string]: string} = {};
+                        const answerOptionText: {[language: string]: string} = {};
                         this.availableLanguages.forEach(language => {
                             answerOptionText[language] = '';
                         });
@@ -946,6 +1233,28 @@ export class QuestionnaireData {
                             } else { // when not, use the same text for every language
                                 Object.keys(answerOptionText).forEach(key => {
                                     answerOptionText[key] = answerOption.valueCoding?.display || answerOption.valueCoding?.code || '';
+                                });
+                            }
+
+                            if (unselectOtherExtensions) {
+                                // prepare the unselect-others array when an answeroption unselects other options
+                                unselectOtherExtensions.forEach((extension) => {
+                                    extension = extension.extension
+                                                    ? extension.extension[0]
+                                                    : {url: ''};
+                                    if (answerOption.valueCoding && answerOption.valueCoding && extension.valueCode === answerOption.valueCoding.code && answerOption.valueCoding.code) {
+                                        answerOptionsToUnselect.push({
+                                            disabler: answerOption.valueCoding.code,
+                                            toBeDisabled: {mustAllOthersBeDisabled: true}
+                                        });
+                                    } else if (answerOption.valueCoding){
+                                        if (answerOption.valueCoding.code && extension.valueCode){
+                                            answerOptionsToUnselect.push({
+                                                disabler: answerOption.valueCoding.code,
+                                                toBeDisabled: extension.valueCode
+                                            });
+                                        }
+                                    }
                                 });
                             }
 
@@ -966,15 +1275,49 @@ export class QuestionnaireData {
                                 }
                             });
                         }
+
                       
                         return {
                             answer: answerOptionText,
                             code: answerOption
                         };
-                    })
+                    });
+
+                     // now we know all answerOptions, we can link the dependingAnswers from the temp array
+                     answerOptionsToUnselect.forEach((answerPair) => {
+                        if (question.answerOptions) {
+                            const disabler = question.answerOptions.find((answerOption) => {
+                                                return answerOption.code.valueCoding && answerOption.code.valueCoding.code === answerPair.disabler;
+                                            });
+                            let answersToBeDisabled: Array<code> = new Array<code>();
+                            if ((answerPair.toBeDisabled as {mustAllOthersBeDisabled: boolean}).mustAllOthersBeDisabled) {
+                                // add all but the disabler option to array
+                                question.answerOptions.map((answerOption) => {
+                                    if (answerOption.code.valueCoding && answerOption.code.valueCoding.code && answerOption.code.valueCoding.code !== answerPair.disabler) {
+                                        answersToBeDisabled.push(answerOption.code.valueCoding.code);
+                                    }
+                                });
+                            } else {
+                                answersToBeDisabled = new Array<code>();
+                                // find the link to the disabled question
+                                const disabledQuestion = question.answerOptions.find((answerOption) => {
+                                    return answerOption.code.valueCoding
+                                                ? answerOption.code.valueCoding.code === answerPair.toBeDisabled
+                                                : false;
+                                });
+                                if (disabledQuestion && disabledQuestion.code.valueCoding && disabledQuestion.code.valueCoding.code) {
+                                    answersToBeDisabled.push(disabledQuestion.code.valueCoding.code);
+                                }
+                            }
+                            // finally assign the to be disabled questions to the disabler
+                            if (disabler) {
+                                disabler.disableOtherAnswers = answersToBeDisabled;
+                            }
+                        }
+                    });
 
                 } else { // no answerValueSet available
-                    console.warn('CHOICE questiony need answerOptions or an answerValueSet. No embedded answerValueSet found for ' + _FHIRItem.answerValueSet);
+                    console.warn('CHOICE question need answerOptions or an answerValueSet. No embedded answerValueSet found for ' + _FHIRItem.answerValueSet);
                 }
             } else if (
                 _FHIRItem.type === QuestionnaireItemType.INTEGER || 
@@ -989,7 +1332,7 @@ export class QuestionnaireData {
                 _FHIRItem.type === QuestionnaireItemType.ATTACHMENT ||
                 _FHIRItem.type === QuestionnaireItemType.URL
             ) {
-                // these do not need preset answer options, so nothing to do here
+                 // these do not need preset answer options, so nothing to do here
             } else if (_FHIRItem.type === QuestionnaireItemType.DISPLAY) {
                 question.readOnly = true;
             } else if (_FHIRItem.type === QuestionnaireItemType.QUANTITY) {
@@ -1014,9 +1357,9 @@ export class QuestionnaireData {
                         }
                     ]
                 } else {
-                    if (hasExtension(HIDDEN_EXTENSION, undefined, _FHIRItem) == undefined) {
-                        console.warn('QuestionnaireData: Item type QUANTITY is currently only supported with slider extension', _FHIRItem);
-                    }
+                    // if (hasExtension(SLIDER_STEP_VALUE_EXTENSION, undefined, _FHIRItem) == undefined) {
+                    //     console.warn('QuestionnaireData: Item type QUANTITY is currently only supported with slider extension', _FHIRItem);
+                    // }
                 }
 
             } else if (_FHIRItem.type === QuestionnaireItemType.OPEN_CHOICE) {
@@ -1025,6 +1368,27 @@ export class QuestionnaireData {
                 console.warn('QuestionnaireData: Currently items of type ' + _FHIRItem.type +' are not supported!', _FHIRItem);
             }
         }
+
+        if (question.initial !== undefined) {
+            if (question.allowsMultipleAnswers) {
+                question.selectedAnswers = question.initial.filter(initialValue => question.type && this.checkIfIsSameType(initialValue, question as IQuestion));
+            } else {
+                const firstFittingAnswer = question.initial.find((initialValue) => question.type && this.checkIfIsSameType(initialValue, question as IQuestion));
+                if (firstFittingAnswer != undefined) question.selectedAnswers = [firstFittingAnswer];
+            }
+        }
+        if (question.type === QuestionnaireItemType.CHOICE || question.type === QuestionnaireItemType.OPEN_CHOICE) {
+            const initialInFhir = _FHIRItem.answerOption?.filter(ao => ao.initialSelected).map(item => {
+                item.initialSelected = undefined
+                return item
+            });
+            if (initialInFhir && initialInFhir.length > 0) {
+                question.selectedAnswers = question.allowsMultipleAnswers 
+                    ? initialInFhir    
+                    : [initialInFhir[0]];
+            }
+        }
+        
         return question as IQuestion;
     }
 
@@ -1039,7 +1403,7 @@ export class QuestionnaireData {
     *          kept track of in the hiddenFhirItems property).
     */
     private filterOutHiddenItems(_FHIRItems: QuestionnaireItem[], _parent?: QuestionnaireItem): QuestionnaireItem[] {
-        let returnArray = new Array<QuestionnaireItem>();
+        const returnArray = new Array<QuestionnaireItem>();
         JSON.parse(JSON.stringify(_FHIRItems)).forEach((item: QuestionnaireItem) => {
             if (item.item) {
                 item.item = this.filterOutHiddenItems(item.item, item);
@@ -1057,8 +1421,22 @@ export class QuestionnaireData {
         return returnArray;
     }
 
-    private linkDependingQuestions(_FHIRItem : QuestionnaireItem, _currentQuestion : IQuestion): {id: string, reference: IQuestion | undefined, operator: QuestionnaireItemOperator, answer: any}[]{
-        let dependingQuestions = new Array<{id: string, reference: IQuestion | undefined, operator: QuestionnaireItemOperator, answer: any}>();
+    /**
+     * 
+     * @param _FHIRItem 
+     * @param _currentQuestion 
+     * @returns                 An array of objects describing the depending questions.
+     */
+    private linkDependingQuestions(
+            _FHIRItem : QuestionnaireItem, 
+            _currentQuestion : IQuestion
+        ): {
+            id: string, 
+            reference: IQuestion | undefined, 
+            operator: QuestionnaireItemOperator, 
+            answer: QuestionnaireResponseItemAnswer | undefined
+        }[]{
+        let dependingQuestions = new Array<{id: string, reference: IQuestion | undefined, operator: QuestionnaireItemOperator, answer: QuestionnaireResponseItemAnswer | undefined}>();
 
         if (_FHIRItem.item && _FHIRItem.item.length > 0) {
 
@@ -1070,7 +1448,6 @@ export class QuestionnaireData {
         }
 
         if (_FHIRItem.enableWhen) {
-            console.log('link depending question', _FHIRItem, _currentQuestion);
             _currentQuestion.isEnabled = false;
             _FHIRItem.enableWhen.forEach((determinator) => {
                 const dependingObject = {
@@ -1081,8 +1458,12 @@ export class QuestionnaireData {
                 };
                 switch(determinator.operator) {
                     case QuestionnaireItemOperator.EXISTS:
-                        if (determinator.answerBoolean) {
+                        if (determinator.answerBoolean != undefined) {
                             dependingObject.answer = { valueBoolean: determinator.answerBoolean };
+                            const dependant = this.findQuestionById(determinator.question);
+                            if (dependant) {
+                                _currentQuestion.isEnabled = (dependant.selectedAnswers.length > 0) === determinator.answerBoolean;
+                            }
                         } else {
                             console.warn(`QuestionnaireData.ts: Depending questions with operator EXISTS needs answerBoolean (Question ${_FHIRItem.linkId})`);
                         }
@@ -1103,8 +1484,8 @@ export class QuestionnaireData {
                             dependingObject.answer = { valueDateTime: determinator.answerDateTime };
                         } else if (determinator.answerTime) {
                             dependingObject.answer = { valueTime: determinator.answerTime };
-                        } else if (determinator.answerBoolean) {
-                                dependingObject.answer = { valueBoolean: determinator.answerBoolean };
+                        } else if (determinator.answerBoolean != undefined) {
+                                dependingObject.answer = { valueBoolean:  determinator.answerBoolean };
                         } else {
                             console.warn(`QuestionnaireData.ts: Currently only answerCoding, answerString, answerDecimal, answerInteger, answerDate, answerDateTime, answerBoolean and answerTime are supported for depending questions with operators "=" and "!=" (Question ${_FHIRItem.linkId})`);
                         }
@@ -1147,7 +1528,7 @@ export class QuestionnaireData {
     * @param _overWriteExistingAnswers (optional) specifies if existing answers should be overwritten (default: false)
     */
     populateAnswers(_resources: Resource[], _overWriteExistingAnswers?: boolean): void {
-        let resources = {};
+        const resources = {};
         _resources.forEach(r => {
             if (r.resourceType) {
                 resources[r.resourceType.toLowerCase()] = r;
@@ -1166,14 +1547,14 @@ export class QuestionnaireData {
                         const type = expression.split('.')[0].substring(1).toLowerCase();
                         const resource = resources[type];
                         if (resource) {
-                            const value = fhirpath.evaluate(resource, expression.substring(type.length + 2))[0];
-                            if (value) {
+                            const cleanExpression = expression.replace(new RegExp('%' + type + '.', 'g'), '');
+                            const value = fhirpath.evaluate(resource, cleanExpression)[0];
+                            if (value != undefined) {
                                 let populatedAnswer: IAnswerOption = { answer: {}, code: {} };
                                 this.availableLanguages.forEach(l => {
                                     populatedAnswer.answer[l] = value;
-                                })
-
-                                // todo handle correct way for every type
+                                });
+                                
                                 switch(item.type) {
                                     case QuestionnaireItemType.CHOICE:
                                         populatedAnswer = this.findAccordingAnswerOption(value, item.answerOptions) || populatedAnswer;
@@ -1186,7 +1567,9 @@ export class QuestionnaireData {
                                         populatedAnswer.code.valueInteger = Number(value);
                                         break;
                                     case QuestionnaireItemType.BOOLEAN:
-                                        populatedAnswer.code.valueBoolean = value.toLowerCase() === 'true';
+                                        populatedAnswer.code.valueBoolean = typeof value === 'string'
+                                            ? value.toLowerCase() === 'true'
+                                            : value;
                                         break;
                                     case QuestionnaireItemType.DATE:
                                         populatedAnswer.code.valueDate = value.toString();
@@ -1212,15 +1595,12 @@ export class QuestionnaireData {
                                         };
                                         break;
                                     default:
-                                        console.log('Population of items of type' + item.type + ' is currently not supported by QuestionnaireData. Please inform the developer or create an issue on Github with specifying the missing type.');
+                                        console.warn('Population of items of type' + item.type + ' is currently not supported by QuestionnaireData. Please inform the developer or create an issue on Github with specifying the missing type.');
                                 }
                                 if (Object.keys(populatedAnswer.code).length > 0) {
-                                    this.updateQuestionAnswers(item, populatedAnswer)
+                                    this.updateQuestionAnswers(item, populatedAnswer);
                                 }
-                            } else {
-                                console.log('No value found for expression ' + expression + '.');
-                            }
-
+                            } 
                         } else {
                             console.warn('QuestionnaireData: Can not populate with initialExpression for item ' + item.id + ': Missing context resource of type ' + type);
                         }
@@ -1277,12 +1657,51 @@ export class QuestionnaireData {
     }
 
     /**
+     * Checks if an initial value is valid for a given question
+     * @param initial   the initial value from the FHIR questionnaire
+     * @param item      the IQuestion with the value
+     * @returns         TRUE, if the initial value has a value[x] of the correct type of the 
+     *                  item, FALSE if not, or if it is a choice question with answerOptions
+     */
+    private checkIfIsSameType(initial: QuestionnaireItemInitial, item: IQuestion): boolean {
+        switch (item.type) {
+            case QuestionnaireItemType.BOOLEAN: return initial.valueBoolean != undefined;
+            case QuestionnaireItemType.DECIMAL: return initial.valueDecimal != undefined;
+            case QuestionnaireItemType.INTEGER: return initial.valueInteger != undefined;
+            case QuestionnaireItemType.DATE: return initial.valueDate != undefined;
+            case QuestionnaireItemType.DATETIME: return initial.valueDateTime != undefined;
+            case QuestionnaireItemType.TIME: return initial.valueTime != undefined;
+            case QuestionnaireItemType.STRING: return initial.valueString != undefined;
+            case QuestionnaireItemType.TEXT: return initial.valueTime != undefined;
+            case QuestionnaireItemType.URL: return initial.valueUri != undefined;
+            case QuestionnaireItemType.ATTACHMENT: return initial.valueAttachment != undefined;
+            case QuestionnaireItemType.QUANTITY: return initial.valueQuantity != undefined;
+            case QuestionnaireItemType.CHOICE: 
+            case QuestionnaireItemType.OPEN_CHOICE: 
+                if (item.answerOptions && item.answerOptions.length > 0) {
+                    console.warn('When answerOptions are available, you should use answerOption.initialSelected instead of initialValue. (Question ' + item.id + ')');
+                    return false;
+                } else {
+                    return (
+                        initial.valueInteger != undefined ||
+                        initial.valueDate != undefined ||
+                        initial.valueString != undefined ||
+                        initial.valueCoding != undefined ||
+                        initial.valueReference != undefined
+                    );
+                }
+            default: return false;
+        }
+    }
+
+    /**
     * Recursively searches for a IQuestion by ID. This is useful if a Questionnaires questions
     * are nested on multiple layers.
-    * @param _id the id of the IQuestion to find
-    * @param _data the (nested) array of IQuestion to search in
+    * @param _id    the id of the IQuestion to find
+    * @param _data? the (nested) array of IQuestion to search in. If no data is provided, search is
+    *               performed over all questions of the QuestionnaireData  
     */
-    findQuestionById(_id: string, _data: IQuestion[]): IQuestion | undefined {
+    findQuestionById(_id: string, _data: IQuestion[] = this.getQuestions()): IQuestion | undefined {
         let result: IQuestion | undefined = undefined;
         _data.forEach((question) => {
             if (!result) {
@@ -1303,7 +1722,7 @@ export class QuestionnaireData {
      *                              and the matching strings
      */
     private getTranslationsFromDesignation(languageDesignations: ValueSetComposeIncludeConceptDesignation[]): {[language: string]: string} {
-        let translations: {[language: string]: string} = {};
+        const translations: {[language: string]: string} = {};
         Array.prototype.forEach.call(languageDesignations, (designation: { language: string; value: string; }) => {
             translations[designation.language] = designation.value;
         })
@@ -1322,5 +1741,27 @@ export class QuestionnaireData {
             returnObject[lang] = _text;
         });
         return returnObject;
+    }
+
+    /**
+     * Searches for the QuestionnaireItem in the FHIR Questionnaire
+     * @param id        the id of the item to find
+     * @param subItems  optional (for recursivitiy): an array to search in
+     * @returns         the QuestionnaireItem, or undefined if no item can be found
+     */
+     private findFhirItem(id: string, subItems?: QuestionnaireItem[]): QuestionnaireItem | undefined {
+        let found: QuestionnaireItem | undefined;
+        const searchArray = subItems || this.fhirQuestionnaire.item;
+        searchArray?.forEach(item => {
+            if (!found) {
+                if (item.linkId === id) {
+                    found = item;
+                }
+                if (item.item) {
+                    found = this.findFhirItem(id, item.item);
+                }
+            }
+        });
+        return found;
     }
 }

@@ -22,14 +22,17 @@
       <div v-if="qData !== undefined">
         <QuestionComponent
           v-for="question in qData.getQuestions()"
-          :key="question.id"
+          :key="
+            /* this is a hack, when the counter increases on reset, the question component gets a new key and thus is re-rendered*/
+            resetCounter + question.id
+          "
           :question="question"
           :language="lang"
-          :onAnswer="qData.updateQuestionAnswers"
-          :isSelected="qData.isAnswerOptionSelected" />
+          :onAnswer="qData.updateQuestionAnswers.bind(qData)"
+          :isSelected="qData.isAnswerOptionSelected.bind(qData)" />
         <button
           :disabled="!qData"
-          @click="qData?.resetResponse()">
+          @click="reset">
           zurücksetzen
         </button>
         <button @click="setAnswers">Antworten speichern</button>
@@ -77,6 +80,7 @@ import QuestionComponent from './components/Question.vue';
 import ZARIT from '@/assets/questionnaires/zarit.json';
 import BLUEBOOK from '@/assets/questionnaires/bluebook.json';
 import SITUATION from '@/assets/questionnaires/situation.json';
+import INITIAL from '@/assets/questionnaires/initialValues.json';
 import type {Questionnaire} from '@i4mi/fhir_r4';
 import {QuestionnaireData} from '@i4mi/fhir_questionnaire';
 
@@ -90,6 +94,7 @@ export default defineComponent({
       lang: 'de',
       availableLanguages: ['de', 'en', 'fr'],
       qData: undefined as QuestionnaireData | undefined,
+      resetCounter: 0,
       questionnaire: undefined,
       questionnaires: [
         {
@@ -102,6 +107,11 @@ export default defineComponent({
           description:
             'Der ZARIT Fragebogen dient pflegenden Angehörigen dazu, ihre eigene Belastung zu evaluieren. Der Fragebogen ist verfügbar in deutsch und französisch. Das letzte Item der QuestionnaireReponse ist ein Score, der automatisch berechnet wird.',
           questionnaire: ZARIT as Questionnaire
+        },
+        {
+          name: 'Initial Values',
+          description: 'Ein Fragebogen, bei dem bereits Antworten vorgegeben sind (initial values)',
+          questionnaire: INITIAL as Questionnaire
         },
         {
           name: 'Neonatology Bluebook',
@@ -134,7 +144,6 @@ export default defineComponent({
           this.showOwnQuestionnaireModal = true;
         } else {
           this.qData = new QuestionnaireData(questionnaire.questionnaire, this.availableLanguages);
-          console.log(this.qData.getQuestions());
         }
       }
     },
@@ -156,6 +165,10 @@ export default defineComponent({
       } catch (error) {
         console.log('Es ging etwas schief beim Questionnaire speichern', error);
       }
+    },
+    reset() {
+      this.qData?.resetResponse();
+      this.resetCounter++; // so the questions get re-rendered
     }
   }
 });
