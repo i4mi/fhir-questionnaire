@@ -209,17 +209,24 @@ function recursivelyCheckCompleteness(_question: IQuestion[], _onlyRequired: boo
 /**
 * Recursively iterates through nested IQuestions and extracts the given answers and adds
 * it to a given array as FHIR QuestionnaireResponseItem
-* @param question      an array of (possibly nested) IQuestions
+* @param questions      an array of (possibly nested) IQuestions
 * @param responseItems the array to fill with the FHIR QuestionnaireResponseItems
 * @returns             the given array
 * @throws              an error if answers are not valid
 **/
-function mapIQuestionToQuestionnaireResponseItem(_question: IQuestion[], _responseItems: QuestionnaireResponseItem[], _language: string): QuestionnaireResponseItem[] {
-    _question.forEach((question) => {
+function mapIQuestionToQuestionnaireResponseItem(_questions: IQuestion[], _responseItems: QuestionnaireResponseItem[], _language: string): QuestionnaireResponseItem[] {
+    _questions.forEach((question) => {
         question.isInvalid = false;
         if (question.type === QuestionnaireItemType.GROUP) {
             if (question.subItems && question.subItems.length > 0) {
-                _responseItems = mapIQuestionToQuestionnaireResponseItem(question.subItems, _responseItems, _language);
+                const labelText = question.label[_language];
+                _responseItems.push(
+                    {
+                        linkId: question.id,
+                        text: labelText ? labelText : undefined,
+                        item: mapIQuestionToQuestionnaireResponseItem(question.subItems, [], _language)
+                    }
+                );
             } else {
                 question.isInvalid = true;
                 throw new Error(`Invalid question set: IQuestion with id ${question.id} is group type, but has no subItems.`);
@@ -688,11 +695,8 @@ export class QuestionnaireData {
     }
 
     /**
-    * Processes a QuestionnaireResponse and parses the given answers to the local iQuestion array
-    * @param _fhirResponse a QuestionnaireResponse that matches the Questionnaire. If the item array of the
-    *                      _fhirResponse is empty, the existing answers will not be overwritten. If the item
-    *                      array of the _fhirResponse contains at least one item, the existing answers are all
-    *                      overwritten.
+    * Processes a QuestionnaireResponse and parses the given answers to the local iQuestion array. Existing answers are overwritten.
+    * @param _fhirResponse a QuestionnaireResponse that matches the Questionnaire.
     * @throws an error if the questionnaire response is not matching the questionnaire
     **/
     restoreAnswersFromQuestionnaireResponse(_fhirResponse: QuestionnaireResponse): void {
@@ -702,6 +706,15 @@ export class QuestionnaireData {
         if (this.fhirQuestionnaire.url && questionnaireUrl !== this.fhirQuestionnaire.url.split('|')[0]) {
             throw new Error('Invalid argument: QuestionnaireResponse does not match Questionnaire!');
         }
+        const recursivelyClearItems = (_items: IQuestion[]): void => {
+            _items.forEach(item => {
+                item.selectedAnswers = [];
+                if (item.subItems) {
+                    recursivelyClearItems(item.subItems);
+                }
+            });
+        }
+        recursivelyClearItems(this.items);
         const answerMatchingIQuestionItemWithFhirResponseItem = (_fhirItems: QuestionnaireResponseItem[]): void => {
             _fhirItems.forEach((answerItem) => {
                 const item = this.findQuestionById(answerItem.linkId, this.items);
@@ -732,7 +745,7 @@ export class QuestionnaireData {
                 } else {
                     console.warn('Item with linkId ' + answerItem.linkId + ' was found in QuestionnaireResponse, but does not exist in Questionnaire.');
                 }
-            })
+            });
         }
 
         // only restore, if it is not already up to date
@@ -783,15 +796,12 @@ export class QuestionnaireData {
                 ') is not supported by this Questionnaire. (Supported languages: ' + this.availableLanguages + ').');
         }
         const options = _options || {};
+
         // usual questionnaire response
         const fhirResponse: QuestionnaireResponse = {
             resourceType: 'QuestionnaireResponse',
             status: this.isResponseComplete(true) ? QuestionnaireResponseStatus.COMPLETED : QuestionnaireResponseStatus.IN_PROGRESS,
-            meta: {},
-            text: {
-                status: NarrativeStatus.GENERATED,
-                div: ''
-            },
+            text: { status: NarrativeStatus.GENERATED, div: '' },
             questionnaire: this.getQuestionnaireURLwithVersion(),
             authored: options.date ? options.date.toISOString() : new Date().toISOString(),
             source: options.patient,
@@ -805,7 +815,6 @@ export class QuestionnaireData {
                 valueCoding: this.fhirQuestionnaire.code[0]
             }];
         }
-        
 
         // stuff to do for hidden items with calculated expression
         const hiddenItemsWithCalculatedExpression = [...this.hiddenFhirItems].filter(i => i.item.options && i.item.options.calculatedExpression !== undefined);
@@ -849,20 +858,7 @@ export class QuestionnaireData {
                 }
             }
             if (item.parentLinkId) {
-                const recursivelyFindId = (id: string, items: QuestionnaireResponseItem[]): QuestionnaireResponseItem | undefined => {
-                    let itemWithId: QuestionnaireResponseItem | undefined;
-                    items.forEach(i => {
-                        if (!itemWithId) {
-                            if (i.linkId === id) {
-                                itemWithId = i;
-                            } else if (i.item) {
-                                itemWithId = recursivelyFindId(id, i.item);
-                            }
-                        }
-                    });
-                    return itemWithId;
-                }
-                const parentItem = recursivelyFindId(item.parentLinkId, fhirResponse.item!);
+                const parentItem = this.recursivelyFindId(item.parentLinkId, fhirResponse.item!);
                 if (parentItem) {
                     if (parentItem.item) {
                         parentItem.item.push(mapIQuestionToQuestionnaireResponseItem([item.item], new Array<QuestionnaireResponseItem>(), _language)[0]);
@@ -874,32 +870,58 @@ export class QuestionnaireData {
                 fhirResponse.item!.push(mapIQuestionToQuestionnaireResponseItem([item.item], new Array<QuestionnaireResponseItem>(), _language)[0]);
             }
         });
-        if (options.reset) {
-            this.resetResponse();
-        }
 
         // generate narrative
-        fhirResponse.text!.div = '<div xmlns=\"http://www.w3.org/1999/xhtml\">';
-        fhirResponse.text!.div    += '<style>' + 
-            '.question {font-weight: bold;} ' + 
-            'ul {margin: 0} ' + 
-            '.multiple-answers {display: inline; padding: 0} ' +
-            '.multiple-answers > li {display: inline; margin-left: 0.3em} ' +
-            '.multiple-answers > li:before {content: \'-\'; margin-right: 0.3em}' +
-            '</style>';
-        fhirResponse.text!.div    += '<h4 class="title">' + this.getQuestionnaireTitle(_language) + '</h4>';
-        fhirResponse.text!.div    += '<p class="status">Status: ' + fhirResponse.status + '</p>';
-        fhirResponse.text!.div    += '<p class="created">Created: ' + new Date(fhirResponse.authored!).toLocaleDateString() + '</p>';
-        fhirResponse.text!.div    += '<p class="questionnaire-link">Questionnaire: ' + fhirResponse.questionnaire + '</p>';
+        let narrativeDiv = '<div xmlns="http://www.w3.org/1999/xhtml">';
+        narrativeDiv    += '<style>' + 
+                              '.question {font-weight: bold;} ' + 
+                              'ul {margin: 0} ' + 
+                              '.multiple-answers {display: inline; padding: 0} ' +
+                              '.multiple-answers > li {display: inline; margin-left: 0.3em} ' +
+                              '.multiple-answers > li:before {content: \'-\'; margin-right: 0.3em}' +
+                           '</style>';
+        narrativeDiv    += '<h4 class="title">' + this.getQuestionnaireTitle(_language) + '</h4>';
+        narrativeDiv    += '<p class="status">Status: ' + fhirResponse.status + '</p>';
+        narrativeDiv    += '<p class="created">Created: ' + new Date(fhirResponse.authored!).toLocaleDateString() + '</p>';
+        narrativeDiv    += '<p class="questionnaire-link">Questionnaire: ' + fhirResponse.questionnaire + '</p>';
         if (options.patient) {
-            fhirResponse.text!.div+= '<p class="patient">Patient: ' + options.patient.display ? options.patient.display : options.patient.reference + '</p>';
+            narrativeDiv+= '<p class="patient">Patient: ' + options.patient.display ? options.patient.display : options.patient.reference + '</p>';
         }
-        fhirResponse.text!.div    += fhirResponse.item ? this.getNarrativeString(fhirResponse.item, true) : '';
-        fhirResponse.text!.div    += '</div>';
+        narrativeDiv    += fhirResponse.item ? this.getNarrativeString(fhirResponse.item, true) : '';
+        narrativeDiv    += '</div>';
+
+        fhirResponse.text = {
+                status: NarrativeStatus.GENERATED,
+                div: narrativeDiv
+        }
 
         fhirResponse.item = this.recursivelyCleanEmptyArrays(fhirResponse.item);
         
+        if (options.reset) {
+            this.resetResponse();
+        }
+    
         return {...fhirResponse};
+    }
+
+    /**
+     * Recursively searches for a QuestionnaireResponseItem in a deep array.
+     * @param id        the id of the item to find
+     * @param items     the array of items
+     * @returns         the QuestionnaireResponseItem if found, or undefined if no item matches
+     */
+    private recursivelyFindId(id: string, items: QuestionnaireResponseItem[]): QuestionnaireResponseItem | undefined {
+        let itemWithId: QuestionnaireResponseItem | undefined;
+        items.forEach(i => {
+            if (!itemWithId) {
+                if (i.linkId === id) {
+                    itemWithId = i;
+                } else if (i.item) {
+                    itemWithId = this.recursivelyFindId(id, i.item);
+                }
+            }
+        });
+        return itemWithId;
     }
 
     /**
@@ -940,6 +962,7 @@ export class QuestionnaireData {
      * @returns         a string containging html code that represents the QuestionnaireResponseItem
      */
     private getItemString(_item: QuestionnaireResponseItem): string {
+        console.log('getItemString()', _item)
         const parseAnswer  = (a: QuestionnaireResponseItemAnswer) => {
             if (a.valueBoolean !== undefined) return a.valueBoolean;
             if (a.valueCoding !== undefined) return (a.valueCoding?.display || a.valueCoding?.code);
@@ -955,10 +978,17 @@ export class QuestionnaireData {
             if (a.valueAttachment !== undefined) return 'Attachment ' + a.valueAttachment?.title;
         };
 
-        if (!_item.answer) return '<li><span class="question display">' + (_item.text || 'no text') + '</span></li>';
-        let itemString = '<li><span class="question">' + (_item.text || 'no text') + ':</span>';
-        if (_item.answer.length === 0) itemString += ' <span class="response">-'
-        if (_item.answer!.length === 1) {
+        if (!_item.answer) {
+            if (_item.item && _item.item?.length > 0) {
+                return (_item.text ? '<li><span class="question">' + _item.text + ':</span>' : '') + this.getNarrativeString(_item.item, false);
+            } else {
+                return '<li><span class="question display">' + (_item.text || 'no text') + '</span></li>';
+            }
+        }
+        let itemString = _item.text ? '<li><span class="question">' + _item.text + ':</span>' : '';
+        if (_item.answer.length === 0) {
+            itemString += ' <span class="response">-</span>'
+        } else if (_item.answer!.length === 1) {
             itemString += ' <span class="response">'+ parseAnswer(_item.answer[0])+ '</span>';
         } else {
             itemString += '<ul class="multiple-answers">';

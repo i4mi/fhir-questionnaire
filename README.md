@@ -189,7 +189,7 @@ Falls back to default language of the questionnaire, if the wanted language is n
 - returns: The description, when available in the requested language, else in the Questionnaires default language (or undefined, if no description is set in the Questionnaire) 
 
 ### restoreAnswersFromQuestionnaireResponse(_fhirResponse): void 
-Processes a QuestionnaireResponse and sets its answers to the QuestionnaireData object.
+Processes a QuestionnaireResponse and sets its answers to the QuestionnaireData object. The existing answers are overwritten.
 - parameter **_fhirResponse**: a QuestionnaireResponse that matches the Questionnaire
 - throws: an error if the QuestionnaireResponse is not matching the Questionnaire
 
