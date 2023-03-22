@@ -962,7 +962,6 @@ export class QuestionnaireData {
      * @returns         a string containging html code that represents the QuestionnaireResponseItem
      */
     private getItemString(_item: QuestionnaireResponseItem): string {
-        console.log('getItemString()', _item)
         const parseAnswer  = (a: QuestionnaireResponseItemAnswer) => {
             if (a.valueBoolean !== undefined) return a.valueBoolean;
             if (a.valueCoding !== undefined) return (a.valueCoding?.display || a.valueCoding?.code);
