@@ -25,6 +25,16 @@ test('isResponseComplete()', () => {
     expect(empty.isResponseComplete(false)).toBeTruthy();
 });
 
+test('isTouched()', () => {
+    const testData = new QuestionnaireData(VARIOUS, LANG);
+    const empty = new QuestionnaireData({url: 'none', ... EMPTY_QUESTIONNAIRE}, LANG);
+    const q1 = testData.findQuestionById('1.1.1-string');
+    expect(testData.isTouched()).toBeFalsy();
+    expect(empty.isTouched()).toBeFalsy();
+    expect(() => {testData.updateQuestionAnswers(q1!, {code: {valueString: 'Tom Cruise'}, answer: {[LANG[0]]: 'Tom Cruise'}})}).not.toThrow();
+    expect(testData.isTouched()).toBeTruthy();
+});
+
 test('mark questions invalid', () => {
     const testData = new QuestionnaireData(VARIOUS, LANG);
     const group1 = testData.findQuestionById('1-group');
@@ -53,11 +63,13 @@ test('restoreAnswersFromQuestionnaireResponse', () => {
     // response not fitting questionnaire
     expect(() => empty.restoreAnswersFromQuestionnaireResponse(RESPONSE)).toThrow();
     expect(empty.getQuestionnaireResponse(LANG[0])).toBeDefined();
+    expect(empty.isTouched()).toBeFalsy();
 
     // fitting response
     expect(() => testData.restoreAnswersFromQuestionnaireResponse(RESPONSE)).not.toThrow();
 
     // now we have all required questions answered, but not the non required
+    expect(testData.isTouched()).toBeTruthy();
     expect(testData.isResponseComplete()).toBeFalsy();
     expect(testData.isResponseComplete(true)).toBeTruthy();
 
@@ -105,6 +117,7 @@ test('resetResponse()', () => {
     expect(testData.isResponseComplete(true)).toBeTruthy();
     testData.resetResponse();
     expect(testData.isResponseComplete(true)).toBeFalsy();
+    expect(testData.isTouched()).toBeFalsy();
     expect(() => testData.getQuestionnaireResponse(LANG[0])).toThrow();
 });
 
@@ -112,6 +125,7 @@ test('populateAnswers', () => {
     const testData = new QuestionnaireData(POPULATE, LANG);
     expect(() => testData.populateAnswers([PATIENT])).not.toThrow();
     expect(testData.isResponseComplete(true)).toBeTruthy();
+    expect(testData.isTouched()).toBeTruthy();
     expect(testData.isResponseComplete(false)).toBeFalsy();
     expect(() => testData.populateAnswers([OBSERVATION])).not.toThrow();
     expect(testData.isResponseComplete(false)).toBeTruthy();
