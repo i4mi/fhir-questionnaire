@@ -1,6 +1,6 @@
 {
   "name": "@i4mi/fhir_questionnaire",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "TS Package for handling FHIR Questionnaire and generating QuestionnaireRespones.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -21,12 +21,14 @@
     "fhir",
     "resources",
     "i4mi",
+    "pcdh",
+    "patient-centered digital healt",
     "questionnaire",
     "questionnaireresponse",
     "typescript",
     "fhirpath"
   ],
-  "author": "Gabriel Hess, Olivier Descloux @ Institute for Medical Informatics (I4MI) - Bern University of Applied Science (BFH)",
+  "author": "Gabriel Hess, Olivier Descloux @ Institute for Medical Informatics (I4MI) and Institute for Patient-centered digital health - Bern University of Applied Science (BFH)",
   "license": "Apache-2.0",
   "devDependencies": {
     "@types/jest": "^24.0.12",

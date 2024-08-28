@@ -381,6 +381,16 @@ function setOptionsFromExtensions(_FHIRItem: QuestionnaireItem): IQuestionOption
     return returnValue;
 }
 
+function recursivelyCheckTouched(item: IQuestion): boolean {
+    let touched = item.selectedAnswers.length > 0;
+    item.subItems?.forEach((subItem) => {
+        if (!touched) {
+            touched = recursivelyCheckTouched(subItem);
+        }
+    });
+    return touched;
+}
+
 export class QuestionnaireData {
     // the FHIR resources we work on
     fhirQuestionnaire: Questionnaire;
@@ -1045,6 +1055,23 @@ export class QuestionnaireData {
     isQuestionComplete(_question: IQuestion, _markInvalid?: boolean): boolean {
         return recursivelyCheckCompleteness([_question], true, _markInvalid === undefined ? true : _markInvalid);
     }
+
+    /**
+     * Determines if any question has been answered yet. Also checks subquestions, if activated.
+     * @returns: TRUE, if at least one question has an answer
+     *           FALSE, if all questions remain unanswered
+     */
+    isTouched(): boolean {
+        let touched = false;
+        this.items.forEach((item) => {
+            if (!touched) {
+                touched = recursivelyCheckTouched(item);
+            }
+        });
+
+        return touched;
+    }
+
 
     /**
     * recursively iterates through a possibly nested QuestionnaireItem and maps it to IQuestion objects.
