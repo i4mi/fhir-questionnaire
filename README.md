@@ -19,13 +19,14 @@ npm install @i4mi/fhir_questionnaire
 ```
 Wait for the install to complete and you are ready to set up QuestionnaireData.
 ### Setup
-For every questionnaire you want to handle, you need to initialize a QuestionnaireData instance, providing the FHIR questionnaire resource as a JSON object, and at least one shorthand for an available language:
+For every questionnaire you want to handle, you need to initialize a QuestionnaireData instance, providing the FHIR questionnaire resource as a JSON object.
+
 ```typescript
 import {QuestionnaireData} from '@i4mi/fhir_questionnaire';
 
 // ... other code
 
-const qData = new QuestionnaireData(fhirQuestionnaire, ['en']);
+const qData = new QuestionnaireData(fhirQuestionnaire);
 ```
 
 #### External ValueSets

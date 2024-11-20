@@ -15,6 +15,7 @@ const HIDDEN_EXTENSION = 'http://hl7.org/fhir/StructureDefinition/questionnaire-
 const CALCULATED_EXPRESSION_EXTENSION = 'http://hl7.org/fhir/uv/sdc/StructureDefinition/sdc-questionnaire-calculatedExpression';
 const QUESTIONNAIRERESPONSE_CODING_EXTENSION_URL = 'http://midata.coop/extensions/response-code';
 const INITIAL_EXPRESSION_EXTENSION = 'http://hl7.org/fhir/uv/sdc/StructureDefinition/sdc-questionnaire-initialExpression';
+const LANGUAGE_EXTENSION = 'http://hl7.org/fhir/StructureDefinition/translation';
 
 const PRIMITIVE_VALUE_X = [
     'valueString',
@@ -391,6 +392,28 @@ function recursivelyCheckTouched(item: IQuestion): boolean {
     return touched;
 }
 
+function getAvailableLanguages(_questionnaire: Questionnaire): string[] {
+    function extractFromExtensions(languageKeys: {[key: string]: boolean}, extensions?: Extension[],): void {
+        extensions?.forEach((extension) => {
+            if (extension.url === LANGUAGE_EXTENSION) {
+                extension.extension?.forEach((subExtension) => {
+                    if (subExtension.url === 'lang') {
+                        const languageValue = subExtension.valueCode;
+                        if (languageValue) {
+                            languageKeys[languageValue] = true;
+                        }
+                    }
+                })
+            }
+        })
+    }
+    const languageKeys: {[key: string]: boolean} = {};
+    extractFromExtensions(languageKeys, _questionnaire._title?.extension);
+    extractFromExtensions(languageKeys, _questionnaire._description?.extension);
+    _questionnaire.item && _questionnaire.item[0] && extractFromExtensions(languageKeys, _questionnaire.item[0]._text?.extension);
+    return Object.keys(languageKeys);
+}
+
 export class QuestionnaireData {
     // the FHIR resources we work on
     fhirQuestionnaire: Questionnaire;
@@ -407,11 +430,11 @@ export class QuestionnaireData {
     lastRestored?: Date;
     responseIdToSynchronize?: string;
 
-    constructor(_questionnaire: Questionnaire, _availableLanguages: string[], _valueSets?: {[url: string]: ValueSet}, _items?: IQuestion[], _hiddenFhirItems?: {item: IQuestion, parentLinkId?: string}[]){
+    constructor(_questionnaire: Questionnaire, _availableLanguages?: string[], _valueSets?: {[url: string]: ValueSet}, _items?: IQuestion[], _hiddenFhirItems?: {item: IQuestion, parentLinkId?: string}[]){
         this.fhirQuestionnaire = _questionnaire;
         this.items = new Array<IQuestion>();
         this.hiddenFhirItems = new Array<{item: IQuestion,parentLinkId?: string}>();
-        this.availableLanguages = _availableLanguages || [];
+        this.availableLanguages = _availableLanguages || getAvailableLanguages(_questionnaire);
         this.valueSets = {};
 
         if (_valueSets) {
