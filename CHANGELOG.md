@@ -1,5 +1,6 @@
 | Version | Date       | Changes    |
 | ------- | ---------- | ---------- |
+| 0.2.3   | 2024-11-20 | - make availableLanguages optional again in QuestionnaireData constructor |
 | 0.2.2   | 2024-08-28 | - add isTouched() |
 | 0.2.1   | 2023-03-22 | - remove unneeded logging |
 | 0.2.0   | 2023-03-21 | - add getQuestionnaireDescription()<br />- add isQuestionComplete()<br />- generate narrative for QuestionnaireResponse<br />- field `midataExtensions` added to getQuestionnaireResponse() options<br />- support initial values<br />- add tests (coverage >80%)<br />- various bugfixes |

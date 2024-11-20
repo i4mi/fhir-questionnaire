@@ -2,6 +2,7 @@ import {Questionnaire, QuestionnaireResponse} from '@i4mi/fhir_r4';
 import {QuestionnaireData} from '../dist/QuestionnaireData';
 
 const I18N_QUESTIONNAIRE = require('./questionnaires/i18n.json') as Questionnaire;
+const EMPTY_QUESTIONNAIRE = require('./questionnaires/empty.json') as Questionnaire;
 
 const LANGUAGES = ['de', 'fr', 'it']; // 'it' is not in Questionnaire
 const testData = new QuestionnaireData(I18N_QUESTIONNAIRE, LANGUAGES);
@@ -88,4 +89,17 @@ test('getQuestionnaireResponse', () => {
   expect(response.it).toBeDefined();
   // it is fallback, since the questionnaire has no IT strings
   expect(response.de).toEqual(response.it);
+});
+
+const testDataSimple = new QuestionnaireData(I18N_QUESTIONNAIRE);
+test('simpleAvailableLanguages', () => {
+  expect(testDataSimple.availableLanguages).toEqual(['de', 'fr']);
+});
+
+test('loadEmptyQuestionnaire', () => {
+  let testDataEmpty: QuestionnaireData | undefined;
+  expect(() => {
+    testDataEmpty = new QuestionnaireData(EMPTY_QUESTIONNAIRE);
+  }).not.toThrow();
+  expect(testDataEmpty?.availableLanguages).toEqual([]);
 });
