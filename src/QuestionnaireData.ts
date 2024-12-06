@@ -918,7 +918,7 @@ export class QuestionnaireData {
         narrativeDiv    += '<p class="created">Created: ' + new Date(fhirResponse.authored!).toLocaleDateString() + '</p>';
         narrativeDiv    += '<p class="questionnaire-link">Questionnaire: ' + fhirResponse.questionnaire + '</p>';
         if (options.patient) {
-            narrativeDiv+= '<p class="patient">Patient: ' + options.patient.display ? options.patient.display : options.patient.reference + '</p>';
+            narrativeDiv+= '<p class="patient">Patient: ' + (options.patient.display ? options.patient.display : options.patient.reference) + '</p>';
         }
         narrativeDiv    += fhirResponse.item ? this.getNarrativeString(fhirResponse.item, true) : '';
         narrativeDiv    += '</div>';
@@ -985,8 +985,7 @@ export class QuestionnaireData {
             ? '<ul class="narrative questionnaire-response">' 
             : '<ul class="sub-question">';
         _items.map(i => {narrativeString += this.getItemString(i)});
-
-        return narrativeString + '</ul>';
+        return narrativeString + (_topLevel ? '</li>' : '')  + '</ul>';
     }
 
     /**
