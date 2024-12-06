@@ -1,5 +1,6 @@
 | Version | Date       | Changes    |
 | ------- | ---------- | ---------- |
+| 0.2.4   | 2024-12-06 | - fix bugs in narrative that resulted in resources not validating |
 | 0.2.3   | 2024-11-20 | - make availableLanguages optional again in QuestionnaireData constructor |
 | 0.2.2   | 2024-08-28 | - add isTouched() |
 | 0.2.1   | 2023-03-22 | - remove unneeded logging |
