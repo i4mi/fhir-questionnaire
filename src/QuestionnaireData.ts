@@ -906,13 +906,13 @@ export class QuestionnaireData {
 
         // generate narrative
         let narrativeDiv = '<div xmlns="http://www.w3.org/1999/xhtml">';
-        narrativeDiv    += '<style>' + 
-                              '.question {font-weight: bold;} ' + 
-                              'ul {margin: 0} ' + 
-                              '.multiple-answers {display: inline; padding: 0} ' +
-                              '.multiple-answers > li {display: inline; margin-left: 0.3em} ' +
-                              '.multiple-answers > li:before {content: \'-\'; margin-right: 0.3em}' +
-                           '</style>';
+        // narrativeDiv    += '<style>' + 
+        //                       '.question {font-weight: bold;} ' + 
+        //                       'ul {margin: 0} ' + 
+        //                       '.multiple-answers {display: inline; padding: 0} ' +
+        //                       '.multiple-answers > li {display: inline; margin-left: 0.3em} ' +
+        //                       '.multiple-answers > li:before {content: \'-\'; margin-right: 0.3em}' +
+        //                    '</style>';
         narrativeDiv    += '<h4 class="title">' + this.getQuestionnaireTitle(_language) + '</h4>';
         narrativeDiv    += '<p class="status">Status: ' + fhirResponse.status + '</p>';
         narrativeDiv    += '<p class="created">Created: ' + new Date(fhirResponse.authored!).toLocaleDateString() + '</p>';
@@ -965,6 +965,10 @@ export class QuestionnaireData {
     private recursivelyCleanEmptyArrays(_items: QuestionnaireResponseItem[] | undefined): QuestionnaireResponseItem[] | undefined {
         if (_items !== undefined && _items.length > 0) {
             _items.forEach(item => {
+                if (item.answer?.length === 0) {
+                    // also throw out empty answer arrays
+                    item.answer = undefined;
+                }
                 item.item = this.recursivelyCleanEmptyArrays(item.item);
             });
             return _items;
@@ -985,7 +989,7 @@ export class QuestionnaireData {
             ? '<ul class="narrative questionnaire-response">' 
             : '<ul class="sub-question">';
         _items.map(i => {narrativeString += this.getItemString(i)});
-        return narrativeString + (_topLevel ? '</li>' : '')  + '</ul>';
+        return narrativeString + '</ul>';
     }
 
     /**
@@ -1011,16 +1015,16 @@ export class QuestionnaireData {
 
         if (!_item.answer) {
             if (_item.item && _item.item?.length > 0) {
-                return (_item.text ? '<li><span class="question">' + _item.text + ':</span>' : '') + this.getNarrativeString(_item.item, false);
+                return (_item.text ? '<li><span class="question">' + _item.text + ':</span>' : '') + this.getNarrativeString(_item.item, false) + '</li>';
             } else {
                 return '<li><span class="question display">' + (_item.text || 'no text') + '</span></li>';
             }
         }
         let itemString = _item.text ? '<li><span class="question">' + _item.text + ':</span>' : '';
         if (_item.answer.length === 0) {
-            itemString += ' <span class="response">-</span>'
+            itemString += '<span class="response">-</span>'
         } else if (_item.answer!.length === 1) {
-            itemString += ' <span class="response">'+ parseAnswer(_item.answer[0])+ '</span>';
+            itemString += '<span class="response">'+ parseAnswer(_item.answer[0])+ '</span>';
         } else {
             itemString += '<ul class="multiple-answers">';
             _item.answer.map((a) => {
