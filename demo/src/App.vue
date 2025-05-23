@@ -88,7 +88,7 @@
 import {defineComponent} from 'vue';
 import QuestionComponent from './components/Question.vue';
 import NoQuestionnairePage from './components/NoQuestionnairePage.vue';
-import ZARIT from '@/assets/questionnaires/zarit.json';
+import EFFORT from '@/assets/questionnaires/effort.json';
 import BLUEBOOK from '@/assets/questionnaires/bluebook.json';
 import SITUATION from '@/assets/questionnaires/situation.json';
 import INITIAL from '@/assets/questionnaires/initialValues.json';
@@ -121,10 +121,10 @@ export default defineComponent({
       questionnaire: undefined as string | undefined,
       questionnaires: [
         {
-          name: 'ZARIT',
+          name: 'Effort questionnaire',
           description:
-            'The ZARIT questionnaire helps family carers to evaluate their own stress levels. The questionnaire is available in German and French. The last item of the questionnaire response is a score that is calculated automatically.',
-          questionnaire: ZARIT as Questionnaire
+            'The shortened Effort questionnaire helps family carers to evaluate the time spent caring for their relatives. This multilingual questionnaire is available in German, French and English. The last item of the questionnaire response is calculated automatically.',
+          questionnaire: EFFORT as Questionnaire
         },
         {
           name: 'Initial Values',
@@ -157,8 +157,6 @@ export default defineComponent({
   methods: {
     setQuestionnaire(qName?: string): void {
       this.questionnaire = qName;
-
-      console.log('setQuestionnaire');
       const questionnaire = this.questionnaires.find((q) => q.name === this.questionnaire);
       if (questionnaire && questionnaire.questionnaire) {
         if (questionnaire.name === OWN_QUESTIONNAIRE) {
