@@ -39,6 +39,37 @@
       type="date"
       @change="updateValue(value, question.type)" />
 
+    <!-- QUANTITY Question-->
+    <!-- with SLIDER-->
+    <div
+      class="slider-container"
+      v-if="question.type === 'quantity' && question.options?.controlType == 'slider'">
+      <span class="value-label"
+        >{{ value }} {{ value && question.options.unit?.code ? question.options.unit.code : '' }}</span
+      >
+      <div class="slider">
+        <span>{{ question.options.min }}</span>
+        <input
+          type="range"
+          v-model="value"
+          :step="question.options.sliderStep"
+          :min="question.options.min !== undefined ? question.options.min : 0"
+          :max="question.options.max !== undefined ? question.options.max : 100"
+          @change="updateValue(value, question.type)" />
+        <span>{{ question.options.max }}</span>
+      </div>
+    </div>
+    <!-- with INPUT-->
+    <div v-if="question.type === 'quantity' && question.options?.controlType != 'slider'">
+      <input
+        v-model="value"
+        :min="question.options.min"
+        :max="question.options.max"
+        type="number"
+        @change="updateValue(value, question.type)" />
+      <span v-if="question.options.unit?.code">&nbsp;{{ question.options.unit.code }}</span>
+    </div>
+
     <!-- TEXT Question -->
     <textarea
       v-if="question.type === 'text'"
@@ -128,7 +159,6 @@ export default defineComponent({
       case QuestionnaireItemType.CHOICE:
       // nothing to do because for choice the display value is directly calculated
     }
-
   },
   methods: {
     updateValue(value: string | number | boolean, type: QuestionnaireItemType) {
@@ -141,6 +171,16 @@ export default defineComponent({
         case QuestionnaireItemType.TEXT: {
           answer.answer[this.language] = value as string;
           answer.code.valueString = value as string;
+          break;
+        }
+        case QuestionnaireItemType.QUANTITY: {
+          answer.answer[this.language] = value as string;
+          answer.code.valueQuantity = {
+            value: value as number,
+            code: this.question.options.unit.value,
+            system: this.question.options.unit.system,
+            unit: this.question.options.unit.display
+          };
           break;
         }
         case QuestionnaireItemType.DECIMAL: {
@@ -163,6 +203,9 @@ export default defineComponent({
           answer.answer[this.language] = date.toLocaleTimeString();
           answer.code.valueDate = date.toISOString();
           break;
+        }
+        default: {
+          console.log('Item type ' + type + ' is not yet implemented.');
         }
       }
       this.onAnswer(this.question, answer);
@@ -189,9 +232,9 @@ export default defineComponent({
 }
 
 .question.invalid {
-  border-left: solid 3px #d73e2e;
+  border-left: solid 3px #f26419;
   border-radius: 3px;
-  background-color: #533;
+  background-color: #f6ae2d;
 }
 
 .question-display h2 {
@@ -212,5 +255,21 @@ export default defineComponent({
 .question-choice label {
   margin-left: 0.5em;
   cursor: pointer;
+}
+.slider-container {
+  width: 30em;
+  .value-label {
+    display: inline-block;
+    width: 100%;
+    text-align: center;
+  }
+  input {
+    width: calc(100% - 6em);
+  }
+  span {
+    width: 2em;
+    display: inline-block;
+    text-align: center;
+  }
 }
 </style>

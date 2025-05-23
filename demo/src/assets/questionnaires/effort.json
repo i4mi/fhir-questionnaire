@@ -1,0 +1,1180 @@
+{
+    "resourceType": "Questionnaire",
+    "id": "effort-questionnaire",
+    "contained": [
+        {
+            "resourceType": "ValueSet",
+            "id": "YES-NO-Valueset",
+            "url": "http://to.be.defined",
+            "title": "Yes/No",
+            "status": "active",
+            "compose": {
+                "include": [
+                    {
+                        "system": "http://snomed.info/sct",
+                        "concept": [
+                            {
+                                "code": "373066001",
+                                "display": "Yes",
+                                "designation": [
+                                    {
+                                        "language": "de",
+                                        "value": "Ja"
+                                    },
+                                    {
+                                        "language": "en",
+                                        "value": "Yes"
+                                    },
+                                    {
+                                        "language": "fr",
+                                        "value": "Oui"
+                                    }
+                                ]
+                            },
+                            {
+                                "code": "373067005",
+                                "display": "No",
+                                "designation": [
+                                    {
+                                        "language": "de",
+                                        "value": "Nein"
+                                    },
+                                    {
+                                        "language": "en",
+                                        "value": "No"
+                                    },
+                                    {
+                                        "language": "fr",
+                                        "value": "Non"
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "resourceType": "ValueSet",
+            "id": "FREQUENCY-Valueset",
+            "url": "http://to.be.defined",
+            "title": "Frequency",
+            "status": "active",
+            "compose": {
+                "include": [
+                    {
+                        "system": "http://midata.coop/approches/frequency",
+                        "concept": [
+                            {
+                                "code": "'0'",
+                                "display": "Multiple times a day",
+                                "designation": [
+                                    {
+                                        "language": "de",
+                                        "value": "täglich mehrmals"
+                                    },
+                                    {
+                                        "language": "fr",
+                                        "value": "plusieurs fois par jour"
+                                    },
+                                    {
+                                        "language": "en",
+                                        "value": "multiple times a day"
+                                    }
+                                ]
+                            },
+                            {
+                                "code": "1",
+                                "display": "Daily",
+                                "designation": [
+                                    {
+                                        "language": "de",
+                                        "value": "täglich einmal"
+                                    },
+                                    {
+                                        "language": "fr",
+                                        "value": "Une fois par jour"
+                                    },
+                                    {
+                                        "language": "en",
+                                        "value": "Once a day"
+                                    }
+                                ]
+                            },
+                            {
+                                "code": "2",
+                                "display": "Multiple times a week",
+                                "designation": [
+                                    {
+                                        "language": "de",
+                                        "value": "2-3x die Woche"
+                                    },
+                                    {
+                                        "language": "fr",
+                                        "value": "2-3x par semaine"
+                                    },
+                                    {
+                                        "language": "en",
+                                        "value": "2-3x per week"
+                                    }
+                                ]
+                            },
+                            {
+                                "code": "3",
+                                "display": "Once a week",
+                                "designation": [
+                                    {
+                                        "language": "de",
+                                        "value": "einmal in der Woche"
+                                    },
+                                    {
+                                        "language": "fr",
+                                        "value": "une fois par semaine"
+                                    },
+                                    {
+                                        "language": "en",
+                                        "value": "once a week"
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        }
+    ],
+    "extension": [
+        {
+            "url": "http://midata.coop/extensions/valueset-reference",
+            "valueReference": {
+                "reference": "#YES-NO-Valueset"
+            }
+        },
+        {
+            "url": "http://midata.coop/extensions/valueset-reference",
+            "valueReference": {
+                "reference": "#FREQUENCY-Valueset"
+            }
+        }
+    ],
+    "url": "http://to.be.defined",
+    "version": "1.0",
+    "name": "Effort questionnaire",
+    "title": "Effort questionnaire",
+    "_title": {
+        "extension": [
+            {
+                "url": "http://hl7.org/fhir/StructureDefinition/translation",
+                "extension": [
+                    {
+                        "url": "lang",
+                        "valueCode": "de"
+                    },
+                    {
+                        "url": "content",
+                        "valueString": "Fragen zum Aufwand"
+                    }
+                ]
+            },
+            {
+                "url": "http://hl7.org/fhir/StructureDefinition/translation",
+                "extension": [
+                    {
+                        "url": "lang",
+                        "valueCode": "fr"
+                    },
+                    {
+                        "url": "content",
+                        "valueString": "Questions sur l'effort"
+                    }
+                ]
+            },
+            {
+                "url": "http://hl7.org/fhir/StructureDefinition/translation",
+                "extension": [
+                    {
+                        "url": "lang",
+                        "valueCode": "en"
+                    },
+                    {
+                        "url": "content",
+                        "valueString": "Questions about the effort"
+                    }
+                ]
+            }
+        ]
+    },
+    "status": "active",
+    "subjectType": [
+        "Patient"
+    ],
+    "publisher": "AROSS & BFH I4MI",
+    "code": [
+        {
+            "system": "http://loinc.org",
+            "code": "89196-0",
+            "display": "Patient reported outcome measure panel"
+        }
+    ],
+    "item": [
+        {
+            "linkId": "I0",
+            "text": "Einführungstext",
+            "_text": {
+                "extension": [
+                    {
+                        "url": "http://hl7.org/fhir/StructureDefinition/translation",
+                        "extension": [
+                            {
+                                "url": "lang",
+                                "valueCode": "de"
+                            },
+                            {
+                                "url": "content",
+                                "valueString": "Sollten Sie mehr als eine Person unterstützen, denken Sie bitte bei der Beantwortung der Fragen an die Person, die Sie mehrheitlich unterstützen."
+                            }
+                        ]
+                    },
+                    {
+                        "url": "http://hl7.org/fhir/StructureDefinition/translation",
+                        "extension": [
+                            {
+                                "url": "lang",
+                                "valueCode": "fr"
+                            },
+                            {
+                                "url": "content",
+                                "valueString": "Si vous soutenez plus d'une personne, veuillez penser à la personne que vous soutenez le plus souvent lorsque vous répondez aux questions."
+                            }
+                        ]
+                    },{
+                        "url": "http://hl7.org/fhir/StructureDefinition/translation",
+                        "extension": [
+                            {
+                                "url": "lang",
+                                "valueCode": "en"
+                            },
+                            {
+                                "url": "content",
+                                "valueString": "If you are supporting more than one person, please think of the person you support the most when answering the questions."
+                            }
+                        ]
+                    }
+                ]
+            },
+            "type": "display"
+        },
+        {
+            "linkId": "Q1",
+            "prefix": "1",
+            "text": "Helfen Sie ihrer unterstützten Person bei der Bewegung innerhalb der Wohnung / Haus, inkl. beim Aufstehen aus dem Bett?",
+            "_text": {
+                "extension": [
+                    {
+                        "url": "http://hl7.org/fhir/StructureDefinition/translation",
+                        "extension": [
+                            {
+                                "url": "lang",
+                                "valueCode": "de"
+                            },
+                            {
+                                "url": "content",
+                                "valueString": "Helfen Sie ihrer unterstützten Person bei der Bewegung innerhalb der Wohnung / Haus, inkl. beim Aufstehen aus dem Bett?"
+                            }
+                        ]
+                    },
+                    {
+                        "url": "http://hl7.org/fhir/StructureDefinition/translation",
+                        "extension": [
+                            {
+                                "url": "lang",
+                                "valueCode": "fr"
+                            },
+                            {
+                                "url": "content",
+                                "valueString": "Aidez-vous votre proche à se déplacer dans son appartement/sa maison, et à se lever de son lit?"
+                            }
+                        ]
+                    },
+                    {
+                        "url": "http://hl7.org/fhir/StructureDefinition/translation",
+                        "extension": [
+                            {
+                                "url": "lang",
+                                "valueCode": "en"
+                            },
+                            {
+                                "url": "content",
+                                "valueString": "Do you help the person you support to move around the apartment/house, including getting out of bed?"
+                            }
+                        ]
+                    }
+                ]
+            },
+            "type": "choice",
+            "required": true,
+            "repeats": false,
+            "answerValueSet": "#YES-NO-Valueset",
+            "item": [
+                {
+                    "linkId": "Q1a",
+                    "text": "Wie häufig passiert dies?",
+                    "_text": {
+                        "extension": [
+                            {
+                                "url": "http://hl7.org/fhir/StructureDefinition/translation",
+                                "extension": [
+                                    {
+                                        "url": "lang",
+                                        "valueCode": "de"
+                                    },
+                                    {
+                                        "url": "content",
+                                        "valueString": "Wie häufig passiert dies?"
+                                    }
+                                ]
+                            },
+                            {
+                                "url": "http://hl7.org/fhir/StructureDefinition/translation",
+                                "extension": [
+                                    {
+                                        "url": "lang",
+                                        "valueCode": "fr"
+                                    },
+                                    {
+                                        "url": "content",
+                                        "valueString": "à quelle fréquence?"
+                                    }
+                                ]
+                            },
+                            {
+                                "url": "http://hl7.org/fhir/StructureDefinition/translation",
+                                "extension": [
+                                    {
+                                        "url": "lang",
+                                        "valueCode": "en"
+                                    },
+                                    {
+                                        "url": "content",
+                                        "valueString": "How often does this happen?"
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    "type": "choice",
+                    "enableWhen": [
+                        {
+                            "question": "Q1",
+                            "operator": "=",
+                            "answerCoding": {
+                                "system": "http://snomed.info/sct",
+                                "code": "373066001"
+                            }
+                        }
+                    ],
+                    "required": true,
+                    "repeats": false,
+                    "answerValueSet": "#FREQUENCY-Valueset"
+                },
+                {
+                    "extension": [
+                        {
+                            "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-itemControl",
+                            "valueCodeableConcept": {
+                                "coding": [
+                                    {
+                                        "system": "http://hl7.org/fhir/questionnaire-item-control",
+                                        "code": "slider",
+                                        "display": "Slider"
+                                    }
+                                ],
+                                "text": "Slider"
+                            }
+                        },
+                        {
+                            "url": "http://hl7.org/fhir/StructureDefinition/minValue",
+                            "valueInteger": 0
+                        },
+                        {
+                            "url": "http://hl7.org/fhir/StructureDefinition/maxValue",
+                            "valueInteger": 120
+                        },
+                        {
+                            "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-unit",
+                            "valueCodeableConcept": {
+                                "coding": [
+                                    {
+                                        "system": "https://ucum.org",
+                                        "code": "min",
+                                        "display": "minute"
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-sliderStepValue",
+                            "valueInteger": 5
+                        }
+                    ],
+                    "linkId": "Q1b",
+                    "text": "Bestimmen Sie an Hand des Reglers, wie viele Minuten diese einzelne Hilfe durchschnittlich dauert.",
+                    "_text": {
+                        "extension": [
+                            {
+                                "url": "http://hl7.org/fhir/StructureDefinition/translation",
+                                "extension": [
+                                    {
+                                        "url": "lang",
+                                        "valueCode": "de"
+                                    },
+                                    {
+                                        "url": "content",
+                                        "valueString": "Bestimmen Sie an Hand des Reglers, wie viele Minuten diese einzelne Hilfe durchschnittlich dauert."
+                                    }
+                                ]
+                            },
+                            {
+                                "url": "http://hl7.org/fhir/StructureDefinition/translation",
+                                "extension": [
+                                    {
+                                        "url": "lang",
+                                        "valueCode": "fr"
+                                    },
+                                    {
+                                        "url": "content",
+                                        "valueString": "et combien de temps par fois?"
+                                    }
+                                ]
+                            },
+                            {
+                                "url": "http://hl7.org/fhir/StructureDefinition/translation",
+                                "extension": [
+                                    {
+                                        "url": "lang",
+                                        "valueCode": "en"
+                                    },
+                                    {
+                                        "url": "content",
+                                        "valueString": "Use the slider to determine how many minutes this individual help takes on average."
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    "type": "quantity",
+                    "enableWhen": [
+                        {
+                            "question": "Q1",
+                            "operator": "=",
+                            "answerCoding": {
+                                "system": "http://snomed.info/sct",
+                                "code": "373066001"
+                            }
+                        }
+                    ],
+                    "required": true,
+                    "repeats": false
+                }
+            ]
+        },
+        {
+            "linkId": "Q2",
+            "prefix": "2",
+            "text": "Helfen Sie ihrer unterstützten Person beim Toilettengang?",
+            "_text": {
+                "extension": [
+                    {
+                        "url": "http://hl7.org/fhir/StructureDefinition/translation",
+                        "extension": [
+                            {
+                                "url": "lang",
+                                "valueCode": "de"
+                            },
+                            {
+                                "url": "content",
+                                "valueString": "Helfen Sie ihrer unterstützten Person beim Toilettengang?"
+                            }
+                        ]
+                    },
+                    {
+                        "url": "http://hl7.org/fhir/StructureDefinition/translation",
+                        "extension": [
+                            {
+                                "url": "lang",
+                                "valueCode": "fr"
+                            },
+                            {
+                                "url": "content",
+                                "valueString": "Aidez-vous votre proche à aller aux toilettes?"
+                            }
+                        ]
+                    },
+ {
+                        "url": "http://hl7.org/fhir/StructureDefinition/translation",
+                        "extension": [
+                            {
+                                "url": "lang",
+                                "valueCode": "en"
+                            },
+                            {
+                                "url": "content",
+                                "valueString": "Do you help the person you support to go to the toilet??"
+                            }
+                        ]
+                    }
+                ]
+            },
+            "type": "choice",
+            "required": true,
+            "repeats": false,
+            "answerValueSet": "#YES-NO-Valueset",
+            "item": [
+                {
+                    "linkId": "Q2a",
+                    "text": "Wie häufig passiert dies?",
+                    "_text": {
+                        "extension": [
+                            {
+                                "url": "http://hl7.org/fhir/StructureDefinition/translation",
+                                "extension": [
+                                    {
+                                        "url": "lang",
+                                        "valueCode": "de"
+                                    },
+                                    {
+                                        "url": "content",
+                                        "valueString": "Wie häufig passiert dies?"
+                                    }
+                                ]
+                            },
+                            {
+                                "url": "http://hl7.org/fhir/StructureDefinition/translation",
+                                "extension": [
+                                    {
+                                        "url": "lang",
+                                        "valueCode": "fr"
+                                    },
+                                    {
+                                        "url": "content",
+                                        "valueString": "à quelle fréquence?"
+                                    }
+                                ]
+                            },
+                            {
+                                "url": "http://hl7.org/fhir/StructureDefinition/translation",
+                                "extension": [
+                                    {
+                                        "url": "lang",
+                                        "valueCode": "en"
+                                    },
+                                    {
+                                        "url": "content",
+                                        "valueString": "How often does this happen?"
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    "type": "choice",
+                    "enableWhen": [
+                        {
+                            "question": "Q2",
+                            "operator": "=",
+                            "answerCoding": {
+                                "system": "http://snomed.info/sct",
+                                "code": "373066001"
+                            }
+                        }
+                    ],
+                    "required": true,
+                    "repeats": false,
+                    "answerValueSet": "#FREQUENCY-Valueset"
+                },
+                {
+                    "extension": [
+                        {
+                            "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-itemControl",
+                            "valueCodeableConcept": {
+                                "coding": [
+                                    {
+                                        "system": "http://hl7.org/fhir/questionnaire-item-control",
+                                        "code": "slider",
+                                        "display": "Slider"
+                                    }
+                                ],
+                                "text": "Slider"
+                            }
+                        },
+                        {
+                            "url": "http://hl7.org/fhir/StructureDefinition/minValue",
+                            "valueInteger": 0
+                        },
+                        {
+                            "url": "http://hl7.org/fhir/StructureDefinition/maxValue",
+                            "valueInteger": 120
+                        },
+                        {
+                            "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-unit",
+                            "valueCodeableConcept": {
+                                "coding": [
+                                    {
+                                        "system": "https://ucum.org",
+                                        "code": "min",
+                                        "display": "minute"
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-sliderStepValue",
+                            "valueInteger": 5
+                        }
+                    ],
+                    "linkId": "Q2b",
+                    "text": "Bestimmen Sie an Hand des Reglers, wie viele Minuten diese einzelne Hilfe durchschnittlich dauert.",
+                    "_text": {
+                        "extension": [
+                            {
+                                "url": "http://hl7.org/fhir/StructureDefinition/translation",
+                                "extension": [
+                                    {
+                                        "url": "lang",
+                                        "valueCode": "de"
+                                    },
+                                    {
+                                        "url": "content",
+                                        "valueString": "Bestimmen Sie an Hand des Reglers, wie viele Minuten diese einzelne Hilfe durchschnittlich dauert."
+                                    }
+                                ]
+                            },
+                            {
+                                "url": "http://hl7.org/fhir/StructureDefinition/translation",
+                                "extension": [
+                                    {
+                                        "url": "lang",
+                                        "valueCode": "fr"
+                                    },
+                                    {
+                                        "url": "content",
+                                        "valueString": "et combien de temps par fois?"
+                                    }
+                                ]
+                            },
+                            {
+                                "url": "http://hl7.org/fhir/StructureDefinition/translation",
+                                "extension": [
+                                    {
+                                        "url": "lang",
+                                        "valueCode": "en"
+                                    },
+                                    {
+                                        "url": "content",
+                                        "valueString": "Use the slider to determine how many minutes this individual help takes on average."
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    "type": "quantity",
+                    "enableWhen": [
+                        {
+                            "question": "Q2",
+                            "operator": "=",
+                            "answerCoding": {
+                                "system": "http://snomed.info/sct",
+                                "code": "373066001"
+                            }
+                        }
+                    ],
+                    "required": true,
+                    "repeats": false
+                }
+            ]
+        },
+        {
+            "linkId": "Q3",
+            "prefix": "3",
+            "text": "Helfen Sie ihrer unterstützten Person bei der täglichen Körperpflege?",
+            "_text": {
+                "extension": [
+                    {
+                        "url": "http://hl7.org/fhir/StructureDefinition/translation",
+                        "extension": [
+                            {
+                                "url": "lang",
+                                "valueCode": "de"
+                            },
+                            {
+                                "url": "content",
+                                "valueString": "Helfen Sie ihrer unterstützten Person bei der täglichen Körperpflege?"
+                            }
+                        ]
+                    },
+                    {
+                        "url": "http://hl7.org/fhir/StructureDefinition/translation",
+                        "extension": [
+                            {
+                                "url": "lang",
+                                "valueCode": "fr"
+                            },
+                            {
+                                "url": "content",
+                                "valueString": "Aidez-vous votre proche à s'occuper de son hygiène personnelle quotidienne?"
+                            }
+                        ]
+                    },
+                    {
+                        "url": "http://hl7.org/fhir/StructureDefinition/translation",
+                        "extension": [
+                            {
+                                "url": "lang",
+                                "valueCode": "en"
+                            },
+                            {
+                                "url": "content",
+                                "valueString": "Do you help the person you support with daily personal hygiene?"
+                            }
+                        ]
+                    }
+                ]
+            },
+            "type": "choice",
+            "required": true,
+            "repeats": false,
+            "answerValueSet": "#YES-NO-Valueset",
+            "item": [
+                {
+                    "linkId": "Q3a",
+                    "text": "Wie häufig passiert dies?",
+                    "_text": {
+                        "extension": [
+                            {
+                                "url": "http://hl7.org/fhir/StructureDefinition/translation",
+                                "extension": [
+                                    {
+                                        "url": "lang",
+                                        "valueCode": "de"
+                                    },
+                                    {
+                                        "url": "content",
+                                        "valueString": "Wie häufig passiert dies?"
+                                    }
+                                ]
+                            },
+                            {
+                                "url": "http://hl7.org/fhir/StructureDefinition/translation",
+                                "extension": [
+                                    {
+                                        "url": "lang",
+                                        "valueCode": "fr"
+                                    },
+                                    {
+                                        "url": "content",
+                                        "valueString": "à quelle fréquence?"
+                                    }
+                                ]
+                            },
+                            {
+                                "url": "http://hl7.org/fhir/StructureDefinition/translation",
+                                "extension": [
+                                    {
+                                        "url": "lang",
+                                        "valueCode": "en"
+                                    },
+                                    {
+                                        "url": "content",
+                                        "valueString": "How often does this happen?"
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    "type": "choice",
+                    "enableWhen": [
+                        {
+                            "question": "Q3",
+                            "operator": "=",
+                            "answerCoding": {
+                                "system": "http://snomed.info/sct",
+                                "code": "373066001"
+                            }
+                        }
+                    ],
+                    "required": true,
+                    "repeats": false,
+                    "answerValueSet": "#FREQUENCY-Valueset"
+                },
+                {
+                    "extension": [
+                        {
+                            "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-itemControl",
+                            "valueCodeableConcept": {
+                                "coding": [
+                                    {
+                                        "system": "http://hl7.org/fhir/questionnaire-item-control",
+                                        "code": "slider",
+                                        "display": "Slider"
+                                    }
+                                ],
+                                "text": "Slider"
+                            }
+                        },
+                        {
+                            "url": "http://hl7.org/fhir/StructureDefinition/minValue",
+                            "valueInteger": 0
+                        },
+                        {
+                            "url": "http://hl7.org/fhir/StructureDefinition/maxValue",
+                            "valueInteger": 120
+                        },
+                        {
+                            "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-unit",
+                            "valueCodeableConcept": {
+                                "coding": [
+                                    {
+                                        "system": "https://ucum.org",
+                                        "code": "min",
+                                        "display": "minute"
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-sliderStepValue",
+                            "valueInteger": 5
+                        }
+                    ],
+                    "linkId": "Q3b",
+                    "text": "Bestimmen Sie an Hand des Reglers, wie viele Minuten diese einzelne Hilfe durchschnittlich dauert.",
+                    "_text": {
+                        "extension": [
+                            {
+                                "url": "http://hl7.org/fhir/StructureDefinition/translation",
+                                "extension": [
+                                    {
+                                        "url": "lang",
+                                        "valueCode": "de"
+                                    },
+                                    {
+                                        "url": "content",
+                                        "valueString": "Bestimmen Sie an Hand des Reglers, wie viele Minuten diese einzelne Hilfe durchschnittlich dauert."
+                                    }
+                                ]
+                            },
+                            {
+                                "url": "http://hl7.org/fhir/StructureDefinition/translation",
+                                "extension": [
+                                    {
+                                        "url": "lang",
+                                        "valueCode": "fr"
+                                    },
+                                    {
+                                        "url": "content",
+                                        "valueString": "et combien de temps par fois?"
+                                    }
+                                ]
+                            },
+                            {
+                                "url": "http://hl7.org/fhir/StructureDefinition/translation",
+                                "extension": [
+                                    {
+                                        "url": "lang",
+                                        "valueCode": "en"
+                                    },
+                                    {
+                                        "url": "content",
+                                        "valueString": "Use the slider to determine how many minutes this individual help takes on average."
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    "type": "quantity",
+                    "enableWhen": [
+                        {
+                            "question": "Q3",
+                            "operator": "=",
+                            "answerCoding": {
+                                "system": "http://snomed.info/sct",
+                                "code": "373066001"
+                            }
+                        }
+                    ],
+                    "required": true,
+                    "repeats": false
+                }
+            ]
+        },
+        {
+            "linkId": "Q4",
+            "prefix": "4",
+            "text": "Helfen Sie ihrer unterstützten Person beim Duschen oder Baden?",
+            "_text": {
+                "extension": [
+                    {
+                        "url": "http://hl7.org/fhir/StructureDefinition/translation",
+                        "extension": [
+                            {
+                                "url": "lang",
+                                "valueCode": "de"
+                            },
+                            {
+                                "url": "content",
+                                "valueString": "Helfen Sie ihrer unterstützten Person beim Duschen oder Baden?"
+                            }
+                        ]
+                    },
+                    {
+                        "url": "http://hl7.org/fhir/StructureDefinition/translation",
+                        "extension": [
+                            {
+                                "url": "lang",
+                                "valueCode": "fr"
+                            },
+                            {
+                                "url": "content",
+                                "valueString": "Aidez-vous votre proche à prendre sa douche ou son bain?"
+                            }
+                        ]
+                    },
+                    {
+                        "url": "http://hl7.org/fhir/StructureDefinition/translation",
+                        "extension": [
+                            {
+                                "url": "lang",
+                                "valueCode": "en"
+                            },
+                            {
+                                "url": "content",
+                                "valueString": "Do you help the person you support to shower or bathe?"
+                            }
+                        ]
+                    }
+                ]
+            },
+            "type": "choice",
+            "required": true,
+            "repeats": false,
+            "answerValueSet": "#YES-NO-Valueset",
+            "item": [
+                {
+                    "linkId": "Q4a",
+                    "text": "Wie häufig passiert dies?",
+                    "_text": {
+                        "extension": [
+                            {
+                                "url": "http://hl7.org/fhir/StructureDefinition/translation",
+                                "extension": [
+                                    {
+                                        "url": "lang",
+                                        "valueCode": "de"
+                                    },
+                                    {
+                                        "url": "content",
+                                        "valueString": "Wie häufig passiert dies?"
+                                    }
+                                ]
+                            },
+                            {
+                                "url": "http://hl7.org/fhir/StructureDefinition/translation",
+                                "extension": [
+                                    {
+                                        "url": "lang",
+                                        "valueCode": "fr"
+                                    },
+                                    {
+                                        "url": "content",
+                                        "valueString": "à quelle fréquence?"
+                                    }
+                                ]
+                            },
+                            {
+                                "url": "http://hl7.org/fhir/StructureDefinition/translation",
+                                "extension": [
+                                    {
+                                        "url": "lang",
+                                        "valueCode": "en"
+                                    },
+                                    {
+                                        "url": "content",
+                                        "valueString": "How often does this happen?"
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    "type": "choice",
+                    "enableWhen": [
+                        {
+                            "question": "Q4",
+                            "operator": "=",
+                            "answerCoding": {
+                                "system": "http://snomed.info/sct",
+                                "code": "373066001"
+                            }
+                        }
+                    ],
+                    "required": true,
+                    "repeats": false,
+                    "answerValueSet": "#FREQUENCY-Valueset"
+                },
+                {
+                    "extension": [
+                        {
+                            "url": "http://hl7.org/fhir/StructureDefinition/minValue",
+                            "valueInteger": 0
+                        },
+                        {
+                            "url": "http://hl7.org/fhir/StructureDefinition/maxValue",
+                            "valueInteger": 120
+                        },
+                        {
+                            "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-unit",
+                            "valueCodeableConcept": {
+                                "coding": [
+                                    {
+                                        "system": "https://ucum.org",
+                                        "code": "min",
+                                        "display": "minute"
+                                    }
+                                ]
+                            }
+                        }
+                    ],
+                    "linkId": "Q4b",
+                    "text": "Geben Sie ein, wie viele Minuten diese einzelne Hilfe durchschnittlich dauert.",
+                    "_text": {
+                        "extension": [
+                            {
+                                "url": "http://hl7.org/fhir/StructureDefinition/translation",
+                                "extension": [
+                                    {
+                                        "url": "lang",
+                                        "valueCode": "de"
+                                    },
+                                    {
+                                        "url": "content",
+                                        "valueString": "Geben Sie ein, wie viele Minuten diese einzelne Hilfe durchschnittlich dauert."
+                                    }
+                                ]
+                            },
+                            {
+                                "url": "http://hl7.org/fhir/StructureDefinition/translation",
+                                "extension": [
+                                    {
+                                        "url": "lang",
+                                        "valueCode": "fr"
+                                    },
+                                    {
+                                        "url": "content",
+                                        "valueString": "et combien de temps par fois?"
+                                    }
+                                ]
+                            },
+                            {
+                                "url": "http://hl7.org/fhir/StructureDefinition/translation",
+                                "extension": [
+                                    {
+                                        "url": "lang",
+                                        "valueCode": "en"
+                                    },
+                                    {
+                                        "url": "content",
+                                        "valueString": "Please enter how many minutes this individual help takes on average."
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    "type": "quantity",
+                    "enableWhen": [
+                        {
+                            "question": "Q4",
+                            "operator": "=",
+                            "answerCoding": {
+                                "system": "http://snomed.info/sct",
+                                "code": "373066001"
+                            }
+                        }
+                    ],
+                    "required": true,
+                    "repeats": false
+                }
+            ]
+        },
+        {
+            "extension": [
+                {
+                    "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-hidden",
+                    "valueBoolean": true
+                },
+                {
+                    "url": "http://hl7.org/fhir/uv/sdc/StructureDefinition/sdc-questionnaire-calculatedExpression",
+                    "valueExpression": {
+                        "description": "Der geleistete Zeitaufwand wird aufgrund der gegebenen Antworten automatisch berechnet.",
+                        "name": "timeSpent",
+                        "language": "text/fhirpath",
+                        "expression": "item.aggregate(iif($this.item.exists(),$total + (iif($this.item[0].answer.valueCoding.code.toInteger() = 3,1,iif($this.item[0].answer.valueCoding.code.toInteger() = 2,2.5,iif($this.item[0].answer.valueCoding.code.toInteger() = 1,7,2.5 * 7)))) * $this.item[1].answer.valueQuantity.value.toInteger(), $total), 0).round(0)"
+                    }
+                }
+            ],
+            "initial": [
+                {
+                    "valueQuantity": {
+                        "code": "min",
+                        "system": "http://unitsofmeasure.org"
+                    }
+                }
+            ],
+            "linkId": "timeSpent",
+            "text": "Der geleistete Zeitaufwand wird aufgrund der gegebenen Antworten automatisch berechnet.",
+            "_text": {
+                "extension": [
+                    {
+                        "url": "http://hl7.org/fhir/StructureDefinition/translation",
+                        "extension": [
+                            {
+                                "url": "lang",
+                                "valueCode": "de"
+                            },
+                            {
+                                "url": "content",
+                                "valueString": "Der geleistete Zeitaufwand wird aufgrund der gegebenen Antworten automatisch berechnet."
+                            }
+                        ]
+                    },
+                    {
+                        "url": "http://hl7.org/fhir/StructureDefinition/translation",
+                        "extension": [
+                            {
+                                "url": "lang",
+                                "valueCode": "fr"
+                            },
+                            {
+                                "url": "content",
+                                "valueString": "Le temps passé est calculé automatiquement en fonction des réponses données."
+                            }
+                        ]
+                    },
+                    {
+                        "url": "http://hl7.org/fhir/StructureDefinition/translation",
+                        "extension": [
+                            {
+                                "url": "lang",
+                                "valueCode": "en"
+                            },
+                            {
+                                "url": "content",
+                                "valueString": "The time spent is calculated automatically based on the answers given."
+                            }
+                        ]
+                    }
+                ]
+            },
+            "type": "quantity",
+            "required": false,
+            "repeats": false
+        }
+    ]
+}
