@@ -11,6 +11,8 @@ See also the documentation of the [FHIR Questionnaire](http://hl7.org/fhir/R4/qu
 ## Demo App
 There is a [small demo app](./demo) written in Vue.js, that demonstrates the use of the library with different FHIR Questionnaires.
 
+You can [try the demo app here](./demo/dist/).
+
 ## Basic use
 ### Install
 Before you can use this package in your project, you need to install it, using npm. Point your terminal to the root directory of your project (where also `package.json`is located) and enter the following command.
