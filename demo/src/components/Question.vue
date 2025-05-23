@@ -55,7 +55,7 @@
           :step="question.options.sliderStep"
           :min="question.options.min !== undefined ? question.options.min : 0"
           :max="question.options.max !== undefined ? question.options.max : 100"
-          @change="updateValue(value, question.type)" />
+          @change="updateValue(Number(value), question.type)" />
         <span>{{ question.options.max }}</span>
       </div>
     </div>
@@ -162,6 +162,7 @@ export default defineComponent({
   },
   methods: {
     updateValue(value: string | number | boolean, type: QuestionnaireItemType) {
+      console.log('update value', value, typeof value, type)
       const answer: IAnswerOption = {
         answer: {},
         code: {}
