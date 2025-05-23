@@ -36,12 +36,24 @@
           :language="lang"
           :onAnswer="qData.updateQuestionAnswers.bind(qData)"
           :isSelected="qData.isAnswerOptionSelected.bind(qData)" />
-        <button
-          :disabled="!qData"
-          @click="reset">
-          reset
-        </button>
-        <button @click="setAnswers">generate QuestionnaireResponse</button>
+        <div class="footer">
+          Language: <select
+            v-model="lang"
+            name="language-selector"
+            @change="() => selectLanguage(lang)">
+            <option
+              v-for="l in availableLanguages"
+              :key="'lang-' + l">
+              {{ l }}
+            </option>
+          </select>
+          <button
+            :disabled="!qData"
+            @click="reset">
+            reset
+          </button>
+          <button @click="setAnswers">generate QuestionnaireResponse</button>
+        </div>
       </div>
       <NoQuestionnairePage
         :questionnaires="questionnaires"
@@ -114,38 +126,43 @@ export default defineComponent({
   components: {QuestionComponent, NoQuestionnairePage},
   data() {
     return {
-      lang: 'de',
+      lang: 'en',
       availableLanguages: ['de', 'en', 'fr'],
       qData: undefined as QuestionnaireData | undefined,
       resetCounter: 0,
       questionnaire: undefined as string | undefined,
       questionnaires: [
         {
-          name: 'Effort questionnaire',
+          name: 'Effort Questionnaire',
           description:
             'The shortened Effort questionnaire helps family carers to evaluate the time spent caring for their relatives. This multilingual questionnaire is available in German, French and English. The last item of the questionnaire response is calculated automatically.',
-          questionnaire: EFFORT as Questionnaire
+          questionnaire: EFFORT as Questionnaire,
+          languages: ['de', 'en', 'fr']
         },
         {
           name: 'Initial Values',
           description: 'A questionnaire with some answers already prepopuleted (initial values)',
-          questionnaire: INITIAL as Questionnaire
+          questionnaire: INITIAL as Questionnaire,
+          languages: ['en']
         },
         {
           name: 'Neonatology Bluebook',
           description: 'A questionnaire about new born children.',
-          questionnaire: BLUEBOOK as Questionnaire
+          questionnaire: BLUEBOOK as Questionnaire,
+          languages: ['en']
         },
         {
           name: 'COVID Situation',
           description:
             'This questionnaire has interdependent questions as well as the ‘unselect-others’ extension, in which an answer to a multiple-choice question can exclude other answers.',
-          questionnaire: SITUATION as Questionnaire
+          questionnaire: SITUATION as Questionnaire,
+          languages: ['de', 'en', 'fr', 'gsw', 'rm', 'it']
         },
         {
           name: OWN_QUESTIONNAIRE,
           description: 'Load your own FHIR Questionnaire.',
-          questionnaire: {resourceType: 'Questionnaire'} as Questionnaire
+          questionnaire: {resourceType: 'Questionnaire'} as Questionnaire,
+          languages: ['en']
         }
       ],
       ownQuestionnaire: JSON.stringify(OWN_QUESTIONNAIRE_DEFAULT, null, 2),
@@ -162,7 +179,7 @@ export default defineComponent({
         if (questionnaire.name === OWN_QUESTIONNAIRE) {
           this.showOwnQuestionnaireModal = true;
         } else {
-          this.qData = new QuestionnaireData(questionnaire.questionnaire, this.availableLanguages);
+          this.qData = new QuestionnaireData(questionnaire.questionnaire, questionnaire.languages);
         }
       }
     },
@@ -181,6 +198,9 @@ export default defineComponent({
         );
         this.showOwnQuestionnaireModal = true;
       }
+    },
+    selectLanguage(lang: string) {
+      this.lang = lang;
     },
     setAnswers(): void {
       if (!this.qData) return;
