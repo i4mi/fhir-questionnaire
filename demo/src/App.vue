@@ -36,17 +36,26 @@
           :language="lang"
           :onAnswer="qData.updateQuestionAnswers.bind(qData)"
           :isSelected="qData.isAnswerOptionSelected.bind(qData)" />
+        <!-- FOOTER -->
         <div class="footer">
-          Language: <select
-            v-model="lang"
-            name="language-selector"
-            @change="() => selectLanguage(lang)">
-            <option
-              v-for="l in availableLanguages"
-              :key="'lang-' + l">
-              {{ l }}
-            </option>
-          </select>
+          <a
+            @click="unsetQuestionnaire"
+            class="back-button"
+            >🔙</a
+          >
+          <div v-if="availableLanguages.length > 1" style="display: inline">
+            Language:&nbsp;<select
+              v-model="lang"
+              name="language-selector"
+              @change="() => selectLanguage(lang)">
+              <option
+                v-for="l in availableLanguages"
+                :key="'lang-' + l">
+                {{ l }}
+              </option>
+            </select>
+          </div>
+
           <button
             :disabled="!qData"
             @click="reset">
@@ -55,6 +64,8 @@
           <button @click="setAnswers">generate QuestionnaireResponse</button>
         </div>
       </div>
+
+      <!-- HOME PAGE -->
       <NoQuestionnairePage
         :questionnaires="questionnaires"
         :onSelect="(q: string) => setQuestionnaire(q)"
@@ -181,11 +192,13 @@ export default defineComponent({
         } else {
           this.qData = new QuestionnaireData(questionnaire.questionnaire, questionnaire.languages);
         }
+        this.availableLanguages = questionnaire.languages;
       }
     },
     unsetQuestionnaire() {
       this.questionnaire = undefined;
       this.qData = undefined;
+      this.ownQuestionnaire = JSON.stringify(OWN_QUESTIONNAIRE_DEFAULT, null, 2);
     },
     loadOwnQuestionnaire() {
       try {
@@ -297,5 +310,17 @@ button {
 .help-button:hover {
   color: #2f4858;
   background-color: #f6ae2d;
+}
+.footer {
+  position: fixed;
+  width: 100%;
+  background-color: white;
+  bottom: 0;
+}
+.back-button {
+  margin-right: 1em;
+  border-right: 1px black solid;
+  padding-right: 1em;
+  cursor: pointer;
 }
 </style>
