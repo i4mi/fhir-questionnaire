@@ -43,7 +43,9 @@
             class="back-button"
             >🔙</a
           >
-          <div v-if="availableLanguages.length > 1" style="display: inline">
+          <div
+            v-if="availableLanguages.length > 1"
+            style="display: inline">
             Language:&nbsp;<select
               v-model="lang"
               name="language-selector"
@@ -132,6 +134,24 @@ const OWN_QUESTIONNAIRE_DEFAULT: Questionnaire = {
   ]
 };
 
+function getAvailableLanguagesFromQuestionnaire(q: Questionnaire): string[] | undefined {
+  if (q._title?.extension) {
+    const languages = new Array<string>();
+    const languageExtensions = q._title.extension.filter(
+      (ext) => ext.url === 'http://hl7.org/fhir/StructureDefinition/translation'
+    );
+    languageExtensions.forEach((le) => {
+      le.extension?.forEach((subExt) => {
+        if (subExt.url === 'lang' && subExt.valueCode) {
+          languages.push(subExt.valueCode);
+        }
+      });
+    });
+    return languages;
+  }
+  return undefined;
+}
+
 export default defineComponent({
   name: 'App',
   components: {QuestionComponent, NoQuestionnairePage},
@@ -202,7 +222,10 @@ export default defineComponent({
     },
     loadOwnQuestionnaire() {
       try {
-        this.qData = new QuestionnaireData(JSON.parse(this.ownQuestionnaire), this.availableLanguages);
+        const questionnaire = JSON.parse(this.ownQuestionnaire);
+        this.availableLanguages = getAvailableLanguagesFromQuestionnaire(questionnaire) || this.availableLanguages;
+        this.qData = new QuestionnaireData(questionnaire, this.availableLanguages);
+
         this.showOwnQuestionnaireModal = false;
       } catch (e) {
         window.alert(
