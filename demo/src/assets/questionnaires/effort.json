@@ -1132,7 +1132,7 @@
                         "description": "Der geleistete Zeitaufwand wird aufgrund der gegebenen Antworten automatisch berechnet.",
                         "name": "timeSpent",
                         "language": "text/fhirpath",
-                        "expression": "item.aggregate(iif($this.item.exists(),$total + (iif($this.item[0].answer.valueCoding.code.toInteger() = 3,1,iif($this.item[0].answer.valueCoding.code.toInteger() = 2,2.5,iif($this.item[0].answer.valueCoding.code.toInteger() = 1,7,2.5 * 7)))) * $this.item[1].answer.valueQuantity.value, $total), 0).round(0)"
+                        "expression": "item.aggregate(iif($this.item.exists(),$total + (iif($this.item[0].answer.valueCoding.code.toInteger() = 3,1,iif($this.item[0].answer.valueCoding.code.toInteger() = 2,2.5,iif($this.item[0].answer.valueCoding.code.toInteger() = 1,7,2.5 * 7)))) * $this.item[1].answer.valueQuantity.value.toInteger(), $total), 0).round(0)"
                     }
                 }
             ],
