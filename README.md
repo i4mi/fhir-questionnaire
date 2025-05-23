@@ -11,7 +11,7 @@ See also the documentation of the [FHIR Questionnaire](http://hl7.org/fhir/R4/qu
 ## Demo App
 There is a [small demo app](./demo) written in Vue.js, that demonstrates the use of the library with different FHIR Questionnaires.
 
-You can [try the demo app here](./demo/dist/).
+You can [try the demo app here](https://i4mi.github.io/fhir-questionnaire/demo/dist/).
 
 ## Basic use
 ### Install
