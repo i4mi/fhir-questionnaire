@@ -1,20 +1,26 @@
 <template>
   <div>
     <header>
-      <img src="@/assets/logo.png" />
-      <h1>FHIR Questionnaire Demo</h1>
+      <h1 @click="unsetQuestionnaire">FHIR Questionnaire Demo</h1>
       <div id="questionnaire-selector">
-        <span> Fragebogen auswählen: </span>
+        <span> Select questionnaire: </span>
         <select
           v-model="questionnaire"
           name="questionnaire-selector"
-          @change="setQuestionnaire">
+          @change="() => setQuestionnaire(questionnaire)">
           <option
             v-for="questionnaire in questionnaires"
             :key="questionnaire.name">
             {{ questionnaire.name }}
           </option>
         </select>
+        <a
+          href="https://hl7.org/fhir/R4/questionnaire.html"
+          target="fhir"
+          title="Show official FHIR R4 Questionnaire specification"
+          class="help-button"
+          >?</a
+        >
       </div>
     </header>
 
@@ -33,11 +39,14 @@
         <button
           :disabled="!qData"
           @click="reset">
-          zurücksetzen
+          reset
         </button>
-        <button @click="setAnswers">Antworten speichern</button>
+        <button @click="setAnswers">generate QuestionnaireResponse</button>
       </div>
-      <p v-if="qData === undefined">Es wurde noch kein Fragebogen ausgewählt.</p>
+      <NoQuestionnairePage
+        :questionnaires="questionnaires"
+        :onSelect="(q: string) => setQuestionnaire(q)"
+        v-if="qData === undefined" />
     </main>
 
     <!-- OWN QUESTIONNAIRE MODAL-->
@@ -45,6 +54,7 @@
       v-if="showOwnQuestionnaireModal"
       class="modal"
       id="ownQuestionnaireModal">
+      <p>You can paste your FHIR Questionnaire resource here (R4):</p>
       <textarea v-model="ownQuestionnaire"></textarea>
       <button
         @click="
@@ -53,12 +63,12 @@
             ownQuestionnaire = '';
           }
         ">
-        abbrechen
+        cancel
       </button>
       <button
         :disabled="ownQuestionnaire === ''"
         @click="loadOwnQuestionnaire">
-        laden
+        load
       </button>
     </div>
 
@@ -67,9 +77,9 @@
       v-if="response"
       class="modal"
       id="response-modal">
-      <p>Hier ist die QuestionnaireResponse-Resource:</p>
+      <p>Voilà – your QuestionnaireResponse resource:</p>
       <textarea v-model="response"></textarea>
-      <button @click="response = undefined">schliessen</button>
+      <button @click="response = undefined">close</button>
     </div>
   </div>
 </template>
@@ -77,40 +87,48 @@
 <script lang="ts">
 import {defineComponent} from 'vue';
 import QuestionComponent from './components/Question.vue';
+import NoQuestionnairePage from './components/NoQuestionnairePage.vue';
 import ZARIT from '@/assets/questionnaires/zarit.json';
 import BLUEBOOK from '@/assets/questionnaires/bluebook.json';
 import SITUATION from '@/assets/questionnaires/situation.json';
 import INITIAL from '@/assets/questionnaires/initialValues.json';
-import type {Questionnaire} from '@i4mi/fhir_r4';
+import {QuestionnaireItemType, QuestionnairePublicationStatus, type Questionnaire} from '@i4mi/fhir_r4';
 import {QuestionnaireData} from '@i4mi/fhir_questionnaire';
 
-const OWN_QUESTIONNAIRE = '[ eigener Fragebogen ]';
+const OWN_QUESTIONNAIRE = 'your own questionnaire';
+const OWN_QUESTIONNAIRE_DEFAULT: Questionnaire = {
+  resourceType: 'Questionnaire',
+  status: QuestionnairePublicationStatus.DRAFT,
+  title: 'Insert your questionnaire here',
+  item: [
+    {
+      linkId: 'q1',
+      type: QuestionnaireItemType.TEXT,
+      text: 'Example question'
+    }
+  ]
+};
 
 export default defineComponent({
   name: 'App',
-  components: {QuestionComponent},
+  components: {QuestionComponent, NoQuestionnairePage},
   data() {
     return {
       lang: 'de',
       availableLanguages: ['de', 'en', 'fr'],
       qData: undefined as QuestionnaireData | undefined,
       resetCounter: 0,
-      questionnaire: undefined,
+      questionnaire: undefined as string | undefined,
       questionnaires: [
-        {
-          name: '',
-          description: '',
-          questionnaire: undefined
-        },
         {
           name: 'ZARIT',
           description:
-            'Der ZARIT Fragebogen dient pflegenden Angehörigen dazu, ihre eigene Belastung zu evaluieren. Der Fragebogen ist verfügbar in deutsch und französisch. Das letzte Item der QuestionnaireReponse ist ein Score, der automatisch berechnet wird.',
+            'The ZARIT questionnaire helps family carers to evaluate their own stress levels. The questionnaire is available in German and French. The last item of the questionnaire response is a score that is calculated automatically.',
           questionnaire: ZARIT as Questionnaire
         },
         {
           name: 'Initial Values',
-          description: 'Ein Fragebogen, bei dem bereits Antworten vorgegeben sind (initial values)',
+          description: 'A questionnaire with some answers already prepopuleted (initial values)',
           questionnaire: INITIAL as Questionnaire
         },
         {
@@ -121,24 +139,27 @@ export default defineComponent({
         {
           name: 'COVID Situation',
           description:
-            'Fragebogen aus dem Corona Science Projekt, mit dem die aktuelle Situation der Befragen erfasst wird. Dieser Fragebogen verfügt über voneinander abhängige Fragen sowie über die "unselect-others"-Extension, bei der eine Antwort auf eine Multiple-Choice-Frage andere Antworten ausschliessen kann.',
+            'This questionnaire has interdependent questions as well as the ‘unselect-others’ extension, in which an answer to a multiple-choice question can exclude other answers.',
           questionnaire: SITUATION as Questionnaire
         },
         {
           name: OWN_QUESTIONNAIRE,
-          description: 'Laden Sie Ihren eigenen FHIR Questionnaire.',
+          description: 'Load your own FHIR Questionnaire.',
           questionnaire: {resourceType: 'Questionnaire'} as Questionnaire
         }
       ],
-      ownQuestionnaire: '',
+      ownQuestionnaire: JSON.stringify(OWN_QUESTIONNAIRE_DEFAULT, null, 2),
       showOwnQuestionnaireModal: false,
       response: undefined as string | undefined
     };
   },
   mounted() {},
   methods: {
-    setQuestionnaire(): void {
-      const questionnaire = this.questionnaires.find(q => q.name === this.questionnaire);
+    setQuestionnaire(qName?: string): void {
+      this.questionnaire = qName;
+
+      console.log('setQuestionnaire');
+      const questionnaire = this.questionnaires.find((q) => q.name === this.questionnaire);
       if (questionnaire && questionnaire.questionnaire) {
         if (questionnaire.name === OWN_QUESTIONNAIRE) {
           this.showOwnQuestionnaireModal = true;
@@ -147,9 +168,21 @@ export default defineComponent({
         }
       }
     },
+    unsetQuestionnaire() {
+      this.questionnaire = undefined;
+      this.qData = undefined;
+    },
     loadOwnQuestionnaire() {
-      this.showOwnQuestionnaireModal = false;
-      this.qData = new QuestionnaireData(JSON.parse(this.ownQuestionnaire), this.availableLanguages);
+      try {
+        this.qData = new QuestionnaireData(JSON.parse(this.ownQuestionnaire), this.availableLanguages);
+        this.showOwnQuestionnaireModal = false;
+      } catch (e) {
+        window.alert(
+          'I really tried to parse your input, but it is kind of hard to understand. Please make sure to provide a valid FHIR Questionnaire resource.\n\n' +
+            e
+        );
+        this.showOwnQuestionnaireModal = true;
+      }
     },
     setAnswers(): void {
       if (!this.qData) return;
@@ -163,7 +196,7 @@ export default defineComponent({
           2
         );
       } catch (error) {
-        console.log('Es ging etwas schief beim Questionnaire speichern', error);
+        window.alert("I'm sorry, but something went wrong during generating the questionnaire response:\n\n" + error);
       }
     },
     reset() {
@@ -178,21 +211,17 @@ export default defineComponent({
 header {
   width: 100%;
   height: 5em;
-  background-color: black;
+  background-color: #86bbd8;
+  color: #2f4858;
   display: inline-flex;
-}
-header img {
-  height: 4rem;
-  margin: 0.5rem;
 }
 header h1 {
   font-size: 2.5rem;
-  background: -webkit-linear-gradient(45deg, #d73e2e, #fef7d0);
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
   font-weight: 400;
-  margin: 1rem;
+  margin-top: auto;
+  margin-bottom: auto;
+  margin-left: 1rem;
+  margin-bottom: 1rem;
   padding: 0;
 }
 header #questionnaire-selector {
@@ -207,19 +236,21 @@ main {
   font-weight: light;
 }
 .modal {
-  background-color: #ddd;
-  width: 50%;
-  height: 20em;
+  background-color: #86bbd8;
+  width: 70%;
+  height: calc(80vh - 6em);
   position: fixed;
-  top: 5%;
+  top: 6em;
   color: black;
   z-index: 100;
-  margin-left: 25%;
+  margin-left: 15%;
   padding: 1em;
+  border-radius: 0.5em;
 }
 
 .modal p {
   margin-top: 0;
+  margin-bottom: 0.5em;
 }
 
 button {
@@ -230,6 +261,23 @@ button {
 
 .modal textarea {
   width: 100%;
-  height: 18em;
+  height: calc(80vh - 12em);
+}
+
+.help-button {
+  display: inline-block;
+  background-color: #2f4858;
+  color: #86bbd8;
+  width: 1.4em;
+  height: 1.4em;
+  border-radius: 0.7em;
+  text-align: center;
+  font-size: 0.8em;
+  line-height: 1.4em;
+  margin: 0.5em;
+}
+.help-button:hover {
+  color: #2f4858;
+  background-color: #f6ae2d;
 }
 </style>

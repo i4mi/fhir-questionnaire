@@ -189,9 +189,9 @@ export default defineComponent({
 }
 
 .question.invalid {
-  border-left: solid 3px #d73e2e;
+  border-left: solid 3px #F26419;
   border-radius: 3px;
-  background-color: #533;
+  background-color: #F6AE2D;
 }
 
 .question-display h2 {
