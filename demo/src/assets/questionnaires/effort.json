@@ -1022,19 +1022,6 @@
                 {
                     "extension": [
                         {
-                            "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-itemControl",
-                            "valueCodeableConcept": {
-                                "coding": [
-                                    {
-                                        "system": "http://hl7.org/fhir/questionnaire-item-control",
-                                        "code": "slider",
-                                        "display": "Slider"
-                                    }
-                                ],
-                                "text": "Slider"
-                            }
-                        },
-                        {
                             "url": "http://hl7.org/fhir/StructureDefinition/minValue",
                             "valueInteger": 0
                         },
@@ -1053,14 +1040,10 @@
                                     }
                                 ]
                             }
-                        },
-                        {
-                            "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-sliderStepValue",
-                            "valueInteger": 5
                         }
                     ],
                     "linkId": "Q4b",
-                    "text": "Bestimmen Sie an Hand des Reglers, wie viele Minuten diese einzelne Hilfe durchschnittlich dauert.",
+                    "text": "Geben Sie ein, wie viele Minuten diese einzelne Hilfe durchschnittlich dauert.",
                     "_text": {
                         "extension": [
                             {
@@ -1072,7 +1055,7 @@
                                     },
                                     {
                                         "url": "content",
-                                        "valueString": "Bestimmen Sie an Hand des Reglers, wie viele Minuten diese einzelne Hilfe durchschnittlich dauert."
+                                        "valueString": "Geben Sie ein, wie viele Minuten diese einzelne Hilfe durchschnittlich dauert."
                                     }
                                 ]
                             },
@@ -1098,7 +1081,7 @@
                                     },
                                     {
                                         "url": "content",
-                                        "valueString": "Use the slider to determine how many minutes this individual help takes on average."
+                                        "valueString": "Please enter how many minutes this individual help takes on average."
                                     }
                                 ]
                             }
