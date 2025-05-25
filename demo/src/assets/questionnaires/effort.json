@@ -1140,7 +1140,7 @@
                             },
                             {
                                 "url": "content",
-                                "valueString": "Der geleistete Zeitaufwand wird aufgrund der gegebenen Antworten automatisch berechnet."
+                                "valueString": "Der wöchentlich geleistete Zeitaufwand wird aufgrund der gegebenen Antworten automatisch berechnet."
                             }
                         ]
                     },
@@ -1153,7 +1153,7 @@
                             },
                             {
                                 "url": "content",
-                                "valueString": "Le temps passé est calculé automatiquement en fonction des réponses données."
+                                "valueString": "Le temps passé par semaine est calculé automatiquement en fonction des réponses données."
                             }
                         ]
                     },
@@ -1166,7 +1166,7 @@
                             },
                             {
                                 "url": "content",
-                                "valueString": "The time spent is calculated automatically based on the answers given."
+                                "valueString": "The time spent per week is calculated automatically based on the answers given."
                             }
                         ]
                     }
