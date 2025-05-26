@@ -269,12 +269,14 @@ function mapIQuestionToQuestionnaireResponseItem(_questions: IQuestion[], _respo
                     } else {
                         responseItem.answer!.push(answer);
                     }
+
+                    if (question.subItems && question.subItems.length > 0) {
+                        answer.item = [];
+                        mapIQuestionToQuestionnaireResponseItem(question.subItems, answer.item, _language);
+                    }
                 });
 
-                if (question.subItems && question.subItems.length > 0) {
-                    (responseItem as QuestionnaireResponseItem).item = [];
-                    mapIQuestionToQuestionnaireResponseItem(question.subItems, (responseItem as QuestionnaireResponseItem).item || [], _language);
-                }
+
                 if (question.type === QuestionnaireItemType.DISPLAY) responseItem.answer = undefined;
                 // add to array
                 _responseItems.push(responseItem);

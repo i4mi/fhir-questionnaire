@@ -7,6 +7,7 @@ const POPULATE = require('./questionnaires/populate.json') as Questionnaire;
 const EMPTY_QUESTIONNAIRE = require('./questionnaires/empty.json') as Questionnaire;
 const DEPENDING = require('./questionnaires/depending.json') as Questionnaire;
 const CALCULATED = require('./questionnaires/calculatedExpression.json') as Questionnaire;
+const NESTED = require('./questionnaires/nested.json') as Questionnaire;
 const RESPONSE = require('./questionnaires/variousResponse.json') as QuestionnaireResponse;
 const EMPTY_RESPONSE = require('./questionnaires/variousResponseEmpty.json') as QuestionnaireResponse;
 const PATIENT = require('./questionnaires/patient.json') as Patient;
@@ -457,7 +458,7 @@ test('multiple choice / unselectOthersExtension', () => {
     expect(testData.isAnswerOptionSelected(mcQuestion!, tomatoOnlyCode)).toBeTruthy();
 });
 
-test('calculated Expression', () => {
+test('calculated expression', () => {
     const testData = new QuestionnaireData(CALCULATED, LANG);
 
     const hidden = testData.findQuestionById('score-choice');
@@ -526,4 +527,45 @@ test('narrative', () => {
     expect(div.includes('Hep B given y / n')).toBeTruthy();
     expect(div.includes('Mozzarella cheese')).toBeTruthy();
     expect(div.includes('Tomato')).toBeTruthy();
+});
+
+test('nested questions', () => {
+    const testData = new QuestionnaireData(NESTED, ['en']);
+    const parentQuestion = testData.findQuestionById('Q1');
+    const childQuestion = testData.findQuestionById('Q1a');
+    const grandchildQuestion = testData.findQuestionById('Q1a1');
+    expect(parentQuestion).toBeDefined();
+    expect(childQuestion).toBeDefined();
+    expect(grandchildQuestion).toBeDefined();
+    
+    testData.updateQuestionAnswers(parentQuestion!, {answer: {},code: {valueBoolean: true}});
+    testData.updateQuestionAnswers(childQuestion!, {answer: {},code: {valueString: 'first subanswer'}});
+    testData.updateQuestionAnswers(grandchildQuestion!, {answer: {},code: {valueString: 'second subanswer'}});
+
+    const groupQuestions = [
+        testData.findQuestionById('Q2a'),
+        testData.findQuestionById('Q2b')
+    ];
+    expect(groupQuestions[0]).toBeDefined();
+    expect(groupQuestions[1]).toBeDefined();
+    groupQuestions.forEach((gq, i) => testData.updateQuestionAnswers(gq!, {answer: {},code: {valueString: 'group answer #' + (i+1)}}));
+
+    expect(() => testData.getQuestionnaireResponse('en')).not.toThrow();
+    const response = testData.getQuestionnaireResponse('en');
+    expect(response).toBeDefined();
+    expect(response.item?.length).toBe(2);
+    const parentAnswer = response.item?.find(i => i.linkId === parentQuestion?.id);
+    expect(parentAnswer).toBeDefined();
+    expect(parentAnswer?.answer?.length).toBe(1); 
+    expect(parentAnswer?.item).toBeUndefined(); // if there is answer present, we can't have subitems
+    const childAnswer = parentAnswer?.answer ? parentAnswer.answer[0].item?.find((sa) => sa.linkId === childQuestion!.id) : undefined;
+    expect(childAnswer).toBeDefined();
+   expect(childAnswer?.answer?.length).toBe(1); 
+    expect(childAnswer?.item).toBeUndefined(); // if there is answer present, we can't have subitems
+    const grandchildAnswer = childAnswer?.answer ? childAnswer.answer[0].item?.find((sa) => sa.linkId === grandchildQuestion!.id) : undefined;
+    expect(grandchildAnswer).toBeDefined();
+    const answerGroup = response.item?.find(i => i.linkId === 'Q2');
+    expect(answerGroup).toBeDefined();
+    expect(answerGroup?.answer).toBeUndefined(); // group items don't have answers
+    expect(answerGroup?.item?.length).toBe(2);
 });

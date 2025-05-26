@@ -1,0 +1,68 @@
+{
+    "resourceType": "Questionnaire",
+    "id": "nested-questionnaire",
+    "url": "http://to.be.defined",
+    "version": "1.0",
+    "name": "NestedQuestionnaire",
+    "status": "active",
+    "subjectType": [
+        "Patient"
+    ],
+    "item": [
+        {
+            "linkId": "Q1",
+            "prefix": "1",
+            "text": "This is the parent question the sub-question depends on.",
+            "type": "boolean",
+            "required": true,
+            "repeats": false,
+            "item": [
+                {
+                    "linkId": "Q1a",
+                    "text": "This is a follow-up question for the parent question",
+                    "type": "string",
+                    "enableWhen": [
+                        {
+                            "question": "Q1",
+                            "operator": "=",
+                            "answerBoolean": true
+                        }
+                    ],
+                    "required": true,
+                    "repeats": false,
+                    "item": [
+                        {
+                            "linkId": "Q1a1",
+                            "text": "Even the nested question has a subquestion",
+                            "type": "string",
+                            "required": false,
+                            "repeats": false
+                        }
+                    ]
+                }
+            ]
+        },
+                {
+            "linkId": "Q2",
+            "prefix": "2",
+            "text": "This is just a question group, that does not require answers.",
+            "type": "group",
+            "item": [
+                {
+                    "linkId": "Q2a",
+                    "text": "This is the first question of the group",
+                    "type": "string",
+                    "required": true,
+                    "repeats": false
+                },
+                {
+                    "linkId": "Q2b",
+                    "text": "And this is the second question of the group",
+                    "type": "string",
+                    "required": true,
+                    "repeats": false
+                }
+            ]
+        }
+    ]
+}
