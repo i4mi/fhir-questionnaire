@@ -1017,12 +1017,12 @@ export class QuestionnaireData {
 
         if (!_item.answer) {
             if (_item.item && _item.item?.length > 0) {
-                return (_item.text ? '<li><span class="question">' + _item.text + ':</span>' : '') + this.getNarrativeString(_item.item, false) + '</li>';
+                return (_item.text ? '<li><span class="question">' + _item.text + ':&nbsp;</span>' : '') + this.getNarrativeString(_item.item, false) + '</li>';
             } else {
                 return '<li><span class="question display">' + (_item.text || 'no text') + '</span></li>';
             }
         }
-        let itemString = _item.text ? '<li><span class="question">' + _item.text + ':</span>' : '';
+        let itemString = _item.text ? '<li><span class="question">' + _item.text + ':&nbsp;</span>' : '';
         if (_item.answer.length === 0) {
             itemString += '<span class="response">-</span>'
         } else if (_item.answer!.length === 1) {
