@@ -26,7 +26,7 @@ export default defineComponent({
   },
   props: {
     questionnaires: {
-      type: Object,
+      type: Array<{name: string; description: string; hidden?: boolean}>,
       required: true
     },
     onSelect: {
