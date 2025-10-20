@@ -1,11 +1,12 @@
 {
   "name": "@i4mi/fhir_questionnaire",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "TS Package for handling FHIR Questionnaire and generating QuestionnaireRespones.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "rm -rf ./dist && npm i && tsc",
+    "testbuild": "rm -rf ./dist && tsc && rm -rf ./demo/node_modules/.vite && rm -rf ./demo/node_modules/@i4mi/fhir_questionnaire/dist && mkdir ./demo/node_modules/@i4mi/fhir_questionnaire/dist/ && cp ./dist/* ./demo/node_modules/@i4mi/fhir_questionnaire/dist/",
     "test": "jest --config jestconfig.json --coverage --silent",
     "lint": "eslint --ext .js,.ts ./ --fix",
     "publish:beta": "npm i && npm run build && npm run test && npm publish --access public --tag beta",
@@ -31,7 +32,7 @@
     "typescript",
     "fhirpath"
   ],
-  "author": "Gabriel Hess, Olivier Descloux @ Institute for Medical Informatics (I4MI) and Institute for Patient-centered digital health - Bern University of Applied Science (BFH)",
+  "author": "Gabriel Hess, Olivier Descloux @ Institute for Medical Informatics and Institute for Patient-centered digital health - Bern University of Applied Science (BFH)",
   "license": "Apache-2.0",
   "devDependencies": {
     "@types/jest": "^24.0.12",

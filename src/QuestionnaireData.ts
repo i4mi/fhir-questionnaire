@@ -89,7 +89,6 @@ function checkIfDependingQuestionIsEnabled(
     // we start with true, when undefined or any with false
     let isEnabled = (_dependant.dependingQuestionsEnableBehaviour == QuestionnaireEnableWhenBehavior.ALL);     
     _depending.criteria.forEach(criterium => {
-
         let evaluatesToTrue = false;
         const crit = criterium.answer.valueCoding?.code ||
             criterium.answer.valueDate ||
@@ -652,7 +651,7 @@ export class QuestionnaireData {
 
         fhirItem?.enableWhen?.forEach(enableWhen => {
             const determinator = this.findQuestionById(enableWhen.question);
-            if (determinator) {
+            if (determinator && determinator.isEnabled) {
                 const ewDefinition = determinator.dependingQuestions.find(dq => dq.dependingQuestion.id === subItem.id);
                 subItem.isEnabled = checkIfDependingQuestionIsEnabled(determinator, ewDefinition!, {answer: {}, code: determinator.selectedAnswers[0]});
                 // TODO: handle this for when parent item is a multiple choice item
