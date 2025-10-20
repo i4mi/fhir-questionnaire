@@ -7,7 +7,7 @@
   <p>You can select one of the example questionnaires, or use your own Questionnaire resource.</p>
   <ul>
     <li
-      v-for="q of questionnaires"
+      v-for="q of questionnaires.filter((q) => !q.hidden)"
       :key="q.name"
       @click="() => onSelect(q.name)">
       <h3>{{ q.name }}</h3>
@@ -26,7 +26,7 @@ export default defineComponent({
   },
   props: {
     questionnaires: {
-      type: Object,
+      type: Array<{name: string; description: string; hidden?: boolean}>,
       required: true
     },
     onSelect: {
@@ -34,7 +34,8 @@ export default defineComponent({
       required: true
     }
   },
-  mounted() {},
+  mounted() {
+  },
   methods: {}
 });
 </script>

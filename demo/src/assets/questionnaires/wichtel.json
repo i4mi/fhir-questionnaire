@@ -1,0 +1,506 @@
+{
+    "resourceType": "Questionnaire",
+    "status": "active",
+    "title": "Medinf-Wichteln Entscheidungsfindung",
+    "_title": {
+        "extension": [
+            {
+                "url": "http://hl7.org/fhir/StructureDefinition/translation",
+                "extension": [
+                    {
+                        "url": "lang",
+                        "valueCode": "de"
+                    },
+                    {
+                        "url": "content",
+                        "valueString": "Medinf-Wichteln Entscheidungsfindung?"
+                    }
+                ]
+            },
+            {
+                "url": "http://hl7.org/fhir/StructureDefinition/translation",
+                "extension": [
+                    {
+                        "url": "lang",
+                        "valueCode": "en"
+                    },
+                    {
+                        "url": "content",
+                        "valueString": "Medinf Secret Santa decision finding?"
+                    }
+                ]
+            }
+        ]
+    },
+    "item": [
+        {
+            "linkId": "q1",
+            "type": "choice",
+            "answerValueSet": "#yes-no.valueset",
+            "text": "Bekommst du gerne Geschenke?"
+        },
+        {
+            "linkId": "q1-no",
+            "type": "display",
+            "text": "Glaub' ich dir nicht.",
+            "enableWhen": [
+                {
+                    "question": "q1",
+                    "operator": "=",
+                    "answerCoding": {
+                        "system": "http://snomed.info/sct",
+                        "code": "373067005"
+                    }
+                }
+            ],
+            "_text": {
+                "extension": [
+                    {
+                        "url": "http://hl7.org/fhir/StructureDefinition/translation",
+                        "extension": [
+                            {
+                                "url": "lang",
+                                "valueCode": "de"
+                            },
+                            {
+                                "url": "content",
+                                "valueString": "Glaub' ich dir nicht!"
+                            }
+                        ]
+                    },
+                    {
+                        "url": "http://hl7.org/fhir/StructureDefinition/translation",
+                        "extension": [
+                            {
+                                "url": "lang",
+                                "valueCode": "en"
+                            },
+                            {
+                                "url": "content",
+                                "valueString": "I don't believe you!"
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "linkId": "q2",
+            "type": "choice",
+            "text": "Machst du gerne Geschenke?",
+            "answerValueSet": "#yes-no.valueset",
+            "enableWhen": [
+                {
+                    "question": "q1",
+                    "operator": "=",
+                    "answerCoding": {
+                        "system": "http://snomed.info/sct",
+                        "code": "373067005"
+                    }
+                },
+                {
+                    "question": "q1",
+                    "operator": "=",
+                    "answerCoding": {
+                        "system": "http://snomed.info/sct",
+                        "code": "373066001"
+                    }
+                }
+            ],
+            "enableBehavior": "any",
+            "_text": {
+                "extension": [
+                    {
+                        "url": "http://hl7.org/fhir/StructureDefinition/translation",
+                        "extension": [
+                            {
+                                "url": "lang",
+                                "valueCode": "de"
+                            },
+                            {
+                                "url": "content",
+                                "valueString": "Machst du gerne Geschenke?"
+                            }
+                        ]
+                    },
+                    {
+                        "url": "http://hl7.org/fhir/StructureDefinition/translation",
+                        "extension": [
+                            {
+                                "url": "lang",
+                                "valueCode": "en"
+                            },
+                            {
+                                "url": "content",
+                                "valueString": "Do you like giving presents?"
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "linkId": "q2-no",
+            "type": "choice",
+            "answerValueSet": "#yes-no.valueset",
+            "text": "Aber… Geschenke!!!!",
+            "enableWhen": [
+                {
+                    "question": "q2",
+                    "operator": "=",
+                    "answerCoding": {
+                        "system": "http://snomed.info/sct",
+                        "code": "373067005"
+                    }
+                }
+            ],
+            "_text": {
+                "extension": [
+                    {
+                        "url": "http://hl7.org/fhir/StructureDefinition/translation",
+                        "extension": [
+                            {
+                                "url": "lang",
+                                "valueCode": "de"
+                            },
+                            {
+                                "url": "content",
+                                "valueString": "Aber… Geschenke!!!!"
+                            }
+                        ]
+                    },
+                    {
+                        "url": "http://hl7.org/fhir/StructureDefinition/translation",
+                        "extension": [
+                            {
+                                "url": "lang",
+                                "valueCode": "en"
+                            },
+                            {
+                                "url": "content",
+                                "valueString": "But… Presents!!!!"
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "linkId": "q3",
+            "type": "choice",
+            "answerValueSet": "#yes-no.valueset",
+            "text": "Bist du im Dezember zumindest ab und zu mal im Büro?",
+            "enableWhen": [
+                {
+                    "question": "q2",
+                    "operator": "=",
+                    "answerCoding": {
+                        "system": "http://snomed.info/sct",
+                        "code": "373066001"
+                    }
+                },
+                {
+                    "question": "q2-no",
+                    "operator": "=",
+                    "answerCoding": {
+                        "system": "http://snomed.info/sct",
+                        "code": "373066001"
+                    }
+                }
+            ],
+            "enableBehavior": "any",
+            "_text": {
+                "extension": [
+                    {
+                        "url": "http://hl7.org/fhir/StructureDefinition/translation",
+                        "extension": [
+                            {
+                                "url": "lang",
+                                "valueCode": "de"
+                            },
+                            {
+                                "url": "content",
+                                "valueString": "Bist du im Dezember zumindest ab und zu mal im Büro?"
+                            }
+                        ]
+                    },
+                    {
+                        "url": "http://hl7.org/fhir/StructureDefinition/translation",
+                        "extension": [
+                            {
+                                "url": "lang",
+                                "valueCode": "en"
+                            },
+                            {
+                                "url": "content",
+                                "valueString": "Will you be in the office at least a few days this december?"
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "linkId": "q4",
+            "type": "choice",
+            "answerValueSet": "#yes-no.valueset",
+            "text": "Bist du bereit für den ultimativen Festtage-Rätsel-Spass?",
+            "enableWhen": [
+                {
+                    "question": "q3",
+                    "operator": "=",
+                    "answerCoding": {
+                        "system": "http://snomed.info/sct",
+                        "code": "373066001"
+                    }
+                }
+            ],
+            "_text": {
+                "extension": [
+                    {
+                        "url": "http://hl7.org/fhir/StructureDefinition/translation",
+                        "extension": [
+                            {
+                                "url": "lang",
+                                "valueCode": "de"
+                            },
+                            {
+                                "url": "content",
+                                "valueString": "Bist du bereit für den ultimativen Festtage-Rätsel-Spass?"
+                            }
+                        ]
+                    },
+                    {
+                        "url": "http://hl7.org/fhir/StructureDefinition/translation",
+                        "extension": [
+                            {
+                                "url": "lang",
+                                "valueCode": "en"
+                            },
+                            {
+                                "url": "content",
+                                "valueString": "Are your ready for the ultimate holiday-fun?"
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "linkId": "q4-no",
+            "type": "choice",
+            "answerValueSet": "#yes-no.valueset",
+            "text": "Es wird toll, versprochen! Und es gibt Apéro!",
+            "enableWhen": [
+                {
+                    "question": "q4",
+                    "operator": "=",
+                    "answerCoding": {
+                        "system": "http://snomed.info/sct",
+                        "code": "373067005"
+                    }
+                }
+            ],
+            "_text": {
+                "extension": [
+                    {
+                        "url": "http://hl7.org/fhir/StructureDefinition/translation",
+                        "extension": [
+                            {
+                                "url": "lang",
+                                "valueCode": "de"
+                            },
+                            {
+                                "url": "content",
+                                "valueString": "Es wird toll, versprochen! Und es gibt Apéro!"
+                            }
+                        ]
+                    },
+                    {
+                        "url": "http://hl7.org/fhir/StructureDefinition/translation",
+                        "extension": [
+                            {
+                                "url": "lang",
+                                "valueCode": "en"
+                            },
+                            {
+                                "url": "content",
+                                "valueString": "It will be great, promised! And there will be Apéro!"
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "linkId": "q5",
+            "type": "display",
+            "text": "Super! Antworte auf die Mail von Gabriel, um beim Wichteln mitzumachen!",
+            "enableWhen": [
+                {
+                    "question": "q4",
+                    "operator": "=",
+                    "answerCoding": {
+                        "system": "http://snomed.info/sct",
+                        "code": "373066001"
+                    }
+                },
+                {
+                    "question": "q4-no",
+                    "operator": "=",
+                    "answerCoding": {
+                        "system": "http://snomed.info/sct",
+                        "code": "373066001"
+                    }
+                }
+            ],
+            "enableBehavior": "any",
+            "_text": {
+                "extension": [
+                    {
+                        "url": "http://hl7.org/fhir/StructureDefinition/translation",
+                        "extension": [
+                            {
+                                "url": "lang",
+                                "valueCode": "de"
+                            },
+                            {
+                                "url": "content",
+                                "valueString": "Super! Antworte auf die Mail von Gabriel, um beim Wichteln mitzumachen!"
+                            }
+                        ]
+                    },
+                    {
+                        "url": "http://hl7.org/fhir/StructureDefinition/translation",
+                        "extension": [
+                            {
+                                "url": "lang",
+                                "valueCode": "en"
+                            },
+                            {
+                                "url": "content",
+                                "valueString": "Great! Answer to the mail from Gabriel to join the Secret Santa game!"
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "linkId": "nope",
+            "type": "display",
+            "text": "Schade, dann wohl wirklich nicht. Aber wenn du meinst… 😢",
+            "enableWhen": [
+                {
+                    "question": "q2-no",
+                    "operator": "=",
+                    "answerCoding": {
+                        "system": "http://snomed.info/sct",
+                        "code": "373067005"
+                    }
+                },
+                {
+                    "question": "q3",
+                    "operator": "=",
+                    "answerCoding": {
+                        "system": "http://snomed.info/sct",
+                        "code": "373067005"
+                    }
+                },
+                {
+                    "question": "q4-no",
+                    "operator": "=",
+                    "answerCoding": {
+                        "system": "http://snomed.info/sct",
+                        "code": "373067005"
+                    }
+                }
+            ],
+            "enableBehavior": "any",
+            "_text": {
+                "extension": [
+                    {
+                        "url": "http://hl7.org/fhir/StructureDefinition/translation",
+                        "extension": [
+                            {
+                                "url": "lang",
+                                "valueCode": "de"
+                            },
+                            {
+                                "url": "content",
+                                "valueString": "Schade, dann wohl wirklich nicht. Aber wenn du meinst… 😢"
+                            }
+                        ]
+                    },
+                    {
+                        "url": "http://hl7.org/fhir/StructureDefinition/translation",
+                        "extension": [
+                            {
+                                "url": "lang",
+                                "valueCode": "en"
+                            },
+                            {
+                                "url": "content",
+                                "valueString": "What a pity, looks like Secret Santa really isn't for you… 😢"
+                            }
+                        ]
+                    }
+                ]
+            }
+        }
+    ],
+    "contained": [
+        {
+            "resourceType": "ValueSet",
+            "id": "yes-no.valueset",
+            "url": "http://fhir.ch/ig/covid-19-prom/Questionnaire/coronascience-situation-questions-QS1#QS1.yes-no.valueset",
+            "title": "Yes/No",
+            "status": "active",
+            "compose": {
+                "include": [
+                    {
+                        "system": "http://snomed.info/sct",
+                        "concept": [
+                            {
+                                "code": "373066001",
+                                "display": "Yes",
+                                "designation": [
+                                    {
+                                        "language": "de",
+                                        "value": "ja"
+                                    },
+                                    {
+                                        "language": "en",
+                                        "value": "yes"
+                                    },
+                                    {
+                                        "language": "fr",
+                                        "value": "oui"
+                                    }
+                                ]
+                            },
+                            {
+                                "code": "373067005",
+                                "display": "No",
+                                "designation": [
+                                    {
+                                        "language": "de",
+                                        "value": "nein"
+                                    },
+                                    {
+                                        "language": "en",
+                                        "value": "no"
+                                    },
+                                    {
+                                        "language": "fr",
+                                        "value": "non"
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        }
+    ]
+}

@@ -9,7 +9,7 @@
           name="questionnaire-selector"
           @change="() => setQuestionnaire(questionnaire)">
           <option
-            v-for="questionnaire in questionnaires"
+            v-for="questionnaire in questionnaires.filter((q) => !q.hidden)"
             :key="questionnaire.name">
             {{ questionnaire.name }}
           </option>
@@ -117,6 +117,7 @@ import EFFORT from '@/assets/questionnaires/effort.json';
 import BLUEBOOK from '@/assets/questionnaires/bluebook.json';
 import SITUATION from '@/assets/questionnaires/situation.json';
 import INITIAL from '@/assets/questionnaires/initialValues.json';
+import WICHTEL from '@/assets/questionnaires/wichtel.json';
 import {QuestionnaireItemType, QuestionnairePublicationStatus, type Questionnaire} from '@i4mi/fhir_r4';
 import {QuestionnaireData} from '@i4mi/fhir_questionnaire';
 
@@ -165,6 +166,7 @@ export default defineComponent({
       questionnaires: [
         {
           name: 'Effort Questionnaire',
+          key: 'effort',
           description:
             'The shortened Effort questionnaire helps family carers to evaluate the time spent caring for their relatives. This multilingual questionnaire is available in German, French and English. The last item of the questionnaire response is calculated automatically.',
           questionnaire: EFFORT as Questionnaire,
@@ -172,22 +174,33 @@ export default defineComponent({
         },
         {
           name: 'Initial Values',
+          key: 'initial',
           description: 'A questionnaire with some answers already prepopuleted (initial values)',
           questionnaire: INITIAL as Questionnaire,
           languages: ['en']
         },
         {
           name: 'Neonatology Bluebook',
+          key: 'neonatology',
           description: 'A questionnaire about new born children.',
           questionnaire: BLUEBOOK as Questionnaire,
           languages: ['en']
         },
         {
           name: 'COVID Situation',
+          key: 'covid',
           description:
             'This questionnaire has interdependent questions as well as the ‘unselect-others’ extension, in which an answer to a multiple-choice question can exclude other answers.',
           questionnaire: SITUATION as Questionnaire,
           languages: ['de', 'en', 'fr', 'gsw', 'rm', 'it']
+        },
+        {
+          name: 'Secret Santa',
+          key: 'wichtel',
+          hidden: true,
+          description: 'Hidden questionnaire for medinf secret santa.',
+          questionnaire: WICHTEL as Questionnaire,
+          languages: ['de', 'en']
         },
         {
           name: OWN_QUESTIONNAIRE,
@@ -201,7 +214,20 @@ export default defineComponent({
       response: undefined as string | undefined
     };
   },
-  mounted() {},
+  mounted() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const questionnaire = urlParams.get('q');
+    const lang = urlParams.get('lang');
+    if (lang && this.availableLanguages.includes(lang)) {
+      this.lang = lang;
+    }
+    if (questionnaire) {
+      const q = this.questionnaires.find((q) => q.key == questionnaire);
+      if (q) {
+        this.setQuestionnaire(q.name);
+      }
+    }
+  },
   methods: {
     setQuestionnaire(qName?: string): void {
       this.questionnaire = qName;
@@ -224,6 +250,7 @@ export default defineComponent({
       try {
         const questionnaire = JSON.parse(this.ownQuestionnaire);
         this.availableLanguages = getAvailableLanguagesFromQuestionnaire(questionnaire) || this.availableLanguages;
+        console.log('available Languages', this.availableLanguages);
         this.qData = new QuestionnaireData(questionnaire, this.availableLanguages);
 
         this.showOwnQuestionnaireModal = false;

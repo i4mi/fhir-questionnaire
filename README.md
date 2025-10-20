@@ -1,9 +1,9 @@
 # I4MI Questionnaire Data
 QuestionnaireData is a class that facilitates the rendering and handling of FHIR Questionnaires in TypeScript / Javascript applications.
-- ❗️ Please be aware that this is currently work in progress. 
+- ❗️ Please be aware that this is currently work in progress. Altough we try to avoid this, breaking changes can occur also on minor version updates (see [CHANGELOG.md](CHANGELOG.md) for this).
 - ❗️ Not all features of FHIR Questionnaire are supported, and some functionality is not yet documented. 
-- ❗️ Although we do our best in carefully developping and testing the class, there are probably minor and major bugs. If you find one, let us know and [raise an issue on github](https://github.com/i4mi/fhir-questionnaire/issues)).
-- ❗️ We do not recommend using this for production projects.
+- ❗️ Although we do our best in carefully developping and testing the class, there are probably minor and major bugs. If you find one, let us know and [raise an issue on github](https://github.com/i4mi/fhir-questionnaire/issues).
+- ❗️ Use this library in production projects on your responsability.
 - ❗️ QuestionnaireData is based on the FHIR R4 (4.0.1) version of the Questionnaire resource.
 
 See also the documentation of the [FHIR Questionnaire](http://hl7.org/fhir/R4/questionnaire.html) and [FHIR QuestionnaireResponse](http://hl7.org/fhir/R4/questionnaireresponse.html) resources.

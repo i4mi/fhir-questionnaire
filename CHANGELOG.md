@@ -1,5 +1,6 @@
 | Version | Date       | Changes    |
 | ------- | ---------- | ---------- |
+| 0.3.1   | 2025-10-20 | - minimal bugfix with depending questions.<br /> - fix a vulnerability in dependencies. |
 | 0.3.0   | 2025-05-26 | - fix a bug with nested questions, that resulted in invalid QuestionnaireResponse resources. <br />⚠️ This means that generated QuestionnaireResponse resources can differ from previous versions output.|
 | 0.2.4   | 2024-12-06 | - fix bugs in narrative that resulted in resources not validating |
 | 0.2.3   | 2024-11-20 | - make availableLanguages optional again in QuestionnaireData constructor |
