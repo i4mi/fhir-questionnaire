@@ -1,6 +1,7 @@
 import fhirpath from 'fhirpath';
 import { Questionnaire, QuestionnaireResponse, QuestionnaireEnableWhenBehavior, Reference, QuestionnaireResponseStatus, QuestionnaireResponseItem, QuestionnaireItemType,
-    Resource, ValueSet, QuestionnaireItem, QuestionnaireResponseItemAnswer, Extension, code, QuestionnaireItemOperator, readI18N, ValueSetComposeIncludeConceptDesignation, Coding, NarrativeStatus, Expression, integer, Duration, QuestionnaireItemInitial} from '@i4mi/fhir_r4';
+    Resource, ValueSet, QuestionnaireItem, QuestionnaireResponseItemAnswer, Extension, code, QuestionnaireItemOperator, readI18N, ValueSetComposeIncludeConceptDesignation, Coding, NarrativeStatus, Expression, integer, Duration, QuestionnaireItemInitial,
+    QuestionnaireItemAnswerOption} from '@i4mi/fhir_r4';
 import { IQuestion, IAnswerOption, IQuestionOptions, ItemControlType } from './IQuestion';
 
 const UNSELECT_OTHERS_EXTENSION = 'http://midata.coop/extensions/valueset-unselect-others';
@@ -26,7 +27,7 @@ const PRIMITIVE_VALUE_X = [
     'valueDateTime',
     'valueTime',
     'valueUri'
-];
+] as (keyof QuestionnaireResponseItemAnswer)[];
 const COMPLEX_VALUE_X = [
     {
         type: 'valueCoding',
@@ -248,9 +249,10 @@ function mapIQuestionToQuestionnaireResponseItem(_questions: IQuestion[], _respo
                 question.selectedAnswers.forEach((answer) => {
                     if (answer.valueCoding) {
                         // find translated display for answer valueCoding
-                        const answerDisplayAllLanguages = (question.answerOptions.find((answerOption) => {
+                        const answerDisplayAllLanguages = question.answerOptions.find((answerOption) => {
                             return answerOption.code.valueCoding && answer.valueCoding && answerOption.code.valueCoding.code === answer.valueCoding.code;
-                        }) || {answer: ''}).answer;
+                        })?.answer;
+
                         // some answer options (e.g. zip code locations) have only one language set
                         const answerDisplay = answerDisplayAllLanguages
                                                 ? answerDisplayAllLanguages[_language]
@@ -1145,11 +1147,12 @@ export class QuestionnaireData {
                 console.warn(`QuestionnaireData.ts: Item type ${_FHIRItem.type} is currently not supported.`)
                 //return undefined; // TODO : check this
         }
-        const labels = {};
+        const labels: {[language: string]: string} = {};
         this.availableLanguages.map(language => {
-            labels[language] = _FHIRItem._text 
+            const languageText = _FHIRItem._text 
                 ? readI18N(_FHIRItem._text, language) || _FHIRItem.text
-                : _FHIRItem.text || '';
+                : _FHIRItem.text;
+            labels[language] = languageText || '';
         });
         question.label = labels;
 
@@ -1312,17 +1315,24 @@ export class QuestionnaireData {
                             }
 
                         } else {
-                            ['valueString', 'valueDate', 'valueTime', 'valueInteger', 'valueReference'].forEach(valueX => {
+                            const answerValues = ['valueString', 'valueDate', 'valueTime', 'valueInteger', 'valueReference'] as (keyof QuestionnaireItemAnswerOption)[];
+                            const answerExtensionValues = answerValues.map((v) => '_' + v) as (keyof QuestionnaireItemAnswerOption)[];
+                            
+                            answerValues.forEach((valueX, i) => {
                                 if (answerOption[valueX]) {
-                                    if (answerOption['_' + valueX]) {
+                                    const extensionValue = answerOption[answerExtensionValues[i]]
+                                    if (extensionValue) {
                                         Object.keys(answerOptionText).forEach(key => {
-                                            const text = readI18N(answerOption['_' + valueX], key);
-                                            answerOptionText[key] = text || answerOption[valueX];
+                                            const text = readI18N(extensionValue as Element, key);
+                                            if (text) {
+                                                answerOptionText[key] = text;
+                                            } else {
+                                                answerOptionText[key] = answerOption[valueX] as string;
+                                            }
                                         });
-                                        
                                     } else {
                                         Object.keys(answerOptionText).forEach(key => {
-                                            answerOptionText[key] = answerOption[valueX];
+                                            answerOptionText[key] = answerOption[valueX] as string;
                                         });
                                     }
                                 }
@@ -1581,7 +1591,7 @@ export class QuestionnaireData {
     * @param _overWriteExistingAnswers (optional) specifies if existing answers should be overwritten (default: false)
     */
     populateAnswers(_resources: Resource[], _overWriteExistingAnswers?: boolean): void {
-        const resources = {};
+        const resources: {[type: string]: Resource} = {};
         _resources.forEach(r => {
             if (r.resourceType) {
                 resources[r.resourceType.toLowerCase()] = r;
@@ -1601,11 +1611,11 @@ export class QuestionnaireData {
                         const resource = resources[type];
                         if (resource) {
                             const cleanExpression = expression.replace(new RegExp('%' + type + '.', 'g'), '');
-                            const value = fhirpath.evaluate(resource, cleanExpression)[0];
+                            const value = fhirpath.evaluate(resource, cleanExpression)[0] as string;
                             if (value != undefined) {
                                 let populatedAnswer: IAnswerOption = { answer: {}, code: {} };
                                 this.availableLanguages.forEach(l => {
-                                    populatedAnswer.answer[l] = value;
+                                    populatedAnswer.answer[l] = value as string;
                                 });
                                 
                                 switch(item.type) {
@@ -1620,9 +1630,9 @@ export class QuestionnaireData {
                                         populatedAnswer.code.valueInteger = Number(value);
                                         break;
                                     case QuestionnaireItemType.BOOLEAN:
-                                        populatedAnswer.code.valueBoolean = typeof value === 'string'
-                                            ? value.toLowerCase() === 'true'
-                                            : value;
+                                        populatedAnswer.code.valueBoolean = (typeof value === 'string'
+                                            ? (value.toLowerCase() === 'true')
+                                            : value as boolean);
                                         break;
                                     case QuestionnaireItemType.DATE:
                                         populatedAnswer.code.valueDate = value.toString();

@@ -82,14 +82,14 @@ test('findQuestionById()', () => {
 
 test('initial values', () => {
     const initialTest = new QuestionnaireData(INITIAL, LANG); 
-    let q1 = initialTest.findQuestionById('1');
+    const q1 = initialTest.findQuestionById('1');
     expect(q1).toBeDefined();
     expect(q1?.selectedAnswers[0].valueBoolean).toEqual(true);
     const q21 = initialTest.findQuestionById('2.1');
     expect(q21).toBeDefined();
     // wrong format, so not initially selected
     expect(q21?.selectedAnswers[0]).toBeUndefined();
-    let q22 = initialTest.findQuestionById('2.2');
+    const q22 = initialTest.findQuestionById('2.2');
     expect(q22).toBeDefined();
     expect(q22?.selectedAnswers[0].valueDate).toEqual('1941-01-05');
     const q23 = initialTest.findQuestionById('2.3');
