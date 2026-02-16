@@ -553,16 +553,18 @@ test('nested questions', () => {
     expect(() => testData.getQuestionnaireResponse('en')).not.toThrow();
     const response = testData.getQuestionnaireResponse('en');
     expect(response).toBeDefined();
-    expect(response.item?.length).toBe(2);
+    expect(response.item?.length).toBe(4);
     const parentAnswer = response.item?.find(i => i.linkId === parentQuestion?.id);
     expect(parentAnswer).toBeDefined();
-    expect(parentAnswer?.answer?.length).toBe(1); 
+    expect(parentAnswer?.answer?.length).toBe(1);
     expect(parentAnswer?.item).toBeUndefined(); // if there is answer present, we can't have subitems
-    const childAnswer = parentAnswer?.answer ? parentAnswer.answer[0].item?.find((sa) => sa.linkId === childQuestion!.id) : undefined;
-    expect(childAnswer).toBeDefined();
-   expect(childAnswer?.answer?.length).toBe(1); 
-    expect(childAnswer?.item).toBeUndefined(); // if there is answer present, we can't have subitems
-    const grandchildAnswer = childAnswer?.answer ? childAnswer.answer[0].item?.find((sa) => sa.linkId === grandchildQuestion!.id) : undefined;
+    const childAnswerWrong = parentAnswer?.answer 
+    ? parentAnswer.answer[0].item?.find((sa) => sa.linkId === childQuestion!.id) 
+    : undefined;
+    expect(childAnswerWrong).toBeUndefined();
+    const childAnserRight = response.item?.find(i => i.linkId === childQuestion?.id);
+    expect(childAnserRight).toBeDefined();
+    const grandchildAnswer = response.item?.find(i => i.linkId === grandchildQuestion?.id);
     expect(grandchildAnswer).toBeDefined();
     const answerGroup = response.item?.find(i => i.linkId === 'Q2');
     expect(answerGroup).toBeDefined();
