@@ -218,21 +218,28 @@ function recursivelyCheckCompleteness(_question: IQuestion[], _onlyRequired: boo
 function mapIQuestionToQuestionnaireResponseItem(_questions: IQuestion[], _responseItems: QuestionnaireResponseItem[], _language: string): QuestionnaireResponseItem[] {
     _questions.forEach((question) => {
         question.isInvalid = false;
-        if (question.type === QuestionnaireItemType.GROUP) {
-            if (question.subItems && question.subItems.length > 0) {
-                const labelText = question.label[_language];
-                _responseItems.push(
-                    {
-                        linkId: question.id,
-                        text: labelText ? labelText : undefined,
-                        item: mapIQuestionToQuestionnaireResponseItem(question.subItems, [], _language)
-                    }
-                );
-            } else {
-                question.isInvalid = true;
-                throw new Error(`Invalid question set: IQuestion with id ${question.id} is group type, but has no subItems.`);
+       
+        if (question.isEnabled){
+            const responseItem: QuestionnaireResponseItem = {
+                linkId: question.id,
+                text: question.label[_language],
+                answer: new Array<QuestionnaireResponseItemAnswer>()
+            };
+
+            // push it first, so we have the correct order
+            _responseItems.push(responseItem);
+
+            if (question.type === QuestionnaireItemType.GROUP) {
+                if (question.subItems && question.subItems.length > 0) {
+                    responseItem.item = [];
+                    mapIQuestionToQuestionnaireResponseItem(question.subItems, responseItem.item, _language);
+                } else {
+                    question.isInvalid = true;
+                    throw new Error(`Invalid question set: IQuestion with id ${question.id} is group type, but has no subItems.`);
+                }
+            } else if (question.subItems && question.subItems.length > 0) {
+                mapIQuestionToQuestionnaireResponseItem(question.subItems, _responseItems, _language);
             }
-        } else if (question.isEnabled){
             // some validation
             if (question.required && question.selectedAnswers.length === 0) {
                 question.isInvalid = true;
@@ -241,11 +248,6 @@ function mapIQuestionToQuestionnaireResponseItem(_questions: IQuestion[], _respo
                 question.isInvalid = true;
                 throw new Error(`Invalid answer set: IQuestion with id ${question.id} allows only one answer, but has more.`);
             } else {
-                const responseItem: QuestionnaireResponseItem = {
-                    linkId: question.id,
-                    text: question.label[_language],
-                    answer: new Array<QuestionnaireResponseItemAnswer>()
-                };
                 question.selectedAnswers.forEach((answer) => {
                     if (answer.valueCoding) {
                         // find translated display for answer valueCoding
@@ -270,17 +272,9 @@ function mapIQuestionToQuestionnaireResponseItem(_questions: IQuestion[], _respo
                     } else {
                         responseItem.answer!.push(answer);
                     }
-
-                    if (question.subItems && question.subItems.length > 0) {
-                        answer.item = [];
-                        mapIQuestionToQuestionnaireResponseItem(question.subItems, answer.item, _language);
-                    }
                 });
 
-
                 if (question.type === QuestionnaireItemType.DISPLAY) responseItem.answer = undefined;
-                // add to array
-                _responseItems.push(responseItem);
             }
         }
     });

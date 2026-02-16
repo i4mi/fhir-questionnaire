@@ -162,7 +162,6 @@ export default defineComponent({
   },
   methods: {
     updateValue(value: string | number | boolean, type: QuestionnaireItemType) {
-      console.log('update value', value, typeof value, type)
       const answer: IAnswerOption = {
         answer: {},
         code: {}
