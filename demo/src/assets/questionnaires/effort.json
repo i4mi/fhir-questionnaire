@@ -66,7 +66,7 @@
                         "system": "http://midata.coop/approches/frequency",
                         "concept": [
                             {
-                                "code": "'0'",
+                                "code": "0",
                                 "display": "Multiple times a day",
                                 "designation": [
                                     {
@@ -1115,7 +1115,7 @@
                         "description": "Der geleistete Zeitaufwand wird aufgrund der gegebenen Antworten automatisch berechnet.",
                         "name": "timeSpent",
                         "language": "text/fhirpath",
-                        "expression": "item.aggregate(iif($this.item.exists(),$total + (iif($this.item[0].answer.valueCoding.code.toInteger() = 3,1,iif($this.item[0].answer.valueCoding.code.toInteger() = 2,2.5,iif($this.item[0].answer.valueCoding.code.toInteger() = 1,7,2.5 * 7)))) * $this.item[1].answer.valueQuantity.value.toInteger(), $total), 0).round(0)"
+                        "expression": "item.where(linkId.matches('Q[0-9]+a')).select(answer.valueCoding.code.replaceMatches('2', '5').replaceMatches('3', '2').replaceMatches('0', '35').replaceMatches('1', '14').toInteger()/2).aggregate($total + $this * (%context.item.where(linkId.matches('Q[0-9]+b')).select(answer.valueQuantity.value))[$index], 0).round(0)"
                     }
                 }
             ],
