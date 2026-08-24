@@ -1,0 +1,1033 @@
+{
+    "resourceType": "Questionnaire",
+    "status": "draft",
+    "name": "swissnoso-cauti",
+    "title": "SwissNoso CAUTI Module Questionnaire",
+    "_title": {
+        "extension": [
+            {
+                "url": "http://hl7.org/fhir/StructureDefinition/translation",
+                "extension": [
+                    {
+                        "url": "lang",
+                        "valueCode": "de"
+                    },
+                    {
+                        "url": "content",
+                        "valueString": "SwissNoso CAUTI Module Fragebogen"
+                    }
+                ]
+            }
+        ]
+    },
+    "publisher": "SwissNoso",
+    "contained": [
+        {
+            "resourceType": "ValueSet",
+            "id": "gender-valueset",
+            "url": "http://temp.ch/TODO:",
+            "title": "Gender codes for CH Core patient",
+            "status": "active",
+            "compose": {
+                "include": [
+                    {
+                        "system": "http://hl7.org/fhir/administrative-gender",
+                        "concept": [
+                            {
+                                "code": "male",
+                                "display": "Male",
+                                "designation": [
+                                    {
+                                        "language": "de",
+                                        "value": "männlich"
+                                    },
+                                    {
+                                        "language": "fr",
+                                        "value": "masculin"
+                                    }
+                                ]
+                            },
+                            {
+                                "code": "female",
+                                "display": "Female",
+                                "designation": [
+                                    {
+                                        "language": "de",
+                                        "value": "weiblich"
+                                    },
+                                    {
+                                        "language": "fr",
+                                        "value": "féminin"
+                                    }
+                                ]
+                            },
+                            {
+                                "code": "unknown",
+                                "display": "Unknown",
+                                "designation": [
+                                    {
+                                        "language": "de",
+                                        "value": "unbekannt"
+                                    },
+                                    {
+                                        "language": "fr",
+                                        "value": "inconnu"
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "resourceType": "ValueSet",
+            "id": "org-unit-valueset",
+            "url": "http://temp.ch/TODO:",
+            "title": "Organisational units for CAUTI questionnaire",
+            "status": "active",
+            "compose": {
+                "include": [
+                    {
+                        "system": "http://swissnoso.ch/cauti/org-unit",
+                        "concept": [
+                            {
+                                "code": "SUR",
+                                "display": "Surgery",
+                                "designation": [
+                                    {
+                                        "language": "de",
+                                        "value": "Chirurgie"
+                                    },
+                                    {
+                                        "language": "fr",
+                                        "value": "TODO:"
+                                    }
+                                ]
+                            },
+                            {
+                                "code": "MED",
+                                "display": "Medicine",
+                                "designation": [
+                                    {
+                                        "language": "de",
+                                        "value": "Medizin"
+                                    },
+                                    {
+                                        "language": "fr",
+                                        "value": "TODO:"
+                                    }
+                                ]
+                            },
+                            {
+                                "code": "G/O",
+                                "display": "Gynecology",
+                                "designation": [
+                                    {
+                                        "language": "de",
+                                        "value": "Gynäkologie / Geburtshilfe"
+                                    },
+                                    {
+                                        "language": "fr",
+                                        "value": "TODO:"
+                                    }
+                                ]
+                            },
+                            {
+                                "code": "ICU",
+                                "display": "Intensive Care",
+                                "designation": [
+                                    {
+                                        "language": "de",
+                                        "value": "Intensivmedizin"
+                                    },
+                                    {
+                                        "language": "fr",
+                                        "value": "TODO:"
+                                    }
+                                ]
+                            },
+                            {
+                                "code": "PED",
+                                "display": "Pediadrics",
+                                "designation": [
+                                    {
+                                        "language": "de",
+                                        "value": "Pädiatrie"
+                                    },
+                                    {
+                                        "language": "fr",
+                                        "value": "TODO:"
+                                    }
+                                ]
+                            },
+                            {
+                                "code": "NEO",
+                                "display": "Neonatalogy",
+                                "designation": [
+                                    {
+                                        "language": "de",
+                                        "value": "Neonatologie"
+                                    },
+                                    {
+                                        "language": "fr",
+                                        "value": "TODO:"
+                                    }
+                                ]
+                            },
+                            {
+                                "code": "GER",
+                                "display": "Geriatry",
+                                "designation": [
+                                    {
+                                        "language": "de",
+                                        "value": "Geriatrie"
+                                    },
+                                    {
+                                        "language": "fr",
+                                        "value": "TODO:"
+                                    }
+                                ]
+                            },
+                            {
+                                "code": "PSY",
+                                "display": "Psychiatry",
+                                "designation": [
+                                    {
+                                        "language": "de",
+                                        "value": "Psychiatrie"
+                                    },
+                                    {
+                                        "language": "fr",
+                                        "value": "TODO:"
+                                    }
+                                ]
+                            },
+                            {
+                                "code": "RHB",
+                                "display": "Rehabilitation",
+                                "designation": [
+                                    {
+                                        "language": "de",
+                                        "value": "Rehabilitation"
+                                    },
+                                    {
+                                        "language": "fr",
+                                        "value": "TODO:"
+                                    }
+                                ]
+                            },
+                            {
+                                "code": "LTC",
+                                "display": "Long Term Care",
+                                "designation": [
+                                    {
+                                        "language": "de",
+                                        "value": "Langzeitpflege"
+                                    },
+                                    {
+                                        "language": "fr",
+                                        "value": "TODO:"
+                                    }
+                                ]
+                            },
+                            {
+                                "code": "MIX",
+                                "display": "Mixed",
+                                "designation": [
+                                    {
+                                        "language": "de",
+                                        "value": "Gemischt"
+                                    },
+                                    {
+                                        "language": "fr",
+                                        "value": "TODO:"
+                                    }
+                                ]
+                            },
+                            {
+                                "code": "OTH",
+                                "display": "Other",
+                                "designation": [
+                                    {
+                                        "language": "de",
+                                        "value": "Sonstige"
+                                    },
+                                    {
+                                        "language": "fr",
+                                        "value": "TODO:"
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "resourceType": "ValueSet",
+            "id": "operation-ward-valueset",
+            "url": "http://temp.ch/TODO:",
+            "title": "Valueset of operation wards",
+            "status": "active",
+            "compose": {
+                "include": [
+                    {
+                        "system": "http://swissnoso.ch/cauti/operation-ward",
+                        "concept": [
+                            {
+                                "code": "ER",
+                                "display": "Emergency room",
+                                "designation": [
+                                    {
+                                        "language": "de",
+                                        "value": "Notfallstation"
+                                    }
+                                ]
+                            },
+                            {
+                                "code": "BU",
+                                "display": "Bed unit",
+                                "designation": [
+                                    {
+                                        "language": "de",
+                                        "value": "Bettenstation"
+                                    }
+                                ]
+                            },
+                            {
+                                "code": "ICU",
+                                "display": "Intensive care unit",
+                                "designation": [
+                                    {
+                                        "language": "de",
+                                        "value": "Intensivstation"
+                                    }
+                                ]
+                            },
+                            {
+                                "code": "OP",
+                                "display": "Operation ward",
+                                "designation": [
+                                    {
+                                        "language": "de",
+                                        "value": "Operationssaal"
+                                    }
+                                ]
+                            },
+                            {
+                                "code": "MW",
+                                "display": "Maternity ward",
+                                "designation": [
+                                    {
+                                        "language": "de",
+                                        "value": "Gebärsaal"
+                                    }
+                                ]
+                            },
+                            {
+                                "code": "OTH",
+                                "display": "Other location",
+                                "designation": [
+                                    {
+                                        "language": "de",
+                                        "value": "Anderer Ort"
+                                    }
+                                ]
+                            },
+                            {
+                                "code": "EXT",
+                                "display": "External location*",
+                                "designation": [
+                                    {
+                                        "language": "de",
+                                        "value": "Spitalexterner Ort (bereits katheterisiert ins Spital eingetreten)"
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "resourceType": "ValueSet",
+            "id": "indication-valueset",
+            "url": "http://to.be.defined",
+            "title": "Indication",
+            "status": "active",
+            "compose": {
+                "include": [
+                    {
+                        "system": "http://snomed.info/sct",
+                        "concept": [
+                            {
+                                "code": "TODO:1",
+                                "display": "Urinary retention",
+                                "designation": [
+                                    {
+                                        "language": "de",
+                                        "value": "Harnverhalt"
+                                    },
+                                    {
+                                        "language": "fr",
+                                        "value": "TODO: "
+                                    }
+                                ]
+                            },
+                            {
+                                "code": "TODO:2",
+                                "display": "Urine monitoring",
+                                "designation": [
+                                    {
+                                        "language": "de",
+                                        "value": "Urinmonitoring / Bilanzierung"
+                                    },
+                                    {
+                                        "language": "fr",
+                                        "value": "TODO: "
+                                    }
+                                ]
+                            },
+                            {
+                                "code": "TODO:3",
+                                "display": "Surgery",
+                                "designation": [
+                                    {
+                                        "language": "de",
+                                        "value": "Operation"
+                                    },
+                                    {
+                                        "language": "fr",
+                                        "value": "TODO: "
+                                    }
+                                ]
+                            },
+                            {
+                                "code": "TODO:4",
+                                "display": "Pressure ulcers plus incontinence",
+                                "designation": [
+                                    {
+                                        "language": "de",
+                                        "value": "Decubitalulzera plus Inkontinenz"
+                                    },
+                                    {
+                                        "language": "fr",
+                                        "value": "TODO: "
+                                    }
+                                ]
+                            },
+                            {
+                                "code": "TODO:5",
+                                "display": "Prolonged immobilisation",
+                                "designation": [
+                                    {
+                                        "language": "de",
+                                        "value": "Prolongierte Immobilisation"
+                                    },
+                                    {
+                                        "language": "fr",
+                                        "value": "TODO: "
+                                    }
+                                ]
+                            },
+                            {
+                                "code": "TODO:6",
+                                "display": "Palliative care plus comfort",
+                                "designation": [
+                                    {
+                                        "language": "de",
+                                        "value": "Palliation plus Komfort"
+                                    },
+                                    {
+                                        "language": "fr",
+                                        "value": "TODO: "
+                                    }
+                                ]
+                            },
+                            {
+                                "code": "TODO:7",
+                                "display": "Other indications",
+                                "designation": [
+                                    {
+                                        "language": "de",
+                                        "value": "Andere Indikation"
+                                    },
+                                    {
+                                        "language": "fr",
+                                        "value": "TODO: "
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "resourceType": "ValueSet",
+            "id": "germs-valueset",
+            "url": "http://to.be.defined",
+            "title": "Germs",
+            "status": "active",
+            "compose": {
+                "include": [
+                    {
+                        "system": "http://snomed.info/sct",
+                        "concept": [
+                            {
+                                "code": "TODO:A",
+                                "display": "E. Coli",
+                                "designation": [
+                                    {
+                                        "language": "de",
+                                        "value": "E. Coli"
+                                    },
+                                    {
+                                        "language": "fr",
+                                        "value": "TODO: "
+                                    }
+                                ]
+                            },
+                            {
+                                "code": "TODO:B",
+                                "display": "Proteus sp.",
+                                "designation": [
+                                    {
+                                        "language": "de",
+                                        "value": "Proteus sp."
+                                    },
+                                    {
+                                        "language": "fr",
+                                        "value": "TODO: "
+                                    }
+                                ]
+                            },
+                            {
+                                "code": "TODO:C",
+                                "display": "Klebsiella sp.",
+                                "designation": [
+                                    {
+                                        "language": "de",
+                                        "value": "Klebsiella sp."
+                                    },
+                                    {
+                                        "language": "fr",
+                                        "value": "TODO: "
+                                    }
+                                ]
+                            },
+                            {
+                                "code": "TODO:D",
+                                "display": "Entereococcus sp.",
+                                "designation": [
+                                    {
+                                        "language": "de",
+                                        "value": "Entereococcus sp."
+                                    },
+                                    {
+                                        "language": "fr",
+                                        "value": "TODO: "
+                                    }
+                                ]
+                            },
+                            {
+                                "code": "TODO:E",
+                                "display": "P. aeruginosa",
+                                "designation": [
+                                    {
+                                        "language": "de",
+                                        "value": "Prolonged immobilisation"
+                                    },
+                                    {
+                                        "language": "fr",
+                                        "value": "TODO: "
+                                    }
+                                ]
+                            },
+                            {
+                                "code": "TODO:F",
+                                "display": "other",
+                                "designation": [
+                                    {
+                                        "language": "de",
+                                        "value": "Anderer Keim"
+                                    },
+                                    {
+                                        "language": "fr",
+                                        "value": "TODO: "
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        }
+    ],
+    "item": [
+        {
+            "linkId": "A-patient-data",
+            "type": "group",
+            "text": "Angaben zum Patienten",
+            "_text": {
+                "extension": [
+                    {
+                        "url": "http://hl7.org/fhir/StructureDefinition/translation",
+                        "extension": [
+                            {
+                                "url": "lang",
+                                "valueCode": "de"
+                            },
+                            {
+                                "url": "content",
+                                "valueString": "Angaben zum Patienten"
+                            }
+                        ]
+                    }
+                ]
+            },
+            "item": [
+                {
+                    "linkId": "A1",
+                    "type": "string",
+                    "text": "Patienten-Nummer (PID)",
+                    "required": true
+                },
+                {
+                    "linkId": "A2",
+                    "type": "string",
+                    "text": "Fall-Nummer",
+                    "required": false
+                },
+                {
+                    "linkId": "A3",
+                    "type": "choice",
+                    "text": "Geschlecht",
+                    "required": true,
+                    "answerValueSet": "#gender-valueset"
+                },
+                {
+                    "linkId": "A4",
+                    "type": "choice",
+                    "text": "Organisationseinheit",
+                    "required": true,
+                    "answerValueSet": "#org-unit-valueset"
+                },
+                {
+                    "linkId": "A5",
+                    "type": "date",
+                    "text": "Eintrittsdatum ins Spital",
+                    "required": true
+                },
+                {
+                    "linkId": "A6",
+                    "type": "date",
+                    "text": "Austrittsdatum aus Spital",
+                    "required": true
+                },
+                {
+                    "linkId": "A7",
+                    "type": "boolean",
+                    "text": "Spital, das nur mit ausgewählten Organisationseinheiten teilnimmt"
+                },
+                {
+                    "linkId": "A7a",
+                    "type": "date",
+                    "enableWhen": [
+                        {
+                            "question": "A7",
+                            "operator": "=",
+                            "answerBoolean": true
+                        }
+                    ],
+                    "text": "Eintrittsdatum in die überwachten Organisationseinheiten (bei Spitälern, die nur mit ausgewählten Organisationseinheiten teilnehmen)"
+                },
+                {
+                    "linkId": "A7b",
+                    "type": "date",
+                    "enableWhen": [
+                        {
+                            "question": "A7",
+                            "operator": "=",
+                            "answerBoolean": true
+                        }
+                    ],
+                    "text": "Austrittsdatum aus der überwachten Organisationseinheiten (bei Spitälern, die nur mit ausgewählten Organisationseinheiten teilnehmen)"
+                }
+            ]
+        },
+        {
+            "linkId": "B-catheter-data",
+            "type": "group",
+            "text": "Angaben zum Blasenkatheter",
+            "_text": {
+                "extension": [
+                    {
+                        "url": "http://hl7.org/fhir/StructureDefinition/translation",
+                        "extension": [
+                            {
+                                "url": "lang",
+                                "valueCode": "de"
+                            },
+                            {
+                                "url": "content",
+                                "valueString": "Angaben zum Blasenkatheter"
+                            }
+                        ]
+                    }
+                ]
+            },
+            "repeats": true,
+            "item": [
+                {
+                    "linkId": "B1",
+                    "type": "date",
+                    "text": "Einlagedatum",
+                    "required": true
+                },
+                {
+                    "linkId": "B2",
+                    "type": "date",
+                    "text": "Entfernungsdatum",
+                    "required": true
+                },
+                {
+                    "linkId": "B3",
+                    "type": "choice",
+                    "text": "Einlageort",
+                    "answerValueSet": "#operation-ward-valueset"
+                },
+                {
+                    "linkId": "B4",
+                    "type": "boolean",
+                    "text": "Einlage des Katheters im Rahmen eines transurethralen Eingriffs"
+                },
+                {
+                    "linkId": "B5",
+                    "type": "choice",
+                    "text": "Indikation (nur Hauptindikation, keine Mehrfachnennung)",
+                    "repeats": false,
+                    "answerValueSet": "#indication-valueset"
+                }
+            ]
+        },
+        {
+            "linkId": "C-outcome",
+            "type": "group",
+            "text": "Infektiöser Outcome: symptomatische CAUTI",
+            "_text": {
+                "extension": [
+                    {
+                        "url": "http://hl7.org/fhir/StructureDefinition/translation",
+                        "extension": [
+                            {
+                                "url": "lang",
+                                "valueCode": "de"
+                            },
+                            {
+                                "url": "content",
+                                "valueString": "Infektiöser Outcome: symptomatische CAUTI"
+                            }
+                        ]
+                    }
+                ]
+            },
+            "repeats": false,
+            "item": [
+                {
+                    "linkId": "C0",
+                    "type": "display",
+                    "text": "(Blasenkatheter > 2 Kalendertage in situ und – falls entfernt – vor < 2 Kalendertagen entfernt)"
+                },
+                {
+                    "linkId": "C1",
+                    "type": "boolean",
+                    "text": "Mikrobiologie abgenommen"
+                },
+                {
+                    "linkId": "C2",
+                    "type": "group",
+                    "repeats": true,
+                    "enableWhen": [
+                        {
+                            "question": "C1",
+                            "operator": "=",
+                            "answerBoolean": true
+                        }
+                    ],
+                    "item": [
+                        {
+                            "linkId": "C1.1",
+                            "type": "date",
+                            "text": "Entnahmedatum",
+                            "required": true
+                        },
+                        {
+                            "linkId": "C1.2",
+                            "type": "choice",
+                            "text": "Anzahl verschiedener Keime",
+                            "answerOption": [
+                                {
+                                    "valueString": "0"
+                                },
+                                {
+                                    "valueString": "1"
+                                },
+                                {
+                                    "valueString": "2"
+                                },
+                                {
+                                    "valueString": ">2"
+                                }
+                            ]
+                        },
+                        {
+                            "linkId": "C1.3",
+                            "type": "choice",
+                            "text": "Keim 1",
+                            "enableWhen": [
+                                {
+                                    "question": "C1.2",
+                                    "operator": "!=",
+                                    "answerString": "0"
+                                }
+                            ],
+                            "repeats": false,
+                            "answerValueSet": "#germs-valueset"
+                        },
+                        {
+                            "linkId": "C1.4",
+                            "type": "choice",
+                            "text": "Keim 1: Keimzahl im Urin",
+                            "enableWhen": [
+                                {
+                                    "question": "C1.2",
+                                    "operator": "!=",
+                                    "answerString": "0"
+                                }
+                            ],
+                            "repeats": false,
+                            "answerOption": [
+                                {
+                                    "valueString": "< 10E5 CFU/ml"
+                                },
+                                {
+                                    "valueString": "≥ 10E5 CFU/ml"
+                                }
+                            ]
+                        },
+                        {
+                            "linkId": "C1.5",
+                            "type": "choice",
+                            "text": "Keim 2",
+                            "enableWhen": [
+                                {
+                                    "question": "C1.2",
+                                    "operator": "=",
+                                    "answerString": "2"
+                                },
+                                {
+                                    "question": "C1.2",
+                                    "operator": "=",
+                                    "answerString": ">2"
+                                }
+                            ],
+                            "enableBehavior": "any",
+                            "repeats": false,
+                            "answerValueSet": "#germs-valueset"
+                        },
+                        {
+                            "linkId": "C1.6",
+                            "type": "choice",
+                            "text": "Keim 2: Keimzahl im Urin",
+                            "enableWhen": [
+                                {
+                                    "question": "C1.2",
+                                    "operator": "=",
+                                    "answerString": "2"
+                                },
+                                {
+                                    "question": "C1.2",
+                                    "operator": "=",
+                                    "answerString": ">2"
+                                }
+                            ],
+                            "enableBehavior": "any",
+                            "repeats": false,
+                            "answerOption": [
+                                {
+                                    "valueString": "< 10E5 CFU/ml"
+                                },
+                                {
+                                    "valueString": "≥ 10E5 CFU/ml"
+                                }
+                            ]
+                        },
+                        {
+                            "linkId": "C1.7",
+                            "type": "boolean",
+                            "text": "Symptome"
+                        },
+                        {
+                            "linkId": "C1.9",
+                            "type": "boolean",
+                            "text": "Fieber >38.0°C (Ohr)",
+                            "enableWhen": [
+                                {
+                                    "question": "C1.7",
+                                    "operator": "=",
+                                    "answerBoolean": true
+                                }
+                            ],
+                            "repeats": false
+                        },
+                        {
+                            "linkId": "C1.10",
+                            "type": "date",
+                            "text": "Datum Fieber",
+                            "enableWhen": [
+                                {
+                                    "question": "C1.9",
+                                    "operator": "=",
+                                    "answerBoolean": true
+                                }
+                            ],
+                            "repeats": false
+                        },
+                        {
+                            "linkId": "C1.11",
+                            "type": "boolean",
+                            "text": "Suprapubische Druckdolenz",
+                            "enableWhen": [
+                                {
+                                    "question": "C1.7",
+                                    "operator": "=",
+                                    "answerBoolean": true
+                                }
+                            ],
+                            "repeats": false
+                        },
+                        {
+                            "linkId": "C1.12",
+                            "type": "date",
+                            "text": "Datum suprapubische Druckdolenz",
+                            "enableWhen": [
+                                {
+                                    "question": "C1.11",
+                                    "operator": "=",
+                                    "answerBoolean": true
+                                }
+                            ],
+                            "repeats": false
+                        },
+                        {
+                            "linkId": "C1.13",
+                            "type": "boolean",
+                            "text": "Flankenschmerzen oder -klopfdolenz",
+                            "enableWhen": [
+                                {
+                                    "question": "C1.7",
+                                    "operator": "=",
+                                    "answerBoolean": true
+                                }
+                            ],
+                            "repeats": false
+                        },
+                        {
+                            "linkId": "C1.14",
+                            "type": "date",
+                            "text": "Datum Flankenschmerzen oder -klopfdolenz",
+                            "enableWhen": [
+                                {
+                                    "question": "C1.13",
+                                    "operator": "=",
+                                    "answerBoolean": true
+                                }
+                            ],
+                            "repeats": false
+                        },
+                        {
+                            "linkId": "C1.15",
+                            "type": "boolean",
+                            "text": "Harndrang (nach Entfernung des Blasenkatheters)",
+                            "enableWhen": [
+                                {
+                                    "question": "C1.7",
+                                    "operator": "=",
+                                    "answerBoolean": true
+                                }
+                            ],
+                            "repeats": false
+                        },
+                        {
+                            "linkId": "C1.16",
+                            "type": "date",
+                            "text": "Datum Harndrang",
+                            "enableWhen": [
+                                {
+                                    "question": "C1.15",
+                                    "operator": "=",
+                                    "answerBoolean": true
+                                }
+                            ],
+                            "repeats": false
+                        },
+                        {
+                            "linkId": "C1.17",
+                            "type": "boolean",
+                            "text": "Pollakisurie (häufiges Wasserlassen, nach Entfernung des Blasenkatheters)",
+                            "enableWhen": [
+                                {
+                                    "question": "C1.7",
+                                    "operator": "=",
+                                    "answerBoolean": true
+                                }
+                            ],
+                            "repeats": false
+                        },
+                        {
+                            "linkId": "C1.18",
+                            "type": "date",
+                            "text": "Datum Pollakisurie",
+                            "enableWhen": [
+                                {
+                                    "question": "C1.17",
+                                    "operator": "=",
+                                    "answerBoolean": true
+                                }
+                            ],
+                            "repeats": false
+                        },
+                        {
+                            "linkId": "C1.19",
+                            "type": "boolean",
+                            "text": "Dysurie (Miktionsschmerzen, nach Entfernung des Blasenkatheters)",
+                            "enableWhen": [
+                                {
+                                    "question": "C1.7",
+                                    "operator": "=",
+                                    "answerBoolean": true
+                                }
+                            ],
+                            "repeats": false
+                        },
+                        {
+                            "linkId": "C1.20",
+                            "type": "date",
+                            "text": "Datum Dysurie",
+                            "enableWhen": [
+                                {
+                                    "question": "C1.19",
+                                    "operator": "=",
+                                    "answerBoolean": true
+                                }
+                            ],
+                            "repeats": false
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

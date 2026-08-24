@@ -118,6 +118,7 @@ import BLUEBOOK from '@/assets/questionnaires/bluebook.json';
 import SITUATION from '@/assets/questionnaires/situation.json';
 import INITIAL from '@/assets/questionnaires/initialValues.json';
 import WICHTEL from '@/assets/questionnaires/wichtel.json';
+import CAUTI from '@/assets/questionnaires/cauti.json';
 import {QuestionnaireItemType, QuestionnairePublicationStatus, type Questionnaire} from '@i4mi/fhir_r4';
 import {QuestionnaireData} from '@i4mi/fhir_questionnaire';
 
@@ -203,6 +204,14 @@ export default defineComponent({
           languages: ['de', 'en']
         },
         {
+          name: 'CAUTI',
+          key: 'cauti',
+          hidden: true,
+          description: 'Test for Swissnoso',
+          questionnaire: CAUTI as Questionnaire,
+          languages: ['de', 'en']
+        },
+        {
           name: OWN_QUESTIONNAIRE,
           description: 'Load your own FHIR Questionnaire.',
           questionnaire: {resourceType: 'Questionnaire'} as Questionnaire,
@@ -220,6 +229,8 @@ export default defineComponent({
     const lang = urlParams.get('lang');
     if (lang && this.availableLanguages.includes(lang)) {
       this.lang = lang;
+    } else if (this.availableLanguages.length > 0) {
+      this.lang = this.availableLanguages[0];
     }
     if (questionnaire) {
       const q = this.questionnaires.find((q) => q.key == questionnaire);
@@ -250,7 +261,6 @@ export default defineComponent({
       try {
         const questionnaire = JSON.parse(this.ownQuestionnaire);
         this.availableLanguages = getAvailableLanguagesFromQuestionnaire(questionnaire) || this.availableLanguages;
-        console.log('available Languages', this.availableLanguages);
         this.qData = new QuestionnaireData(questionnaire, this.availableLanguages);
 
         this.showOwnQuestionnaireModal = false;
