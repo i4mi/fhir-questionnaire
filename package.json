@@ -47,7 +47,7 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
-    "@i4mi/fhir_r4": "^2.0.0",
+    "@i4mi/fhir_r4": "2.1.9-beta.1",
     "fhirpath": "^4.0.0"
   },
   "files": [
