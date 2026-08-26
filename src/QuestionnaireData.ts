@@ -990,6 +990,24 @@ export class QuestionnaireData {
     }
 
     /**
+     * Escapes strings for HTML characters, like replacing "<" with "&lt;" and similar
+     * @param str   the input string
+     * @returns     a sanitized string for using in HTML
+     */
+    private escapeHTML(str?: string): string {
+        if (!str) return '';
+        return str.replace(/[&<>'"]/g,
+            tag => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            "'": '&#39;',
+            '"': '&quot;'
+            }[tag] || tag)
+        );
+    }
+
+    /**
      * Recursively generates the narrative html for a single QuestionnaireResponseItem.
      * @param _item     the item
      * @returns         a string containging html code that represents the QuestionnaireResponseItem
@@ -997,31 +1015,31 @@ export class QuestionnaireData {
     private getItemString(_item: QuestionnaireResponseItem): string {
         const parseAnswer  = (a: QuestionnaireResponseItemAnswer) => {
             if (a.valueBoolean !== undefined) return a.valueBoolean;
-            if (a.valueCoding !== undefined) return (a.valueCoding?.display || a.valueCoding?.code);
-            if (a.valueDate !== undefined) return new Date(a.valueDate).toLocaleDateString();
-            if (a.valueDateTime !== undefined) return new Date(a.valueDateTime).toLocaleString();
-            if (a.valueTime !== undefined) return new Date(a.valueTime).toLocaleTimeString();
-            if (a.valueDecimal  !== undefined) return a.valueDecimal?.toString();
-            if (a.valueInteger  !== undefined) return a.valueInteger?.toString();
-            if (a.valueQuantity  !== undefined) return (a.valueQuantity?.value + ' ' + (a.valueQuantity?.unit ? a.valueQuantity?.unit : a.valueQuantity?.code));
-            if (a.valueReference  !== undefined) return (a.valueReference?.display ? a.valueReference?.display : a.valueReference?.reference);
-            if (a.valueString !== undefined) return a.valueString;
+            if (a.valueCoding !== undefined) return this.escapeHTML(a.valueCoding?.display || a.valueCoding?.code);
+            if (a.valueDate !== undefined) return this.escapeHTML(new Date(a.valueDate).toLocaleDateString());
+            if (a.valueDateTime !== undefined) return this.escapeHTML(new Date(a.valueDateTime).toLocaleString());
+            if (a.valueTime !== undefined) return this.escapeHTML(new Date(a.valueTime).toLocaleTimeString());
+            if (a.valueDecimal  !== undefined) return this.escapeHTML(a.valueDecimal?.toString());
+            if (a.valueInteger  !== undefined) return this.escapeHTML(a.valueInteger?.toString());
+            if (a.valueQuantity  !== undefined) return this.escapeHTML(a.valueQuantity?.value + ' ' + (a.valueQuantity?.unit ? a.valueQuantity?.unit : a.valueQuantity?.code));
+            if (a.valueReference  !== undefined) return this.escapeHTML(a.valueReference?.display ? a.valueReference?.display : a.valueReference?.reference);
+            if (a.valueString !== undefined) return this.escapeHTML(a.valueString);
             if (a.valueUri !== undefined) return a.valueUri;
             if (a.valueAttachment !== undefined) return 'Attachment ' + a.valueAttachment?.title;
         };
 
         if (!_item.answer) {
             if (_item.item && _item.item?.length > 0) {
-                return (_item.text ? '<li><span class="question">' + _item.text + ':</span>' : '') + this.getNarrativeString(_item.item, false) + '</li>';
+                return (_item.text ? '<li><span class="question">' + this.escapeHTML(_item.text) + ':</span>' : '') + this.getNarrativeString(_item.item, false) + '</li>';
             } else {
-                return '<li><span class="question display">' + (_item.text || 'no text') + '</span></li>';
+                return '<li><span class="question display">' + this.escapeHTML(_item.text || 'no text') + '</span></li>';
             }
         }
-        let itemString = _item.text ? '<li><span class="question">' + _item.text + ':</span>' : '';
+        let itemString = _item.text ? '<li><span class="question">' + this.escapeHTML(_item.text) + ':</span>' : '';
         if (_item.answer.length === 0) {
-            itemString += '<span class="response">-</span>'
+            itemString += '<li><span class="response">-</span>'
         } else if (_item.answer!.length === 1) {
-            itemString += '<span class="response">'+ parseAnswer(_item.answer[0])+ '</span>';
+            itemString += '<li><span class="response">'+ parseAnswer(_item.answer[0])+ '</span>';
         } else {
             itemString += '<ul class="multiple-answers">';
             _item.answer.map((a) => {

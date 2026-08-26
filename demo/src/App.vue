@@ -160,7 +160,7 @@ export default defineComponent({
   data() {
     return {
       lang: 'en',
-      availableLanguages: ['de', 'en', 'fr'],
+      availableLanguages: new Array<string>(),
       qData: undefined as QuestionnaireData | undefined,
       resetCounter: 0,
       questionnaire: undefined as string | undefined,
@@ -261,6 +261,8 @@ export default defineComponent({
       try {
         const questionnaire = JSON.parse(this.ownQuestionnaire);
         this.availableLanguages = getAvailableLanguagesFromQuestionnaire(questionnaire) || this.availableLanguages;
+        this.lang = this.availableLanguages[0];
+
         this.qData = new QuestionnaireData(questionnaire, this.availableLanguages);
 
         this.showOwnQuestionnaireModal = false;
