@@ -37,7 +37,37 @@
             "linkId": "q1",
             "type": "choice",
             "answerValueSet": "#yes-no.valueset",
-            "text": "Bekommst du gerne Geschenke?"
+            "text": "Bekommst du gerne Geschenke?",
+            "_text": {
+                "extension": [
+                    {
+                        "url": "http://hl7.org/fhir/StructureDefinition/translation",
+                        "extension": [
+                            {
+                                "url": "lang",
+                                "valueCode": "de"
+                            },
+                            {
+                                "url": "content",
+                                "valueString": "Bekommst du gerne Geschenke?"
+                            }
+                        ]
+                    },
+                    {
+                        "url": "http://hl7.org/fhir/StructureDefinition/translation",
+                        "extension": [
+                            {
+                                "url": "lang",
+                                "valueCode": "en"
+                            },
+                            {
+                                "url": "content",
+                                "valueString": "Do you like receiving gifts?"
+                            }
+                        ]
+                    }
+                ]
+            }
         },
         {
             "linkId": "q1-no",
